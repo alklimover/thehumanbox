@@ -277,7 +277,7 @@ export function OrgSearchModal({ organisms, onTrack, onClose, lineageNames }: Pr
                     {discs.includes('spear') && '🗡️'}
                   </span>
                   <span className="org-search-meta" style={{ color: 'var(--dialog-muted)' }}>
-                    {t('search.meta', { gen: org.generation, days: Math.floor(org.age / DAY_LENGTH) })}
+                    {t('search.meta', { gen: org.generation ?? '—', days: Math.floor(org.age / DAY_LENGTH) })}
                   </span>
                   {org.alive && onTrack && (
                     <button

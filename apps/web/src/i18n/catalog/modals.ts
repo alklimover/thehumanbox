@@ -109,6 +109,12 @@ export const modals = defineMessages(
     'goals.difficulty.calm.note': 'Fewer disasters, gentler hunger.',
     'goals.difficulty.normal.note': 'The standard world.',
     'goals.difficulty.harsh.note': 'More disasters and sharper hunger.',
+    // Goal titles come from the simulation (sim/goals.rs) in English; the
+    // Russian ones are picked by goal id (i18n/goals.ts).
+    'goals.goal.keepTribes': 'Keep {tribes} alive for {years}',
+    'goals.goal.tribes': { one: '{n} tribe', other: '{n} tribes' },
+    'goals.goal.years': { one: '{n} year', other: '{n} years' },
+    'goals.goal.ironAge': 'Reach the Iron Age',
 
     'scenes.title': 'Scenarios',
     'scenes.heading': 'SCENARIOS',
@@ -224,6 +230,10 @@ export const modals = defineMessages(
     'goals.difficulty.calm.note': 'Меньше бедствий, голод мягче.',
     'goals.difficulty.normal.note': 'Обычный мир.',
     'goals.difficulty.harsh.note': 'Больше бедствий, голод злее.',
+    'goals.goal.keepTribes': 'Сохранить {tribes} в живых в течение {years}',
+    'goals.goal.tribes': { one: '{n} племя', few: '{n} племени', many: '{n} племён', other: '{n} племени' },
+    'goals.goal.years': { one: '{n} года', few: '{n} лет', many: '{n} лет', other: '{n} года' },
+    'goals.goal.ironAge': 'Довести племя до железного века',
 
     'scenes.title': 'Сцены',
     'scenes.heading': 'СЦЕНЫ',

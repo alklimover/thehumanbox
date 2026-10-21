@@ -13,11 +13,21 @@ export function prettifyId(id: string): string {
   return id.replace(/[_-]+/g, ' ').trim()
 }
 
+let missListener: ((domain: SimDomain, id: string) => void) | null = null
+
+/** The untranslated-text check (i18n/dev) hears here about ids no table knows. */
+export function onSimLabelMiss(listener: ((domain: SimDomain, id: string) => void) | null) {
+  missListener = listener
+}
+
 /** The name to show for a simulation id of the given kind. */
 export function simLabel(domain: SimDomain, id: string | null | undefined): string {
   if (!id) return ''
   const entry = SIM_TABLES[domain][id] ?? SIM_TABLES[domain][id.toLowerCase()]
-  if (!entry) return prettifyId(id)
+  if (!entry) {
+    missListener?.(domain, id)
+    return prettifyId(id)
+  }
   if (getLocale() === 'ru') return entry.ru
   return entry.en ?? prettifyId(id)
 }

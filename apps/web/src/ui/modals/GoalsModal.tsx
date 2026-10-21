@@ -1,4 +1,5 @@
 import { calendarAt } from '../../game/model/calendar'
+import { goalTitle } from '../../i18n/goals'
 import { DIFFICULTY_ORDER, goalFraction, goalsSummary } from '../../game/model/goals'
 import { t, type MessageKey } from '../../i18n'
 import type { Difficulty, GoalStatus, WorldState } from '../../shared/types'
@@ -67,7 +68,7 @@ export function GoalsModal({ world, onClose }: Props) {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
               <span style={{ color: g.done ? '#e8b060' : '#f4e6c0' }}>
                 {g.done ? '★ ' : '☆ '}
-                {g.title}
+                {goalTitle(g)}
               </span>
               <span className="tree-modal-sub">{progressText(g)}</span>
             </div>
