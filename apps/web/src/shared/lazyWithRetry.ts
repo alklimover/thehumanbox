@@ -1,5 +1,6 @@
 import { lazy, type ComponentType } from 'react'
 import { reloadAppSafely } from '../simulation/worldSource'
+import { t } from '../i18n'
 
 const RELOAD_KEY = 'thb-chunk-reload-at'
 const RELOAD_COOLDOWN_MS = 15_000
@@ -27,7 +28,7 @@ function maybeReload(onFailure: () => void = () => {}) {
         }
         onFailure()
       },
-      failureMessage: 'could not checkpoint the current world; renderer update was cancelled safely',
+      failureMessage: t('errors.checkpoint.renderer'),
     })
   } catch {
     return false

@@ -20,7 +20,8 @@ import {
 } from '../../simulation/worldSource'
 import { deleteWorld, listRecoveryWorlds, loadWorld, type RecoveryWorld } from '../../simulation/wasmDb'
 import { DESKTOP_PAUSE_WHEN_HIDDEN_EVENT } from '../../shared/desktopVisibility'
-import { t } from '../../i18n'
+import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
+import { localeTag } from '../../i18n/locale'
 import { LanguageSwitch } from './LanguageSwitch'
 
 interface Props {
@@ -37,7 +38,7 @@ function WorldSourceSection() {
     if (source !== 'wasm') return
     void listRecoveryWorlds(OWN_WORLD_ID)
       .then(setRecoveries)
-      .catch((error) => setStorageMessage(`could not list recovery saves: ${String(error)}`))
+      .catch((error) => setStorageMessage(t('settings.recovery.listFailed', { error: String(error) })))
   }, [source])
 
   async function exportSavedWorld(id: string, label: string) {
@@ -45,10 +46,10 @@ function WorldSourceSection() {
     setStorageMessage(null)
     try {
       if (id === OWN_WORLD_ID && !(await requestOwnWorldCheckpoint())) {
-        throw new Error('current world could not be checkpointed')
+        throw new Error(t('settings.export.checkpointFailed'))
       }
       const saved = await loadWorld(id)
-      if (!saved) throw new Error('save no longer exists')
+      if (!saved) throw new Error(t('settings.export.missing'))
       const bytes = new Uint8Array(saved.blob).buffer
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/json' }))
       const link = document.createElement('a')
@@ -56,9 +57,9 @@ function WorldSourceSection() {
       link.download = `thehumanbox-${label}-tick-${saved.tick}.world.save`
       link.click()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
-      setStorageMessage(`exported tick ${saved.tick.toLocaleString()}`)
+      setStorageMessage(t('settings.export.done', { tick: saved.tick }))
     } catch (error) {
-      setStorageMessage(`export failed: ${error instanceof Error ? error.message : String(error)}`)
+      setStorageMessage(t('settings.export.failed', { error: errorText(error) }))
     } finally {
       setStorageBusy(false)
     }
@@ -66,17 +67,17 @@ function WorldSourceSection() {
 
   async function confirmReset() {
     const confirmed = await askConfirm({
-      title: 'Start a new world?',
-      body: 'Your current world is kept in recovery saves.\n\nUse “export save” first if you also want a file you can move.',
-      confirmLabel: 'start new',
+      title: t('settings.reset.title'),
+      body: t('settings.reset.body'),
+      confirmLabel: t('settings.reset.confirm'),
     })
     if (confirmed) requestOwnWorldReset()
   }
 
   return (
-    <Section title="Play mode">
+    <Section title={t('settings.play.title')}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <span className="lang-btn active">🎮 private browser world</span>
+        <span className="lang-btn active">{t('settings.play.browserWorld')}</span>
         {source === 'wasm' && (
           <>
             <button
@@ -84,26 +85,24 @@ function WorldSourceSection() {
               disabled={storageBusy}
               onClick={() => void exportSavedWorld(OWN_WORLD_ID, 'my-world')}
             >
-              ↓ export save
+              {t('settings.play.exportSave')}
             </button>
             <button className="lang-btn" disabled={storageBusy} onClick={confirmReset}>
-              ↺ start new…
+              {t('settings.play.startNew')}
             </button>
           </>
         )}
       </div>
       <div style={{ fontSize: 12, color: 'var(--dialog-muted)', marginTop: 10, lineHeight: 1.6 }}>
-        The web game runs and saves entirely in this browser. It never connects to a hosted simulation API.
-        For the full native game, download the desktop app.
+        {t('settings.play.intro')}
       </div>
       {source === 'wasm' && recoveries.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: 1 }}>
-            Recovery saves
+            {t('settings.recovery.title')}
           </div>
           <div style={{ fontSize: 10, color: '#666', margin: '5px 0 7px', lineHeight: 1.45 }}>
-            Reset and unreadable worlds are retained here. Restores are validated before replacing your active
-            save.
+            {t('settings.recovery.intro')}
           </div>
           {recoveries.slice(0, 8).map((recovery) => (
             <div
@@ -111,38 +110,45 @@ function WorldSourceSection() {
               style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 5, flexWrap: 'wrap' }}
             >
               <span style={{ flex: 1, minWidth: 160, fontSize: 10, color: '#bfae90' }}>
-                tick {recovery.tick.toLocaleString()} · {new Date(recovery.savedAt).toLocaleString()} ·{' '}
-                {(recovery.bytes / 1024 / 1024).toFixed(1)} MiB
+                {t('settings.recovery.item', {
+                  tick: recovery.tick,
+                  date: new Date(recovery.savedAt).toLocaleString(localeTag()),
+                  size: fmtNumber(recovery.bytes / 1024 / 1024, {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                    useGrouping: false,
+                  }),
+                })}
               </span>
               <button
                 className="lang-btn"
                 disabled={storageBusy}
                 onClick={() => void exportSavedWorld(recovery.id, 'recovery')}
               >
-                export
+                {t('settings.recovery.export')}
               </button>
               <button
                 className="lang-btn"
                 disabled={storageBusy}
                 onClick={async () => {
                   const confirmed = await askConfirm({
-                    title: 'Restore this save?',
-                    body: `Restore the recovery from tick ${recovery.tick.toLocaleString()}.\n\nIt is checked before it becomes active, and the recovery copy stays available.`,
-                    confirmLabel: 'restore',
+                    title: t('settings.recovery.restoreTitle'),
+                    body: t('settings.recovery.restoreBody', { tick: recovery.tick }),
+                    confirmLabel: t('settings.recovery.restoreConfirm'),
                   })
                   if (confirmed) requestOwnWorldRecovery(recovery.id)
                 }}
               >
-                restore…
+                {t('settings.recovery.restore')}
               </button>
               <button
                 className="lang-btn"
                 disabled={storageBusy}
                 onClick={async () => {
                   const confirmed = await askConfirm({
-                    title: 'Delete this save?',
-                    body: `The recovery from tick ${recovery.tick.toLocaleString()} is deleted for good.`,
-                    confirmLabel: 'delete',
+                    title: t('settings.recovery.deleteTitle'),
+                    body: t('settings.recovery.deleteBody', { tick: recovery.tick }),
+                    confirmLabel: t('settings.recovery.deleteConfirm'),
                     danger: true,
                   })
                   if (!confirmed) return
@@ -150,17 +156,15 @@ function WorldSourceSection() {
                   try {
                     await deleteWorld(recovery.id)
                     setRecoveries((items) => items.filter((item) => item.id !== recovery.id))
-                    setStorageMessage('recovery copy deleted')
+                    setStorageMessage(t('settings.recovery.deleted'))
                   } catch (error) {
-                    setStorageMessage(
-                      `could not delete recovery: ${error instanceof Error ? error.message : String(error)}`,
-                    )
+                    setStorageMessage(t('settings.recovery.deleteFailed', { error: errorText(error) }))
                   } finally {
                     setStorageBusy(false)
                   }
                 }}
               >
-                delete…
+                {t('settings.recovery.delete')}
               </button>
             </div>
           ))}
@@ -173,26 +177,26 @@ function WorldSourceSection() {
   )
 }
 
-const POPULATION_CAP_PRESETS: ReadonlyArray<readonly [number, string]> = [
-  [350, 'light'],
-  [500, 'recommended'],
-  [1000, 'ambitious'],
-  [2000, 'experimental'],
+const POPULATION_CAP_PRESETS: ReadonlyArray<readonly [number, MessageKey]> = [
+  [350, 'settings.sim.preset.light'],
+  [500, 'settings.sim.preset.recommended'],
+  [1000, 'settings.sim.preset.ambitious'],
+  [2000, 'settings.sim.preset.experimental'],
 ]
 
 type TabId = 'world' | 'display' | 'access' | 'performance' | 'help' | 'simulation' | 'app'
 
-const WEB_TABS: ReadonlyArray<{ id: TabId; label: string; icon: string }> = [
-  { id: 'world', label: 'world', icon: '🗺️' },
-  { id: 'display', label: 'display', icon: '☀️' },
-  { id: 'access', label: 'accessibility', icon: '✨' },
-  { id: 'performance', label: 'performance', icon: '🐢' },
-  { id: 'help', label: 'help', icon: '📖' },
+const WEB_TABS: ReadonlyArray<{ id: TabId; label: MessageKey; icon: string }> = [
+  { id: 'world', label: 'settings.tab.world', icon: '🗺️' },
+  { id: 'display', label: 'settings.tab.display', icon: '☀️' },
+  { id: 'access', label: 'settings.tab.access', icon: '✨' },
+  { id: 'performance', label: 'settings.tab.performance', icon: '🐢' },
+  { id: 'help', label: 'settings.tab.help', icon: '📖' },
 ]
 
-const DESKTOP_TABS: ReadonlyArray<{ id: TabId; label: string; icon: string }> = [
-  { id: 'simulation', label: 'simulation', icon: '⏱️' },
-  { id: 'app', label: 'app', icon: '⚙️' },
+const DESKTOP_TABS: ReadonlyArray<{ id: TabId; label: MessageKey; icon: string }> = [
+  { id: 'simulation', label: 'settings.tab.simulation', icon: '⏱️' },
+  { id: 'app', label: 'settings.tab.app', icon: '⚙️' },
 ]
 
 /** Preferences that apply in both the web game and the desktop app. */
@@ -206,27 +210,26 @@ function DisplayTab() {
       <SettingRow title={t('settings.language.title')} desc={t('settings.language.desc')}>
         <LanguageSwitch />
       </SettingRow>
-      <SettingRow
-        title="Photo mode"
-        desc="Hide every panel and the dock for clean screenshots. Press Esc or hover the top edge to get the header back."
-      >
-        <Switch checked={!!photoMode} onChange={(v) => setViewFlag('photoMode', v)} label="Photo mode" />
+      <SettingRow title={t('settings.photo.title')} desc={t('settings.photo.desc')}>
+        <Switch
+          checked={!!photoMode}
+          onChange={(v) => setViewFlag('photoMode', v)}
+          label={t('settings.photo.title')}
+        />
       </SettingRow>
-      <SettingRow
-        title="Headline ticker"
-        desc="A scrolling strip of births, deaths and discoveries at the top."
-      >
+      <SettingRow title={t('settings.ticker.title')} desc={t('settings.ticker.desc')}>
         <Switch
           checked={!!headlineTicker}
           onChange={(v) => setViewFlag('headlineTicker', v)}
-          label="Headline ticker"
+          label={t('settings.ticker.title')}
         />
       </SettingRow>
-      <SettingRow
-        title="Auto-follow"
-        desc="Follow a different person every few seconds. Click anyone to stop."
-      >
-        <Switch checked={!!randomTour} onChange={(v) => setViewFlag('randomTour', v)} label="Auto-follow" />
+      <SettingRow title={t('settings.follow.title')} desc={t('settings.follow.desc')}>
+        <Switch
+          checked={!!randomTour}
+          onChange={(v) => setViewFlag('randomTour', v)}
+          label={t('settings.follow.title')}
+        />
       </SettingRow>
     </>
   )
@@ -236,14 +239,11 @@ function AccessibilityTab() {
   const setViewFlag = useUIStore((s) => s.setViewFlag)
   const colorBlind = useViewFlag('colorBlind')
   return (
-    <SettingRow
-      title="Colorblind palette"
-      desc="Red-green safe colors for tribes, seasons and status markers."
-    >
+    <SettingRow title={t('settings.colorBlind.title')} desc={t('settings.colorBlind.desc')}>
       <Switch
         checked={!!colorBlind}
         onChange={(v) => setViewFlag('colorBlind', v)}
-        label="Colorblind palette"
+        label={t('settings.colorBlind.title')}
       />
     </SettingRow>
   )
@@ -254,17 +254,13 @@ function PerformanceTab() {
   const automatic = LOW_PERF && !chosen
   return (
     <SettingRow
-      title="Low-performance mode"
-      desc={
-        automatic
-          ? 'On automatically for this device. Lower frame rate and resolution, fewer effects.'
-          : 'Lower frame rate and resolution, fewer effects. Reloads the game (your world is saved first).'
-      }
+      title={t('settings.lowPerf.title')}
+      desc={automatic ? t('settings.lowPerf.descAuto') : t('settings.lowPerf.desc')}
     >
       <Switch
         checked={LOW_PERF}
         onChange={() => toggleLowPerf()}
-        label="Low-performance mode"
+        label={t('settings.lowPerf.title')}
         disabled={automatic}
       />
     </SettingRow>
@@ -280,7 +276,7 @@ function HelpTab({ onClose }: { onClose: () => void }) {
   return (
     <>
       {!isMobile && isTourSupported() && (
-        <SettingRow title="Guided tour" desc="A short walkthrough of the map, the dock and the panels.">
+        <SettingRow title={t('settings.tour.title')} desc={t('settings.tour.desc')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -288,11 +284,11 @@ function HelpTab({ onClose }: { onClose: () => void }) {
               startTour(playerWorldKind)
             }}
           >
-            start tour
+            {t('settings.tour.start')}
           </button>
         </SettingRow>
       )}
-      <SettingRow title="About" desc="Version, build and links.">
+      <SettingRow title={t('settings.about.title')} desc={t('settings.about.desc')}>
         <button
           className="lang-btn"
           onClick={() => {
@@ -300,14 +296,11 @@ function HelpTab({ onClose }: { onClose: () => void }) {
             openAbout()
           }}
         >
-          open
+          {t('settings.about.open')}
         </button>
       </SettingRow>
-      <SettingRow
-        title="Stats for nerds"
-        desc="Tick counter, connection status and build details in the header."
-      >
-        <Switch checked={!!nerdStats} onChange={setNerdStats} label="Stats for nerds" />
+      <SettingRow title={t('settings.nerdStats.title')} desc={t('settings.nerdStats.desc')}>
+        <Switch checked={!!nerdStats} onChange={setNerdStats} label={t('settings.nerdStats.title')} />
       </SettingRow>
     </>
   )
@@ -335,7 +328,7 @@ export function DesktopSettingsModal({ onClose }: Props) {
         if (!cancelled) setSettings(loaded)
       })
       .catch((error) => {
-        if (!cancelled) setLoadError(`could not load settings: ${errorText(error)}`)
+        if (!cancelled) setLoadError(t('settings.loadFailed', { error: errorText(error) }))
       })
     // The status line is informational; failing to read it must not block the tab.
     desktop.sim
@@ -366,11 +359,11 @@ export function DesktopSettingsModal({ onClose }: Props) {
       try {
         await desktop.app.applyAutoLaunch()
       } catch (error) {
-        setActionError(`saved, but could not update launch at login: ${errorText(error)}`)
+        setActionError(t('settings.footer.launchFailed', { error: errorText(error) }))
       }
     } catch (error) {
       setSavedAt(null)
-      setActionError(`could not save settings: ${errorText(error)}`)
+      setActionError(t('settings.footer.saveFailed', { error: errorText(error) }))
     } finally {
       setBusy(false)
     }
@@ -386,7 +379,7 @@ export function DesktopSettingsModal({ onClose }: Props) {
       try {
         saved = await desktop.settings.set(settings)
       } catch (error) {
-        setActionError(`could not save settings: ${errorText(error)}`)
+        setActionError(t('settings.footer.saveFailed', { error: errorText(error) }))
         return
       }
       window.dispatchEvent(
@@ -397,7 +390,7 @@ export function DesktopSettingsModal({ onClose }: Props) {
       setSavedAt(Date.now())
     } catch (error) {
       setSavedAt(null)
-      setActionError(`could not restart the simulation: ${errorText(error)}`)
+      setActionError(t('settings.sim.restartFailed', { error: errorText(error) }))
       // The restart may have left the sim stopped or still running; show the truth.
       desktop.sim
         .status()
@@ -411,25 +404,27 @@ export function DesktopSettingsModal({ onClose }: Props) {
   async function migrateSaveFolder(targetDir: string | null) {
     if (!desktop || !settings) return
     setActionError(null)
-    const label = targetDir ?? 'the default app data folder'
+    const target = targetDir ?? t('settings.saveFolder.defaultTarget')
     const confirmed = await askConfirm({
-      title: 'Move the save folder?',
-      body: `Move active storage to ${label}.\n\nThe simulation saves and restarts. The current folder is kept as a backup, and the destination must not already contain a worlds folder.`,
-      confirmLabel: 'move',
+      title: t('settings.saveFolder.confirmTitle'),
+      body: t('settings.saveFolder.confirmBody', { target }),
+      confirmLabel: t('settings.saveFolder.confirm'),
     })
     if (!confirmed) return
     setBusy(true)
-    setSafetyMessage('checkpointing and copying worlds…')
+    setSafetyMessage(t('settings.saveFolder.moving'))
     try {
       const result = await desktop.world.migrateDataRoot({ targetDir })
       setSettings(result.settings)
       setSafetyMessage(
-        result.migrated
-          ? `worlds migrated safely; previous folder kept at ${result.previousFolderKept ?? 'the old location'}`
-          : 'this is already the active save folder',
+        !result.migrated
+          ? t('settings.saveFolder.alreadyActive')
+          : result.previousFolderKept
+            ? t('settings.saveFolder.moved', { folder: result.previousFolderKept })
+            : t('settings.saveFolder.movedOldPlace'),
       )
     } catch (error) {
-      setSafetyMessage(`migration failed safely: ${error instanceof Error ? error.message : String(error)}`)
+      setSafetyMessage(t('settings.saveFolder.moveFailed', { error: errorText(error) }))
     } finally {
       setBusy(false)
     }
@@ -437,20 +432,24 @@ export function DesktopSettingsModal({ onClose }: Props) {
 
   // Fire-and-forget desktop tools. Their rejections used to escape as
   // unhandled promises and vanish; surface the failure instead.
-  function runDesktopTool(what: string, action: () => Promise<unknown>): void {
+  function runDesktopTool(failure: MessageKey, action: () => Promise<unknown>): void {
     setActionError(null)
-    action().catch((error) => setActionError(`could not ${what}: ${errorText(error)}`))
+    action().catch((error) => setActionError(t(failure, { error: errorText(error) })))
   }
 
   async function exportDesktopWorld() {
     if (!desktop) return
     setActionError(null)
-    setSafetyMessage('checkpointing world for export…')
+    setSafetyMessage(t('settings.world.exporting'))
     try {
       const result = await desktop.world.exportActive()
-      setSafetyMessage(result.exported ? `world exported to ${result.filePath}` : 'export cancelled')
+      setSafetyMessage(
+        result.exported
+          ? t('settings.world.exported', { path: String(result.filePath) })
+          : t('settings.world.exportCancelled'),
+      )
     } catch (error) {
-      setSafetyMessage(`export failed: ${error instanceof Error ? error.message : String(error)}`)
+      setSafetyMessage(t('settings.export.failed', { error: errorText(error) }))
     }
   }
 
@@ -461,9 +460,9 @@ export function DesktopSettingsModal({ onClose }: Props) {
     setBusy(true)
     try {
       const result = await desktop.world.resetLocal()
-      setSafetyMessage(result.reset ? 'new world started; previous world archived' : 'reset cancelled')
+      setSafetyMessage(result.reset ? t('settings.world.newDone') : t('settings.world.newCancelled'))
     } catch (error) {
-      setSafetyMessage(`reset failed safely: ${error instanceof Error ? error.message : String(error)}`)
+      setSafetyMessage(t('settings.world.newFailed', { error: errorText(error) }))
     } finally {
       setBusy(false)
     }
@@ -474,48 +473,48 @@ export function DesktopSettingsModal({ onClose }: Props) {
   const justSaved = savedAt && Date.now() - savedAt < 2500
 
   return (
-    <Modal open onClose={onClose} className="settings-modal" title="Settings" hideTitle>
+    <Modal open onClose={onClose} className="settings-modal" title={t('settings.title')} hideTitle>
       <div className="lang-modal-header">
-        <span className="lang-modal-title">SETTINGS</span>
+        <span className="lang-modal-title">{t('settings.heading')}</span>
         {desktop && (
           <span className="tree-modal-sub">
             v{desktop.appVersion} · {desktop.platform}
           </span>
         )}
-        <button aria-label="Close" className="close-btn" onClick={onClose}>
+        <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
       <div className="settings-layout">
-        <nav className="settings-tabs" aria-label="Settings sections">
-          {tabs.map((t) => (
+        <nav className="settings-tabs" aria-label={t('settings.tabsLabel')}>
+          {tabs.map((item) => (
             <button
-              key={t.id}
-              className={clsx('settings-tab', tab === t.id && 'active')}
-              aria-pressed={tab === t.id}
-              onClick={() => setTab(t.id)}
+              key={item.id}
+              className={clsx('settings-tab', tab === item.id && 'active')}
+              aria-pressed={tab === item.id}
+              onClick={() => setTab(item.id)}
             >
-              <ToolSprite icon={t.icon} size={16} />
-              <span>{t.label}</span>
+              <ToolSprite icon={item.icon} size={16} />
+              <span>{t(item.label)}</span>
             </button>
           ))}
         </nav>
         <div className="settings-pane">
           {tab === 'world' &&
             (desktop ? (
-              <Section title="Your world">
-                <SettingRow title="Export world" desc="Save a portable copy of the current world.">
+              <Section title={t('settings.world.title')}>
+                <SettingRow title={t('settings.world.exportTitle')} desc={t('settings.world.exportDesc')}>
                   <button className="lang-btn" onClick={() => void exportDesktopWorld()} disabled={busy}>
-                    export…
+                    {t('settings.world.exportButton')}
                   </button>
                 </SettingRow>
-                <SettingRow title="Start a new world" desc="The current world is archived first.">
+                <SettingRow title={t('settings.world.newTitle')} desc={t('settings.world.newDesc')}>
                   <button
                     className="lang-btn danger"
                     onClick={() => void resetDesktopWorld()}
                     disabled={busy}
                   >
-                    start new…
+                    {t('settings.world.newButton')}
                   </button>
                 </SettingRow>
                 {safetyMessage && <div className="settings-note">{safetyMessage}</div>}
@@ -524,55 +523,57 @@ export function DesktopSettingsModal({ onClose }: Props) {
               <WorldSourceSection />
             ))}
           {tab === 'display' && (
-            <Section title="Display">
+            <Section title={t('settings.display.title')}>
               <DisplayTab />
             </Section>
           )}
           {tab === 'access' && (
-            <Section title="Accessibility">
+            <Section title={t('settings.access.title')}>
               <AccessibilityTab />
             </Section>
           )}
           {tab === 'performance' && (
-            <Section title="Performance">
+            <Section title={t('settings.performance.title')}>
               <PerformanceTab />
             </Section>
           )}
           {tab === 'help' && (
-            <Section title="Help">
+            <Section title={t('settings.help.title')}>
               <HelpTab onClose={onClose} />
             </Section>
           )}
 
-          {desktopTab && desktop && !settings && !loadError && <div className="settings-note">loading…</div>}
+          {desktopTab && desktop && !settings && !loadError && (
+            <div className="settings-note">{t('settings.loading')}</div>
+          )}
           {desktopTab && desktop && !settings && loadError && (
             <div className="settings-note" role="alert">
               {loadError}{' '}
               <button className="lang-btn" onClick={() => setLoadAttempt((n) => n + 1)}>
-                retry
+                {t('settings.retry')}
               </button>
             </div>
           )}
           {desktopTab && desktop && settings && (
             <>
               {tab === 'simulation' && (
-                <Section title="Local simulation">
+                <Section title={t('settings.sim.title')}>
                   <SettingRow
-                    title="Simulation process"
+                    title={t('settings.sim.processTitle')}
                     desc={
                       status
                         ? status.running
-                          ? `Running natively on this computer (port ${status.port}).`
-                          : 'Not running.'
-                        : 'Your world runs natively on this computer.'
+                          ? t('settings.sim.running', { port: String(status.port) })
+                          : t('settings.sim.stopped')
+                        : t('settings.sim.native')
                     }
                   >
                     <button className="lang-btn" onClick={restart} disabled={busy}>
-                      {busy ? 'restarting…' : 'apply + restart'}
+                      {busy ? t('settings.sim.restarting') : t('settings.sim.restart')}
                     </button>
                   </SettingRow>
                   {status?.error && <div className="settings-note error">{status.error}</div>}
-                  <Field label={`Tick interval: ${settings.tickMs} ms`}>
+                  <Field label={t('settings.sim.tickInterval', { ms: String(settings.tickMs) })}>
                     <input
                       type="range"
                       min={30}
@@ -582,9 +583,9 @@ export function DesktopSettingsModal({ onClose }: Props) {
                       onChange={(e) => update({ tickMs: parseInt(e.target.value, 10) })}
                       style={{ width: '100%' }}
                     />
-                    <div className="settings-note">Lower is a faster world and more CPU. Default 100 ms.</div>
+                    <div className="settings-note">{t('settings.sim.tickNote')}</div>
                   </Field>
-                  <Field label={`World capacity: ${settings.populationCap.toLocaleString()} people`}>
+                  <Field label={tn('settings.sim.capacity', settings.populationCap)}>
                     <input
                       type="range"
                       min={120}
@@ -594,7 +595,11 @@ export function DesktopSettingsModal({ onClose }: Props) {
                       onChange={(e) => update({ populationCap: parseInt(e.target.value, 10) })}
                       style={{ width: '100%' }}
                     />
-                    <div className="desktop-cap-presets" role="group" aria-label="World capacity presets">
+                    <div
+                      className="desktop-cap-presets"
+                      role="group"
+                      aria-label={t('settings.sim.capacityPresets')}
+                    >
                       {POPULATION_CAP_PRESETS.map(([cap, label]) => (
                         <button
                           key={cap}
@@ -602,61 +607,61 @@ export function DesktopSettingsModal({ onClose }: Props) {
                           className={settings.populationCap === cap ? 'active' : ''}
                           onClick={() => update({ populationCap: cap })}
                         >
-                          {cap.toLocaleString()} · {label}
+                          {fmtNumber(cap)} · {t(label)}
                         </button>
                       ))}
                     </div>
-                    <div className="settings-note">
-                      Natural births stop at this size; you can still add people yourself. 500 suits the
-                      default speed, 1,000+ needs a fast machine. Applies after restart.
-                    </div>
+                    <div className="settings-note">{t('settings.sim.capacityNote')}</div>
                   </Field>
                 </Section>
               )}
               {tab === 'app' && (
                 <>
-                  <Section title="Updates">
-                    <SettingRow
-                      title="Automatic updates"
-                      desc="Check for new versions and offer to install them."
-                    >
+                  <Section title={t('settings.updates.title')}>
+                    <SettingRow title={t('settings.updates.autoTitle')} desc={t('settings.updates.autoDesc')}>
                       <Switch
                         checked={settings.autoUpdate}
                         onChange={(v) => update({ autoUpdate: v })}
-                        label="Automatic updates"
+                        label={t('settings.updates.autoTitle')}
                       />
                     </SettingRow>
                     <UpdateCheckButton desktop={desktop} />
                   </Section>
-                  <Section title="Startup and background">
-                    <SettingRow title="Launch at sign-in" desc="Open The Human Box when you log in.">
+                  <Section title={t('settings.startup.title')}>
+                    <SettingRow
+                      title={t('settings.startup.launchTitle')}
+                      desc={t('settings.startup.launchDesc')}
+                    >
                       <Switch
                         checked={settings.autoLaunch}
                         onChange={(v) => update({ autoLaunch: v })}
-                        label="Launch at sign-in"
-                      />
-                    </SettingRow>
-                    <SettingRow title="Start hidden" desc="Start in the tray without opening a window.">
-                      <Switch
-                        checked={settings.startMinimized}
-                        onChange={(v) => update({ startMinimized: v })}
-                        label="Start hidden"
+                        label={t('settings.startup.launchTitle')}
                       />
                     </SettingRow>
                     <SettingRow
-                      title="Pause when hidden"
-                      desc="Stop drawing while the window is minimized. Saves CPU."
+                      title={t('settings.startup.hiddenTitle')}
+                      desc={t('settings.startup.hiddenDesc')}
+                    >
+                      <Switch
+                        checked={settings.startMinimized}
+                        onChange={(v) => update({ startMinimized: v })}
+                        label={t('settings.startup.hiddenTitle')}
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      title={t('settings.startup.pauseTitle')}
+                      desc={t('settings.startup.pauseDesc')}
                     >
                       <Switch
                         checked={settings.pauseWhenHidden}
                         onChange={(v) => update({ pauseWhenHidden: v })}
-                        label="Pause when hidden"
+                        label={t('settings.startup.pauseTitle')}
                       />
                     </SettingRow>
                   </Section>
-                  <Section title="Save folder">
+                  <Section title={t('settings.saveFolder.title')}>
                     <code className="settings-path">
-                      {settings.saveLocationOverride ?? 'default (app data folder)'}
+                      {settings.saveLocationOverride ?? t('settings.saveFolder.default')}
                     </code>
                     <div className="settings-actions">
                       <button
@@ -668,14 +673,14 @@ export function DesktopSettingsModal({ onClose }: Props) {
                           try {
                             dir = await desktop.app.pickSaveDir()
                           } catch (error) {
-                            setSafetyMessage(`could not choose a save folder: ${errorText(error)}`)
+                            setSafetyMessage(t('settings.saveFolder.pickFailed', { error: errorText(error) }))
                             return
                           }
                           if (dir) await migrateSaveFolder(dir)
                         }}
                         disabled={busy}
                       >
-                        move…
+                        {t('settings.saveFolder.move')}
                       </button>
                       {settings.saveLocationOverride && (
                         <button
@@ -683,17 +688,14 @@ export function DesktopSettingsModal({ onClose }: Props) {
                           onClick={() => void migrateSaveFolder(null)}
                           disabled={busy}
                         >
-                          move back to default
+                          {t('settings.saveFolder.moveBack')}
                         </button>
                       )}
                     </div>
-                    <div className="settings-note">
-                      Moving checkpoints and copies the whole worlds folder first. The old folder stays as a
-                      backup.
-                    </div>
+                    <div className="settings-note">{t('settings.saveFolder.note')}</div>
                     {safetyMessage && <div className="settings-note">{safetyMessage}</div>}
                   </Section>
-                  <Section title="Tools">
+                  <Section title={t('settings.tools.title')}>
                     <div className="settings-actions">
                       <button
                         className="lang-btn"
@@ -701,26 +703,30 @@ export function DesktopSettingsModal({ onClose }: Props) {
                           // captureScreenshot() resolves null instead of
                           // rejecting when the capture or its file write fails,
                           // so treat a null path as the failure too.
-                          runDesktopTool('take a screenshot', async () => {
-                            if (!(await desktop.app.screenshot())) throw new Error('the capture failed')
+                          runDesktopTool('settings.tools.screenshotFailed', async () => {
+                            if (!(await desktop.app.screenshot())) {
+                              throw new Error(t('settings.tools.captureFailed'))
+                            }
                           })
                         }
                       >
-                        take screenshot
+                        {t('settings.tools.screenshot')}
                       </button>
                       <button
                         className="lang-btn"
                         onClick={() =>
-                          runDesktopTool('open the worlds folder', () => desktop.app.openWorlds())
+                          runDesktopTool('settings.tools.openWorldsFailed', () => desktop.app.openWorlds())
                         }
                       >
-                        open worlds folder
+                        {t('settings.tools.openWorlds')}
                       </button>
                       <button
                         className="lang-btn"
-                        onClick={() => runDesktopTool('open the logs folder', () => desktop.app.openLogs())}
+                        onClick={() =>
+                          runDesktopTool('settings.tools.openLogsFailed', () => desktop.app.openLogs())
+                        }
                       >
-                        open logs folder
+                        {t('settings.tools.openLogs')}
                       </button>
                     </div>
                   </Section>
@@ -728,15 +734,15 @@ export function DesktopSettingsModal({ onClose }: Props) {
               )}
               <div className="settings-footer">
                 <button className="lang-btn active" onClick={save} disabled={busy}>
-                  {busy ? 'saving…' : 'save settings'}
+                  {busy ? t('settings.footer.saving') : t('settings.footer.save')}
                 </button>
-                {justSaved && <span className="settings-saved">saved</span>}
+                {justSaved && <span className="settings-saved">{t('settings.footer.saved')}</span>}
                 {actionError && (
                   <span className="settings-note" role="alert">
                     {actionError}
                   </span>
                 )}
-                <span className="settings-note">Tick changes apply after a restart.</span>
+                <span className="settings-note">{t('settings.footer.note')}</span>
               </div>
             </>
           )}
@@ -752,13 +758,18 @@ function errorText(error: unknown): string {
 
 function updateCheckMessage(result: UpdateCheckResult | null): string {
   if (!result) return ''
-  if (result.status === 'checking') return 'checking...'
+  if (result.status === 'checking') return t('settings.updates.checking')
   if (result.status === 'available')
-    return result.version ? `v${result.version} available` : 'update available'
-  if (result.status === 'downloaded') return result.version ? `v${result.version} ready` : 'update ready'
-  if (result.status === 'up-to-date') return 'up to date'
-  if (result.status === 'unsupported') return result.message ?? 'only available in packaged builds'
-  return result.message ?? 'update check failed'
+    return result.version
+      ? t('settings.updates.availableVersion', { version: result.version })
+      : t('settings.updates.available')
+  if (result.status === 'downloaded')
+    return result.version
+      ? t('settings.updates.readyVersion', { version: result.version })
+      : t('settings.updates.ready')
+  if (result.status === 'up-to-date') return t('settings.updates.upToDate')
+  if (result.status === 'unsupported') return result.message ?? t('settings.updates.unsupported')
+  return result.message ?? t('settings.updates.failed')
 }
 
 function UpdateCheckButton({ desktop }: { desktop: DesktopBridge }) {
@@ -773,7 +784,7 @@ function UpdateCheckButton({ desktop }: { desktop: DesktopBridge }) {
     } catch (error) {
       // Without this the "checking..." message stayed up forever and the
       // rejection was dropped as an unhandled promise.
-      setResult({ status: 'error', message: `check failed: ${errorText(error)}` })
+      setResult({ status: 'error', message: t('settings.updates.checkFailed', { error: errorText(error) }) })
     } finally {
       setChecking(false)
     }
@@ -782,7 +793,7 @@ function UpdateCheckButton({ desktop }: { desktop: DesktopBridge }) {
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
       <button className="lang-btn" onClick={check} disabled={checking}>
-        {checking ? 'checking...' : 'check for updates'}
+        {checking ? t('settings.updates.checking') : t('settings.updates.check')}
       </button>
       {result && (
         <span
@@ -823,7 +834,7 @@ function SettingRow({
       <div className="settings-row-text">
         <div className="settings-row-title">
           {title}
-          {beta && <span className="settings-beta">beta</span>}
+          {beta && <span className="settings-beta">{t('settings.beta')}</span>}
         </div>
         <div className="settings-row-desc">{desc}</div>
       </div>

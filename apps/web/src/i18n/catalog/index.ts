@@ -1,11 +1,13 @@
 import type { Message, PluralForms } from '../define'
 import { common } from './common'
+import { dialogs } from './dialogs'
+import { errors } from './errors'
 import { onboarding } from './onboarding'
 import { settings } from './settings'
 import { splash } from './splash'
 
 /** Every area of the interface. Add a new area here; its keys join MessageKey. */
-const AREAS = { common, onboarding, settings, splash }
+const AREAS = { common, dialogs, errors, onboarding, settings, splash }
 
 type Areas = typeof AREAS
 export type MessageKey = { [A in keyof Areas]: keyof Areas[A]['en'] & string }[keyof Areas]

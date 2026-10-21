@@ -91,3 +91,32 @@
 | schism | раскол | |
 | budding colony | колония-отпочкование | |
 | era gap | разрыв эпох | |
+
+### Настройки, диалоги, ошибки
+
+| English | Русский | Заметки |
+|---|---|---|
+| display (settings tab) | экран | вкладка настроек |
+| accessibility | доступность | |
+| performance | производительность | в узкой вкладке настроек — «быстродействие» |
+| colorblind palette | палитра для дальтоников | |
+| auto-follow | автослежение | |
+| stats for nerds | статистика для гиков | |
+| about | об игре | окно и пункт настроек |
+| world capacity / population cap | вместимость мира | пресеты: light → лёгкий, recommended → рекомендуемый, ambitious → смелый, experimental → на свой риск |
+| tick interval | длина такта | |
+| checkpoint (the world) | сохранить мир | «не удалось сохранить текущий мир; … безопасно отменено» |
+| reload / refresh (the app) | перезагрузить | |
+| start a new world / reset | начать новый мир / сброс | кнопка — «новый мир…» |
+| archive (a world) | отправить в архив | |
+| save folder | папка сохранений | папку `worlds` не переводим — это имя на диске |
+| logs | журналы | «папка журналов» |
+| launch at sign-in | автозапуск | |
+| tray | трей | |
+| automatic updates | автообновление | |
+| up to date | у вас последняя версия | |
+| native (desktop simulation) | прямо на этом компьютере | слово «нативно» не используем |
+| local simulation worker | симуляция в браузере | |
+| MiB / KB | МБ / КБ | |
+| ok (notice button) | понятно | у окна-уведомления |
+| cancel / confirm | отмена / подтвердить | кнопки диалога по умолчанию |
