@@ -4,6 +4,7 @@ import { TOOL_ICON } from './icons'
 import type { OrganismState, ReligionInfo } from '../../../shared/types'
 import { fmtNumber, t, type MessageKey } from '../../../i18n'
 import { cargoLabel, prettifyId, simLabel } from '../../../i18n/sim'
+import { simFaithName } from '../../../i18n/simtext'
 
 /** The subjects a university grants degrees in (pick_degree in sim/civ/civ_tick/people.rs). */
 const DEGREES: Record<string, MessageKey> = {
@@ -23,15 +24,6 @@ const DEGREES: Record<string, MessageKey> = {
 }
 
 const degreeName = (d: string) => (DEGREES[d] ? t(DEGREES[d]) : prettifyId(d))
-
-/**
- * A religion's name. A name shared by two faiths carries a numbered suffix ("Sun Path rel7"):
- * the base is translated and the suffix kept, so the two stay apart.
- */
-function religionName(name: string): string {
-  const m = /^(.*?)( rel\d+)$/.exec(name)
-  return m ? `${simLabel('religion', m[1])}${m[2]}` : simLabel('religion', name)
-}
 
 export function EducationSection({ org }: { org: OrganismState }) {
   return (
@@ -117,7 +109,7 @@ export function ReligionSection({ org, religions }: { org: OrganismState; religi
         <>
           <div className="org-detail-section">{t('person.religion.title')}</div>
           <div style={{ marginBottom: 4, fontSize: 11, color: '#bbb' }}>
-            ✦ {religionName(religions?.find((r) => r.id === org.religion_id)?.name ?? org.religion_id ?? '')}
+            ✦ {simFaithName(religions?.find((r) => r.id === org.religion_id)?.name ?? org.religion_id ?? '')}
           </div>
           {(org.piety ?? null) !== null && (
             <Bar label={t('person.religion.piety')} value={org.piety ?? 0} color="#e6c488" />

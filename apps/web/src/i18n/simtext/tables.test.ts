@@ -8,6 +8,7 @@ import { extract } from '../../../../../scripts/i18n/extract-sim-strings.mjs'
 import { makeMatcher } from '../../../../../scripts/i18n/sim-coverage.mjs'
 import { RU_SIM_TEXT_TABLES } from '.'
 import { SIM_TABLES } from '../sim/tables'
+import { NAME_DOMAINS } from './names'
 
 const ROOT = join(__dirname, '../../../../../crates/sim-core/src')
 const { entries } = extract(ROOT, 'crates/sim-core/src')
@@ -43,7 +44,11 @@ describe('Russian simulation text tables', () => {
         for (const m of ru.matchAll(
           /\{([A-Za-z_][A-Za-z0-9_]*)(?:@([A-Za-z_][A-Za-z0-9_]*))?(?:\|([A-Za-z_]+))?\}/g,
         )) {
-          if (!names.has(m[1]) || (m[2] && !names.has(m[2])) || (m[3] && !(m[3] in SIM_TABLES)))
+          if (
+            !names.has(m[1]) ||
+            (m[2] && !names.has(m[2])) ||
+            (m[3] && !(m[3] in SIM_TABLES) && !(m[3] in NAME_DOMAINS))
+          )
             bad.push(`${key} → ${m[0]}`)
         }
       }),
