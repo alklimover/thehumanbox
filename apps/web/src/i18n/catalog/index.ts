@@ -4,6 +4,7 @@ import { dialogs } from './dialogs'
 import { errors } from './errors'
 import { header } from './header'
 import { hud } from './hud'
+import { map } from './map'
 import { onboarding } from './onboarding'
 import { scenarios } from './scenarios'
 import { settings } from './settings'
@@ -21,6 +22,7 @@ const AREAS = {
   errors,
   header,
   hud,
+  map,
   onboarding,
   scenarios,
   settings,

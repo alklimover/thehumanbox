@@ -6,6 +6,8 @@ import { lineageAtTerritoryTile, territoryTileKey, type TerritoryIndex } from '.
 import { TILE } from '../../model/palette'
 import { isMapControl, screenToMap, type MapCamera, type MapSize } from '../camera-controls'
 import { pickBuildingAt, pickPersonAt } from '../cf/picking'
+import { t, tn } from '../../../i18n'
+import { simLabel } from '../../../i18n/sim'
 
 interface Props {
   world: WorldState
@@ -99,11 +101,19 @@ export function TerritoryHoverCard({
       {facts && <TribeFacts facts={facts} lineage={hover?.lineage ?? ''} />}
       {settlement && (
         <div>
-          {settlement.population} people · {settlement.building_count} buildings
+          {t('map.hover.settlement', {
+            people: tn('map.hover.residents', settlement.population),
+            buildings: tn('map.hover.buildings', settlement.building_count),
+          })}
         </div>
       )}
     </div>
   )
+}
+
+/** The facts give the era pretty-printed ("pre stone"); era ids join their words with a hyphen. */
+function eraName(pretty: string): string {
+  return simLabel('era', pretty.trim().replace(/\s+/g, '-'))
 }
 
 function TribeFacts({ facts, lineage }: { facts: TerritoryCardFacts; lineage: string }) {
@@ -122,17 +132,17 @@ function TribeFacts({ facts, lineage }: { facts: TerritoryCardFacts; lineage: st
         {facts.name}
       </div>
       <div>
-        {facts.people} {facts.people === 1 ? 'person' : 'people'}
-        {facts.era ? ` · ${facts.era}` : ''}
+        {tn('map.hover.people', facts.people)}
+        {facts.era ? ` · ${eraName(facts.era)}` : ''}
       </div>
       <div>
-        {facts.leader ? `led by ${facts.leader}` : 'no leader'}
-        {facts.government ? ` (${facts.government})` : ''}
+        {facts.leader ? t('map.hover.ledBy', { leader: facts.leader }) : t('map.hover.noLeader')}
+        {facts.government ? ` (${simLabel('government', facts.government)})` : ''}
       </div>
-      {facts.wealthGap && <div>wealth: {facts.wealthGap}</div>}
+      {facts.wealthGap && <div>{t('map.hover.wealth', { gap: facts.wealthGap })}</div>}
       {facts.goods && <div>{facts.goods}</div>}
-      {facts.trade && <div>trade: {facts.trade}</div>}
-      {facts.contested && <div style={{ color: '#ffb36b' }}>disputed land</div>}
+      {facts.trade && <div>{t('map.hover.trade', { trade: facts.trade })}</div>}
+      {facts.contested && <div style={{ color: '#ffb36b' }}>{t('map.hover.disputed')}</div>}
     </>
   )
 }

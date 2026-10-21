@@ -1,20 +1,17 @@
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
+import { t, type MessageKey } from '../../../i18n'
 
 const TEMPLE_RADIUS = 20
 
-const KIND_SUBTITLE: Record<string, string> = {
-  Animism: 'a stone shrine to the spirits',
-  Polytheism: 'a temple of many gods',
-  Monotheism: 'a sanctified house of the one god',
-  Philosophical: 'a hall of contemplation',
-  Secular: 'a civic hall of remembrance',
-  animism: 'a stone shrine to the spirits',
-  polytheism: 'a temple of many gods',
-  monotheism: 'a sanctified house of the one god',
-  philosophical: 'a hall of contemplation',
-  secular: 'a civic hall of remembrance',
+/** How a temple of each kind of faith is described; the simulation has sent the kind in either case. */
+const KIND_SUBTITLE: Record<string, MessageKey> = {
+  animism: 'map.temple.kind.animism',
+  polytheism: 'map.temple.kind.polytheism',
+  monotheism: 'map.temple.kind.monotheism',
+  philosophical: 'map.temple.kind.philosophical',
+  secular: 'map.temple.kind.secular',
 }
 
 const TEMPLE_KINDS = new Set(['temple', 'cathedral', 'shrine', 'mosque', 'synagogue', 'pagoda'])
@@ -79,7 +76,12 @@ export function resolveTempleScene(world: WorldState, scene: SceneId): SceneCont
     const piety = o.piety ?? 0
     if (!sameFaith && piety < 0.2) continue
     const role: SceneOccupant['role'] = o.is_leader ? 'priest' : piety > 0.6 ? 'worshipper' : 'guest'
-    const activity = piety > 0.6 ? 'praying' : piety > 0.3 ? 'reflecting' : 'observing'
+    const activity =
+      piety > 0.6
+        ? t('map.temple.praying')
+        : piety > 0.3
+          ? t('map.temple.reflecting')
+          : t('map.temple.observing')
     const entry: SceneOccupant = { org: o, role, activity }
     if (d <= 4) inside.push(entry)
     else away.push(entry)
@@ -98,9 +100,9 @@ export function resolveTempleScene(world: WorldState, scene: SceneId): SceneCont
 
   const adherents = religion.adherents ?? 0
   const subtitle = [
-    KIND_SUBTITLE[religion.kind ?? ''] ?? 'a place of worship',
-    `${adherents} of the faith`,
-    `${inside.length} at the altar · ${away.length} nearby`,
+    t(KIND_SUBTITLE[(religion.kind ?? '').toLowerCase()] ?? 'map.temple.kind.other'),
+    t('map.temple.faithful', { n: adherents }),
+    t('map.temple.crowd', { inside: inside.length, away: away.length }),
   ].join(' · ')
 
   return {

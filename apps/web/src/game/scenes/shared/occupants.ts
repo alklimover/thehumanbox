@@ -1,6 +1,7 @@
 import type { OrganismState, WorldState } from '../../../shared/types'
 import { hasRuinedBuildingAtWorldTile } from '../../model/building-state'
 import type { OccupantRole, SceneOccupant } from '../core/types'
+import { t } from '../../../i18n'
 
 const INSIDE_RADIUS = 1
 const HOUSEHOLD_RADIUS = 6
@@ -65,7 +66,7 @@ export function householdAround(world: WorldState, host: OrganismState): Househo
   const hostEntry: SceneOccupant = {
     org: host,
     role: 'host',
-    activity: host.thought || (hostInside ? 'at home' : 'out'),
+    activity: host.thought || (hostInside ? t('map.home.atHome') : t('map.home.away')),
   }
   if (hostInside) inside.push(hostEntry)
   else away.push(hostEntry)
@@ -77,7 +78,7 @@ export function householdAround(world: WorldState, host: OrganismState): Househo
     const manhattan = Math.abs(dx) + Math.abs(dy)
     if (manhattan > HOUSEHOLD_RADIUS) continue
     const role = roleFor(host, o)
-    const entry: SceneOccupant = { org: o, role, activity: o.thought || 'idling' }
+    const entry: SceneOccupant = { org: o, role, activity: o.thought || t('map.scene.idling') }
     if (isInsideHome({ ...o, home_x: host.home_x, home_y: host.home_y } as OrganismState, world)) {
       inside.push(entry)
     } else {

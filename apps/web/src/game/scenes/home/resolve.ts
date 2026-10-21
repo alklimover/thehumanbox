@@ -1,18 +1,21 @@
 import type { SceneContext, SceneFixture, SceneId } from '../core/types'
 import type { OrganismState, WorldState } from '../../../shared/types'
 import { householdAround } from '../shared/occupants'
+import { t, tn, type MessageKey } from '../../../i18n'
+import { simLabel } from '../../../i18n/sim'
 
-const ERA_LABEL: Record<string, string> = {
-  'pre-stone': 'A bare windbreak',
-  stone: 'A stone-walled hut',
-  bronze: 'A timber-and-thatch home',
-  iron: 'An iron-age cottage',
-  classical: 'A clay-tiled house',
-  medieval: 'A timbered cottage',
-  renaissance: 'A two-story dwelling',
-  industrial: 'A brick row-house',
-  modern: 'A house',
-  information: 'A small apartment',
+/** What a home looks like in each era (the room's subtitle); later eras keep the plain word. */
+const HOME_FLAVOR: Record<string, MessageKey> = {
+  'pre-stone': 'map.home.flavor.preStone',
+  stone: 'map.home.flavor.stone',
+  bronze: 'map.home.flavor.bronze',
+  iron: 'map.home.flavor.iron',
+  classical: 'map.home.flavor.classical',
+  medieval: 'map.home.flavor.medieval',
+  renaissance: 'map.home.flavor.renaissance',
+  industrial: 'map.home.flavor.industrial',
+  modern: 'map.home.flavor.modern',
+  information: 'map.home.flavor.information',
 }
 
 interface Slot {
@@ -195,16 +198,14 @@ export function resolveHomeScene(world: WorldState, scene: SceneId): SceneContex
     return { id: `${k}-${i}`, kind: k, x: slot.x, y: slot.y, label: k.replace(/_/g, ' ') }
   })
 
-  const flavor =
-    aiPicked.length === 0
-      ? (ERA_LABEL[era] ?? 'A home')
-      : `${ERA_LABEL[era] ?? 'A home'} · ${aiPicked.length} chosen pieces`
+  const look = t(HOME_FLAVOR[era] ?? 'map.home.flavor.other')
+  const flavor = aiPicked.length === 0 ? look : tn('map.home.chosen', aiPicked.length, { flavor: look })
 
   return {
     scene,
     world,
-    title: `${host.name}'s home`,
-    subtitle: `${flavor} · ${lineageName} · ${era}`,
+    title: t('map.home.title', { name: host.name }),
+    subtitle: t('map.home.subtitle', { flavor, tribe: lineageName, era: simLabel('era', era) }),
     isDay,
     occupants: inside,
     away,

@@ -1,3 +1,57 @@
 import type { SimTable } from './types'
 
-export const era: SimTable = {}
+/**
+ * The eras a tribe and the world pass through: `Era::name()` in
+ * crates/sim-core/src/sim/civ/progress/eras (sent as `current_era`, `era_name`,
+ * a vehicle's `era`). `genesis` is the world's era before any tribe has one.
+ * The names read after «эпоха:» and on their own, so the speculative ones are
+ * nouns or «… эпоха» rather than adjectives.
+ */
+export const era: SimTable = {
+  genesis: { ru: 'сотворение мира' },
+  'pre-stone': { ru: 'докаменный век' },
+  stone: { ru: 'каменный век' },
+  bronze: { ru: 'бронзовый век' },
+  iron: { ru: 'железный век' },
+  classical: { ru: 'античность' },
+  medieval: { ru: 'средневековье' },
+  renaissance: { ru: 'Возрождение' },
+  industrial: { ru: 'индустриальная эпоха' },
+  modern: { ru: 'современность' },
+  information: { ru: 'информационная эпоха' },
+  atomic: { ru: 'атомный век' },
+  space: { ru: 'космическая эра' },
+  digital: { ru: 'цифровая эпоха' },
+  quantum: { ru: 'квантовая эпоха' },
+  solar: { ru: 'солнечная эпоха' },
+  fusion: { ru: 'термоядерная эпоха' },
+  genetic: { ru: 'генетическая эпоха' },
+  orbital: { ru: 'орбитальная эпоха' },
+  lunar: { ru: 'лунная эпоха' },
+  martian: { ru: 'марсианская эпоха' },
+  cyber: { ru: 'киберэпоха' },
+  neural: { ru: 'нейроэпоха' },
+  posthuman: { ru: 'постчеловеческая эпоха' },
+  interstellar: { ru: 'межзвёздная эпоха' },
+  singularity: { ru: 'сингулярность' },
+  galactic: { ru: 'галактическая эпоха' },
+  dyson: { ru: 'сфера Дайсона' },
+  'kardashev-2': { ru: 'цивилизация II типа' },
+  'kardashev-3': { ru: 'цивилизация III типа' },
+  stellar: { ru: 'звёздная эпоха' },
+  nebular: { ru: 'эпоха туманностей' },
+  universal: { ru: 'вселенская эпоха' },
+  multiverse: { ru: 'мультивселенная' },
+  transcendent: { ru: 'трансцендентность' },
+  eldritch: { ru: 'потусторонняя эпоха' },
+  voidborn: { ru: 'эпоха пустоты' },
+  chronal: { ru: 'хрональная эпоха' },
+  akashic: { ru: 'эпоха хроник Акаши' },
+  entropic: { ru: 'энтропийная эпоха' },
+  oneiric: { ru: 'эпоха сновидений' },
+  mythic: { ru: 'мифическая эпоха' },
+  demiurge: { ru: 'эпоха демиурга' },
+  pantheon: { ru: 'эпоха пантеона' },
+  omega: { ru: 'эпоха Омеги' },
+  rebirth: { ru: 'перерождение' },
+}
