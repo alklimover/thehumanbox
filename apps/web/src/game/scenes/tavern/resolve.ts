@@ -1,6 +1,7 @@
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
+import { t, tn } from '../../../i18n'
 
 export const TAVERN_RADIUS = 18
 
@@ -58,12 +59,12 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
     if (!eligible) continue
     const role: SceneOccupant['role'] = o.is_leader ? 'host' : hasSpirit ? 'brewer' : 'patron'
     const activity = hasSpirit
-      ? 'serving'
+      ? t('map.tavern.serving')
       : drinkerThought
         ? o.thought!
         : knowsBrewing
-          ? 'drinking'
-          : 'looking in'
+          ? t('map.tavern.drinking')
+          : t('map.tavern.lookingIn')
     const entry: SceneOccupant = { org: o, role, activity }
     if (d <= 3) inside.push(entry)
     else away.push(entry)
@@ -94,16 +95,16 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
   ).length
   const timeOfDay = world.is_day
     ? inside.length > 3
-      ? 'busy lunch crowd'
-      : 'quiet daytime hours'
+      ? t('map.tavern.lunch')
+      : t('map.tavern.daytime')
     : inside.length > 3
-      ? 'rowdy evening'
-      : 'late-night regulars'
+      ? t('map.tavern.evening')
+      : t('map.tavern.lateNight')
   const subtitle = [
-    `${inside.length} drinking · ${away.length} nearby`,
+    t('map.tavern.crowd', { inside: inside.length, away: away.length }),
     timeOfDay,
-    brewerCount > 0 ? `${brewerCount} brewer${brewerCount === 1 ? '' : 's'}` : null,
-    totalSpirit > 0 ? `${totalSpirit} on the shelf` : null,
+    brewerCount > 0 ? tn('map.tavern.brewers', brewerCount) : null,
+    totalSpirit > 0 ? t('map.tavern.shelf', { n: totalSpirit }) : null,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -111,7 +112,7 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
   return {
     scene,
     world,
-    title: `${lineageName} tavern`,
+    title: t('map.tavern.title', { tribe: lineageName }),
     subtitle,
     isDay: !!world.is_day,
     occupants: inside.slice(0, 8),

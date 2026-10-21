@@ -6,6 +6,7 @@ import { errors } from './errors'
 import { header } from './header'
 import { hud } from './hud'
 import { life } from './life'
+import { map } from './map'
 import { modals } from './modals'
 import { onboarding } from './onboarding'
 import { people } from './people'
@@ -28,6 +29,7 @@ const AREAS = {
   header,
   hud,
   life,
+  map,
   modals,
   onboarding,
   people,
@@ -38,8 +40,8 @@ const AREAS = {
   stats,
   status,
   toasts,
-  tools,
   toolTips,
+  tools,
 }
 
 type Areas = typeof AREAS

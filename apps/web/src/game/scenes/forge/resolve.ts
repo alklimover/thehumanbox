@@ -1,15 +1,37 @@
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
+import { t, type MessageKey } from '../../../i18n'
 
 const RADIUS = 14
+
+type ShopKind = 'forge' | 'bakery' | 'mill'
+
+const SHOP_WORDS: Record<ShopKind, { title: MessageKey; subtitle: MessageKey; working: MessageKey }> = {
+  forge: {
+    title: 'map.shop.forge.title',
+    subtitle: 'map.shop.forge.subtitle',
+    working: 'map.shop.forge.working',
+  },
+  bakery: {
+    title: 'map.shop.bakery.title',
+    subtitle: 'map.shop.bakery.subtitle',
+    working: 'map.shop.bakery.working',
+  },
+  mill: {
+    title: 'map.shop.mill.title',
+    subtitle: 'map.shop.mill.subtitle',
+    working: 'map.shop.mill.working',
+  },
+}
 
 export function resolveForgeScene(world: WorldState, scene: SceneId): SceneContext | null {
   if (scene.kind !== 'forge' && scene.kind !== 'bakery' && scene.kind !== 'mill') return null
   const building = world.buildings?.find((b) => b.id === scene.buildingId)
   if (!building || !getBuildingState(building).isOperational) return null
 
-  const kind = scene.kind
+  const kind: ShopKind = scene.kind
+  const words = SHOP_WORDS[kind]
   const wantedSpecialties: string[] =
     kind === 'forge'
       ? ['smith', 'carpenter', 'builder', 'mason']
@@ -32,7 +54,7 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
     const entry: SceneOccupant = {
       org: o,
       role: isWorker ? 'host' : 'patron',
-      activity: isWorker ? `working at the ${kind}` : o.thought || 'visiting',
+      activity: isWorker ? t(words.working) : o.thought || t('map.shop.visiting'),
     }
     if (d <= 3) inside.push(entry)
     else away.push(entry)
@@ -41,14 +63,9 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   const owned = building as { owner_lineage?: string | null; lineage_id?: string | null }
   const ownerLineage = owned.owner_lineage ?? owned.lineage_id ?? ''
   const lineageName =
-    world.lineage_names?.[ownerLineage] ?? (ownerLineage ? ownerLineage.slice(0, 6) : 'unowned')
+    world.lineage_names?.[ownerLineage] ?? (ownerLineage ? ownerLineage.slice(0, 6) : t('map.shop.unowned'))
 
-  const subtitle =
-    kind === 'forge'
-      ? `Iron, anvil, and smoke · ${lineageName}`
-      : kind === 'bakery'
-        ? `Bread, ovens, and yeast · ${lineageName}`
-        : `Grain, stones, and flour · ${lineageName}`
+  const subtitle = t(words.subtitle, { tribe: lineageName })
 
   const fixtures: SceneFixture[] =
     kind === 'forge'
@@ -73,12 +90,7 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   return {
     scene,
     world,
-    title:
-      kind === 'forge'
-        ? `${lineageName} forge`
-        : kind === 'bakery'
-          ? `${lineageName} bakery`
-          : `${lineageName} mill`,
+    title: t(words.title, { tribe: lineageName }),
     subtitle,
     isDay: !!world.is_day,
     occupants: inside.slice(0, 6),
