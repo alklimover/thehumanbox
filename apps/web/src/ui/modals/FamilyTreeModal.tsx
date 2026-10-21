@@ -22,6 +22,7 @@ import { shownGeneration } from '../../game/model/generations'
 import { fmtNumber, t, tn } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
 import { sexOf, simText } from '../../i18n/simtext'
+import { displayName } from '../../i18n/names'
 
 // Namespace shim so the rest of the file keeps using d3.X.* without
 // a sweep; tree-shaking still drops everything we don't list above.
@@ -443,7 +444,7 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
           ctx.globalAlpha = 1
         }
 
-        const sw = sexWords ? (isFemale ? sexWords[1] : sexWords[0]) : null
+        const sw = sexWords ? displayName(isFemale ? sexWords[1] : sexWords[0]) : null
         if (sw && showText) {
           ctx.font = '500 7px monospace'
           ctx.fillStyle = isFemale ? '#e09ab0' : '#7ab0e0'
@@ -551,11 +552,11 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
           <>
             <span style={{ color: lineageColor(hovered.lineage_id), fontWeight: 600 }}>
               {personName(hovered)}
-              {hovered.surname ? ` ${hovered.surname}` : ''}
+              {hovered.surname ? ` ${displayName(hovered.surname)}` : ''}
             </span>
             {sexWords && hovered.sex && (
               <span style={{ color: hovered.sex === 'female' ? '#e09ab0' : '#7ab0e0', marginLeft: 4 }}>
-                {hovered.sex === 'female' ? sexWords[1] : sexWords[0]}
+                {displayName(hovered.sex === 'female' ? sexWords[1] : sexWords[0])}
               </span>
             )}
             <span style={{ color: '#666' }}>
@@ -578,7 +579,7 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
                     {' · '}
                     {isCheating ? '⚡' : ''}
                     {t('tree.father', {
-                      name: personName(father) + (father.surname ? ` ${father.surname}` : ''),
+                      name: personName(father) + (father.surname ? ` ${displayName(father.surname)}` : ''),
                     })}
                   </span>
                 ) : null
@@ -643,8 +644,8 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
           {sexWords && (
             <>
               {' '}
-              · <span style={{ color: '#7ab0e0' }}>▪ {sexWords[0]}</span> ·{' '}
-              <span style={{ color: '#e09ab0' }}>● {sexWords[1]}</span>
+              · <span style={{ color: '#7ab0e0' }}>▪ {displayName(sexWords[0])}</span> ·{' '}
+              <span style={{ color: '#e09ab0' }}>● {displayName(sexWords[1])}</span>
             </>
           )}
         </span>

@@ -68,7 +68,7 @@ describe('composed names', () => {
         'Vabik entered the stone era: People shape stone tools and learn to make fire at will.',
       ),
     ).toBe(
-      'Vabik — новая эпоха: каменный век. Люди обтёсывают каменные орудия и учатся разводить огонь, когда захотят.',
+      'Вабик — новая эпоха: каменный век. Люди обтёсывают каменные орудия и учатся разводить огонь, когда захотят.',
     )
     expect(simBookTitle('Songs of the Forest')).toBe('Песни леса')
   })

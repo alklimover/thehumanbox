@@ -19,6 +19,7 @@ import { TraitAverages } from './stats/TraitAverages'
 import { DiscoveryRollup } from './stats/DiscoveryRollup'
 import { BondStats } from './stats/BondStats'
 import { NotableOrgs } from './stats/NotableOrgs'
+import { displayName } from '../../i18n/names'
 
 interface Props {
   world: WorldState
@@ -194,7 +195,7 @@ export function StatsModal({ world: liveWorld, onClose }: Props) {
             <div className="stats-section-title">{t('stats.section.longevity')}</div>
             {longevityLines(
               longevityOf(world.organisms),
-              (l) => world.lineage_names?.[l] ?? l.slice(0, 6),
+              (l) => displayName(world.lineage_names?.[l]) || l.slice(0, 6),
             ).map((line) => (
               <div key={line} style={{ fontSize: 11, lineHeight: 1.6 }}>
                 {line}

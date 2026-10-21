@@ -4,6 +4,7 @@
 // mother's), so a surname is a family line the sim already keeps.
 
 import { t, tn } from '../../i18n'
+import { displayName } from '../../i18n/names'
 
 const DAY_TICKS = 600
 
@@ -45,7 +46,7 @@ export function familyLines(
 
 /** One family as a card line: "Mira ×5, eldest 41 days (longest-lived)". */
 export function familyLineText(f: FamilyLine): string {
-  const params = { surname: f.surname, living: f.living }
+  const params = { surname: displayName(f.surname), living: f.living }
   return f.longestLived ? tn('model.family.lineEldest', f.eldestDays, params) : t('model.family.line', params)
 }
 
@@ -63,5 +64,8 @@ export function familySentence(
     (f) => f.surname === org.surname,
   )
   if (!line) return null
-  return tn('model.family.sentence', line.eldestDays, { surname: line.surname, living: line.living })
+  return tn('model.family.sentence', line.eldestDays, {
+    surname: displayName(line.surname),
+    living: line.living,
+  })
 }

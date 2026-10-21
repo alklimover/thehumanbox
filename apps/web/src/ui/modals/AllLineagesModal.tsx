@@ -5,6 +5,8 @@ import { PERIL_HELP, remainingLine, visibleLineages } from '../../game/model/tri
 import { lineageColor, lineageWord } from '../../shared/constants'
 import { Modal } from './Modal'
 import { t } from '../../i18n'
+import { displayName } from '../../i18n/names'
+import { simLabelAsSent } from '../../i18n/sim'
 
 interface LineageInfo {
   count: number
@@ -13,12 +15,12 @@ interface LineageInfo {
   orgs: OrganismState[]
 }
 
-/** "industrial age · empire · ✧-10", leaving out what is not known. lineageFacts already names era and government. */
+/** "industrial age · empire · ✧-10", leaving out what is not known. The facts are the simulation's ids (ModalRouter). */
 function factsLine(f: LineageFacts | undefined): string {
   if (!f) return ''
   return [
-    f.era ? t('lineages.era', { era: f.era }) : '',
-    f.government ?? '',
+    f.era ? t('lineages.era', { era: simLabelAsSent('era', f.era) }) : '',
+    f.government ? simLabelAsSent('government', f.government) : '',
     f.faith !== undefined ? `✧${f.faith}` : '',
   ]
     .filter(Boolean)
@@ -36,7 +38,7 @@ interface Props {
 
 export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, facts, onClose }: Props) {
   const setFocus = useUIStore((s) => s.setFocus)
-  const tribeName = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
+  const tribeName = (lid: string) => displayName(lineageNames?.[lid]) || (lid ?? '').slice(0, 6)
   const brink = new Map((peril ?? []).map((p) => [p.lineage_id, p.cause]))
   const rows = visibleLineages(
     Object.entries(lineages).map(([lid, info]) => ({ lid, info, count: info.count, peril: brink.get(lid) })),
@@ -91,11 +93,12 @@ export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, 
                 })}
               </span>
               <span className="lineage-strat">
-                {lineageWords?.[lid]?.home ||
-                  lineageWords?.[lid]?.food ||
-                  lineageWord(info.orgs, 'home') ||
-                  lineageWord(info.orgs, 'food') ||
-                  ''}
+                {displayName(
+                  lineageWords?.[lid]?.home ||
+                    lineageWords?.[lid]?.food ||
+                    lineageWord(info.orgs, 'home') ||
+                    lineageWord(info.orgs, 'food'),
+                )}
               </span>
               <span className="lineage-facts">{factsLine(facts?.[lid])}</span>
             </div>

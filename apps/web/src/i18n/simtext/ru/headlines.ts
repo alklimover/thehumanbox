@@ -2,7 +2,15 @@ import type { SimTextTable } from '../engine'
 
 /** The news ticker and the world's chronicle. */
 export const headlines: SimTextTable = {
-  'the {lname} held {festival_name} — {flavor}': '{lname}: {festival_name|festival} — {flavor}',
+  // Ceremonies::tick_festivals: one festival and one line for each season.
+  'the {lname} held a Sun Feast — drums, dancing, every belly full':
+    '{lname}: праздник Солнца — барабаны, пляски, все сыты',
+  'the {lname} held a Fading-Light Rite — lanterns lit against the coming dark':
+    '{lname}: обряд угасающего света — фонари зажгли наперекор надвигающейся тьме',
+  'the {lname} held a Long-Night Vigil — huddled close, sharing the last stores':
+    '{lname}: бдение долгой ночи — сидят тесно, делят последние запасы',
+  'the {lname} held a Greening Rite — the first shoots blessed with song':
+    '{lname}: обряд зелени — первые ростки благословляют песней',
   '{name} became an elder, carrying: "{t}"': '{name} стал[а] старейшиной и хранит память: «{t}»',
 
   '{name} is gone. What they carried: "{text}"{suffix}':

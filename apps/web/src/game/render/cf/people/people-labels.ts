@@ -15,6 +15,7 @@ import { isFocused } from './people-sprites'
 import { emitWorkPose, isFastPose, type PoseSink } from './work-poses'
 import type { NameStyle } from './people-names'
 import { sexOf, simText } from '../../../../i18n/simtext'
+import { displayName } from '../../../../i18n/names'
 
 /** Where names and thoughts go instead of the canvas (a `TextLayer`, see `PeopleNameLayer`). */
 export interface NameSink {
@@ -335,17 +336,17 @@ export function paintPeopleLabels(ctx: CanvasRenderingContext2D, input: PeopleLa
 
     // Names and thoughts that would sit on top of another label are left out; the selected
     // person's always shows.
+    const name = displayName(org.name)
     const nameShown =
       (mask & NAME) !== 0 &&
-      placer.place(labelX, labelY, labelWidth(org.name, isSelected ? 10 : 9), 10, isSelected)
+      placer.place(labelX, labelY, labelWidth(name, isSelected ? 10 : 9), 10, isSelected)
     const thoughtText = mask & THOUGHT ? simText('thought', org.thought, { sex: sexOf(org) }) : ''
     const thoughtShown =
       (mask & THOUGHT) !== 0 &&
       placer.place(labelX, labelY - (nameShown ? 10 : 0), labelWidth(thoughtText, 8), 9, isSelected)
 
     if (nameShown) {
-      if (names)
-        names.text(org.name, labelX, labelY, isSelected ? 'nameSelected' : 'name', alpha * nameAlpha, j)
+      if (names) names.text(name, labelX, labelY, isSelected ? 'nameSelected' : 'name', alpha * nameAlpha, j)
       else {
         ctx.font = isSelected ? 'bold 10px monospace' : '9px monospace'
         ctx.textAlign = 'center'
@@ -353,9 +354,9 @@ export function paintPeopleLabels(ctx: CanvasRenderingContext2D, input: PeopleLa
         ctx.lineWidth = 3
         ctx.strokeStyle = 'rgba(0,0,0,0.85)'
         ctx.globalAlpha = alpha * nameAlpha
-        ctx.strokeText(org.name, labelX, labelY)
+        ctx.strokeText(name, labelX, labelY)
         ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(255,255,255,0.95)'
-        ctx.fillText(org.name, labelX, labelY)
+        ctx.fillText(name, labelX, labelY)
         ctx.globalAlpha = alpha
       }
     }

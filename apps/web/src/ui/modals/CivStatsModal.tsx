@@ -11,6 +11,7 @@ import { moonPhaseName } from '../../game/model/calendar'
 import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
 import { cargoLabel, simLabel, simLabelAsSent } from '../../i18n/sim'
 import { simArtworkTitle, simBookTitle, simFaithName, simText } from '../../i18n/simtext'
+import { displayName } from '../../i18n/names'
 
 interface Props {
   world: WorldState
@@ -205,7 +206,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
   const tradeRoutes = world.trade_routes ?? []
   const caravans = world.caravans ?? []
 
-  const lineageById = (lid: string) => lineageNames[lid] ?? lid.slice(0, 6)
+  const lineageById = (lid: string) => displayName(lineageNames[lid]) || lid.slice(0, 6)
   const activeStrategyFor = (lineageId: string) => {
     const strategy = world.lineage_strategies?.[lineageId]
     return strategy && strategy.expires_tick > world.tick ? strategy : undefined
@@ -250,7 +251,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
   }
   const nameById = useMemo(() => {
     const m = new Map<string, string>()
-    for (const o of world.organisms) m.set(o.id, o.name)
+    for (const o of world.organisms) m.set(o.id, displayName(o.name))
     return m
   }, [world.organisms])
   const orgById = (id: string | null | undefined) => {
@@ -635,7 +636,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                           {icon}
                         </span>
                         <span className="civ-campaign-name">
-                          {campaign.lineage_name || lineageById(campaign.lineage_id)} ·{' '}
+                          {displayName(campaign.lineage_name) || lineageById(campaign.lineage_id)} ·{' '}
                           {simLabel('strategy', campaign.strategy)}
                         </span>
                         <span className="civ-campaign-result">
@@ -792,7 +793,8 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
               world.settlements.map((settlement) => (
                 <div key={settlement.lineage_id} className="civ-row">
                   <span className="civ-row-head">
-                    {settlement.tier >= 5 ? '🏙️' : settlement.tier >= 3 ? '🏘️' : '⛺'} {settlement.name}
+                    {settlement.tier >= 5 ? '🏙️' : settlement.tier >= 3 ? '🏘️' : '⛺'}{' '}
+                    {displayName(settlement.name)}
                   </span>
                   <span className="civ-row-sub">{simLabel('settlement', settlement.tier_name)}</span>
                   <span className="civ-row-tag">{tn('civ.people', settlement.population)}</span>
@@ -896,7 +898,10 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                   {'\u{1F4D6}'} {simBookTitle(b.title)}
                 </span>
                 <span className="civ-row-sub">
-                  {t('civ.books.byline', { author: b.author_name ?? '', topic: keyed(TOPIC_KEYS, b.topic) })}
+                  {t('civ.books.byline', {
+                    author: displayName(b.author_name),
+                    topic: keyed(TOPIC_KEYS, b.topic),
+                  })}
                 </span>
                 <span className="civ-row-tag">{tn('civ.books.copies', b.copies ?? 0)}</span>
               </div>
@@ -911,7 +916,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                 <span className="civ-row-head">
                   {ART_EMOJI[a.kind] ?? ''} {simArtworkTitle(a.title)}
                 </span>
-                <span className="civ-row-sub">{t('civ.art.by', { name: a.creator_name })}</span>
+                <span className="civ-row-sub">{t('civ.art.by', { name: displayName(a.creator_name) })}</span>
               </div>
             ))}
           </section>
@@ -1006,7 +1011,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                 return <div className="civ-empty">{t('civ.trades.empty')}</div>
               }
               const nameById = new Map<string, string>()
-              for (const o of world.organisms) nameById.set(o.id, o.name)
+              for (const o of world.organisms) nameById.set(o.id, displayName(o.name))
               return trades.slice(0, 6).map((trade, i) => {
                 const buyer = nameById.get(trade.buyer_id) ?? trade.buyer_id.slice(0, 6)
                 const seller = nameById.get(trade.seller_id) ?? trade.seller_id.slice(0, 6)

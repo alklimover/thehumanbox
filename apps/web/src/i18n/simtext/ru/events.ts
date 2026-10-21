@@ -41,8 +41,8 @@ export const events: SimTextTable = {
   'drank from water at ({cx},{cy})': 'попил[а] воды в ({cx},{cy})',
   'brought home a {arg0}': '[принёс|принесла] домой: {arg0|good}',
   'crafted {what} for the first time': 'впервые смастерил[а]: {what|good}',
-  '"{spoken}" → {understood}/{reached} understood': '«{spoken}» → поняли {understood} из {reached}',
-  '"{arg0}" warned {kin_warned}': '«{arg0}» — предупредил[а] родичей ({kin_warned})',
+  '"{spoken}" → {understood}/{reached} understood': '«{spoken|word}» → поняли {understood} из {reached}',
+  '"{arg0}" warned {kin_warned}': '«{arg0|word}» — предупредил[а] родичей ({kin_warned})',
   'set out: {description} toward ({arg1}, {arg2})':
     'отправил[ся|ась] в путь ({description}) к ({arg1}, {arg2})',
   'arrived after {description}': 'прибыл[а] после пути ({description})',

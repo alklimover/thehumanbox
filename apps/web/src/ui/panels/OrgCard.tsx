@@ -11,6 +11,7 @@ import { shownGeneration } from '../../game/model/generations'
 import { fmtNumber, t, tn } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
 import { sexOf, simText } from '../../i18n/simtext'
+import { displayName } from '../../i18n/names'
 
 function Bar({ label, value, color, tip }: { label: string; value: number; color: string; tip?: string }) {
   const labelEl = (
@@ -55,13 +56,13 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
   if (!org) return null
   if (!org.lineage_id || !org.traits || !org.name) return null
 
-  const tribeName = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
+  const tribeName = (lid: string) => displayName(lineageNames?.[lid]) || (lid ?? '').slice(0, 6)
   const on = (oid: string) => {
     const other = useWorldStore.getState().byId.get(oid)
     return other ? personName(other) : (oid ?? '').slice(0, 5)
   }
   const isSick = org.infection > 0.15
-  const sexLabel = sexWords ? (org.sex === 'female' ? sexWords[1] : sexWords[0]) : undefined
+  const sexLabel = sexWords ? displayName(org.sex === 'female' ? sexWords[1] : sexWords[0]) : undefined
   const convoCount = org.conversation_count ?? 0
   const female = org.sex === 'female'
 
@@ -73,7 +74,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
       <div className="org-header">
         <span className="org-name">
           {personName(org)}
-          {org.surname ? <span className="org-surname"> {org.surname}</span> : null}
+          {org.surname ? <span className="org-surname"> {displayName(org.surname)}</span> : null}
         </span>
         {isSick && (
           <Tooltip tip={t('panel.org.infected', { pct: (org.infection * 100).toFixed(0) })}>
@@ -96,11 +97,11 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
                 <span style={{ opacity: 0.6 }}>{t('panel.org.sexWords')}</span>
                 <br />
                 <span style={{ color: '#7ab0e0' }}>
-                  <b>{sexWords[0]}</b>
+                  <b>{displayName(sexWords[0])}</b>
                 </span>
                 {' · '}
                 <span style={{ color: '#e09ab0' }}>
-                  <b>{sexWords[1]}</b>
+                  <b>{displayName(sexWords[1])}</b>
                 </span>
                 <br />
                 <span style={{ opacity: 0.5 }}>{t('panel.org.sexWordsCoined')}</span>

@@ -3,6 +3,7 @@ import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
 import { t, type MessageKey } from '../../../i18n'
 import { sexOf, simText } from '../../../i18n/simtext'
+import { displayName } from '../../../i18n/names'
 
 const RADIUS = 14
 
@@ -68,7 +69,8 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   const owned = building as { owner_lineage?: string | null; lineage_id?: string | null }
   const ownerLineage = owned.owner_lineage ?? owned.lineage_id ?? ''
   const lineageName =
-    world.lineage_names?.[ownerLineage] ?? (ownerLineage ? ownerLineage.slice(0, 6) : t('map.shop.unowned'))
+    displayName(world.lineage_names?.[ownerLineage]) ||
+    (ownerLineage ? ownerLineage.slice(0, 6) : t('map.shop.unowned'))
 
   const subtitle = t(words.subtitle, { tribe: lineageName })
 

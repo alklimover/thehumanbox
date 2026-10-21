@@ -3,6 +3,8 @@ import type { OrganismState, WorldState } from '../../../shared/types'
 import { householdAround } from '../shared/occupants'
 import { t, tn, type MessageKey } from '../../../i18n'
 import { simLabelAsSent } from '../../../i18n/sim'
+import { displayName } from '../../../i18n/names'
+import { personName } from '../../../shared/personName'
 
 /** What a home looks like in each era (the room's subtitle); later eras keep the plain word. */
 const HOME_FLAVOR: Record<string, MessageKey> = {
@@ -179,7 +181,7 @@ export function resolveHomeScene(world: WorldState, scene: SceneId): SceneContex
 
   const { inside, away } = householdAround(world, host)
 
-  const lineageName = world.lineage_names?.[host.lineage_id] ?? host.lineage_id.slice(0, 6)
+  const lineageName = displayName(world.lineage_names?.[host.lineage_id]) || host.lineage_id.slice(0, 6)
   const isDay = !!world.is_day
 
   const aiPicked = (host as { home_furniture?: string[] }).home_furniture ?? []
@@ -204,7 +206,7 @@ export function resolveHomeScene(world: WorldState, scene: SceneId): SceneContex
   return {
     scene,
     world,
-    title: t('map.home.title', { name: host.name }),
+    title: t('map.home.title', { name: personName(host) }),
     subtitle: t('map.home.subtitle', { flavor, tribe: lineageName, era: simLabelAsSent('era', era) }),
     isDay,
     occupants: inside,

@@ -13,6 +13,7 @@ import {
 } from '../../game/model/tribe-eldest'
 import type { PerilCause } from '../../shared/types'
 import { t } from '../../i18n'
+import { displayName } from '../../i18n/names'
 
 interface LineageRow {
   id: string
@@ -98,7 +99,7 @@ function LineagesListImpl() {
       const e = unpackEldest(eldest[lid])
       out.push({
         id: lid,
-        name: lineageNames?.[lid] ?? lid.slice(0, 6),
+        name: displayName(lineageNames?.[lid]) || lid.slice(0, 6),
         count,
         minGen,
         maxGen,

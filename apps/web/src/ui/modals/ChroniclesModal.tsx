@@ -4,6 +4,7 @@ import { lineageColor } from '../../shared/constants'
 import { Modal } from './Modal'
 import { t } from '../../i18n'
 import { simText } from '../../i18n/simtext'
+import { displayName } from '../../i18n/names'
 
 const DAY_LENGTH = 600
 
@@ -88,7 +89,7 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
                       {t('life.day', { n: Math.floor(s.tick / DAY_LENGTH) })}
                     </span>
                     <span className="chronicle-name" style={{ color: lineageColor(s.lineage_id) }}>
-                      {s.org_name}
+                      {displayName(s.org_name)}
                     </span>
                     <span className="chronicle-text">{s.story}</span>
                   </div>

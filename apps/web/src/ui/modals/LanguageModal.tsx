@@ -5,6 +5,7 @@ import { useFrozenSnapshot } from '../../shared/hooks/useFrozenSnapshot'
 import { Modal } from './Modal'
 import { t, tn } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
+import { displayName } from '../../i18n/names'
 
 const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
   {
@@ -583,7 +584,7 @@ function buildLineageVocabs(
 export function LanguageModal({ organisms, lineageWords, sexWords, onClose, lineageNames }: Props) {
   const { frozen, reload } = useFrozenSnapshot(() => ({ organisms, lineageWords }))
   const lineages = buildLineageVocabs(frozen.organisms, frozen.lineageWords)
-  const tribeName = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
+  const tribeName = (lid: string) => displayName(lineageNames?.[lid]) || (lid ?? '').slice(0, 6)
 
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
@@ -621,9 +622,9 @@ export function LanguageModal({ organisms, lineageWords, sexWords, onClose, line
         {sexWords && (
           <div className="lang-sex-words">
             <span className="lang-sex-label">{t('lang.sexWords')}</span>
-            <span className="lang-sex-word lang-sex-word-0">{sexWords[0]}</span>
+            <span className="lang-sex-word lang-sex-word-0">{displayName(sexWords[0])}</span>
             <span className="lang-sex-divider">·</span>
-            <span className="lang-sex-word lang-sex-word-1">{sexWords[1]}</span>
+            <span className="lang-sex-word lang-sex-word-1">{displayName(sexWords[1])}</span>
             <span className="lang-sex-note">{t('lang.sexNote')}</span>
           </div>
         )}
@@ -677,7 +678,7 @@ export function LanguageModal({ organisms, lineageWords, sexWords, onClose, line
                           key={`${l.lineageId}-${concept}`}
                           className={`lang-td lang-lineage-col lang-word ${isMatch ? 'lang-word-match' : ''}`}
                         >
-                          {word ?? <span className="lang-unknown">-</span>}
+                          {word ? displayName(word) : <span className="lang-unknown">-</span>}
                         </div>
                       )
                     })}

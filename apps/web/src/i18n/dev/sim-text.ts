@@ -26,14 +26,10 @@ export const SIM_TEXT_SELECTORS: readonly string[] = [
 export const SIM_TEXT_SELECTOR = SIM_TEXT_SELECTORS.join(', ')
 
 /**
- * Text that is never English even though it is Latin: the made-up words of the
- * tribes' languages (the Languages window). Besides these, any element can opt
- * out with data-i18n-ignore.
+ * Text that is never English even though it is Latin. The made-up words of the
+ * tribes' languages used to be listed here; they are shown in Cyrillic now
+ * (i18n/names), so any element can only opt out with data-i18n-ignore.
  */
-export const IGNORED_SELECTORS: readonly string[] = [
-  '[data-i18n-ignore]',
-  '.lang-lineage-col',
-  '.lang-sex-word',
-]
+export const IGNORED_SELECTORS: readonly string[] = ['[data-i18n-ignore]']
 
 export const IGNORED_SELECTOR = IGNORED_SELECTORS.join(', ')

@@ -2,6 +2,7 @@
 // ticks; a day is 600 ticks (the same as DAY_TICKS in game/model/calendar.ts).
 
 import { DAY_TICKS } from './calendar'
+import { personName } from '../../shared/personName'
 
 export interface OldestPerson {
   name: string
@@ -26,7 +27,7 @@ export function oldestLiving(
     .sort((a, b) => b.age - a.age)
     .slice(0, limit)
     .map((o) => ({
-      name: o.custom_name?.trim() || o.name,
+      name: personName(o),
       lineage_id: o.lineage_id ?? '',
       days: Math.floor(o.age / DAY_TICKS),
     }))

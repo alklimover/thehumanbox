@@ -83,7 +83,7 @@ export const thoughts: SimTextTable = {
   'seeking wood': 'ищет дерево',
   'resting deeply': 'крепко спит',
   'tracking small game': 'выслеживает мелкую дичь',
-  '"{arg0}" (no one hears)': '«{arg0}» (никто не слышит)',
+  '"{arg0}" (no one hears)': '«{arg0|word}» (никто не слышит)',
   'howling at the moon': 'воет на луну',
   'dancing with kin': 'танцует с родичами',
   'trap caught something': 'в ловушку что-то попалось',
@@ -463,4 +463,9 @@ export const thoughts: SimTextTable = {
   'no one to reconcile with': 'не с кем мириться',
   'building a boat to settle new land': 'строит лодку, чтобы заселить новые земли',
   'fishing the shallows': 'рыбачит на мелководье',
+  // Words of the tribe's own language, said aloud.
+  'nothing to barter with': 'нечего выменять',
+  '"{spoken}" ({understood}/{reached})': '«{spoken|word}» (поняли {understood} из {reached})',
+  '"{arg0}" (silence)': '«{arg0|word}» (тишина)',
+  '"{arg0}!" ({kin_warned} warned)': '«{arg0|word}!» (предупреждено: {kin_warned})',
 }

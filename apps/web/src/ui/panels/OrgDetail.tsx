@@ -28,6 +28,7 @@ import {
 } from './org-detail/life-log'
 import { BondsRememberedSection, MemoriesSection } from './org-detail/memories'
 import { LanguageSection } from './org-detail/LanguageSection'
+import { displayName } from '../../i18n/names'
 
 // The life story dialog is opened from this panel on demand; its `Modal` pulls Radix Dialog in.
 const LifeModal = lazyWithRetry(() => import('../modals/LifeModal').then((m) => ({ default: m.LifeModal })))
@@ -58,8 +59,9 @@ function OrgDetailBody({
   const starredOrgIds = useUIStore((s) => s.starredOrgIds)
   const toggleStar = useUIStore((s) => s.toggleStar)
   const isStarred = starredOrgIds.includes(org.id)
-  const tn = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
-  const on = (oid: string) => organisms?.find((o) => o.id === oid)?.name ?? (oid ?? '').slice(0, 5)
+  const tn = (lid: string) => displayName(lineageNames?.[lid]) || (lid ?? '').slice(0, 6)
+  const on = (oid: string) =>
+    displayName(organisms?.find((o) => o.id === oid)?.name) || (oid ?? '').slice(0, 5)
   const color = lineageColor(org.lineage_id)
   // `traits`, `name` and `lineage_id` are cold fields. The server omits
   // them from periodic "full" frames (which still set `organisms_complete`),

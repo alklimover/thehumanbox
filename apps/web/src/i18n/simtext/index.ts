@@ -18,6 +18,7 @@ import { events } from './ru/events'
 import { headlines } from './ru/headlines'
 import { memories } from './ru/memories'
 import { thoughts } from './ru/thoughts'
+import { displayName, namesInText } from '../names'
 
 export type { Sex, SimTextChannel, SimTextContext } from './engine'
 
@@ -88,9 +89,23 @@ export function simText(
   if (getLocale() === 'en') return text ?? ''
   if (text && channel === 'thought') {
     const r = reflection(text, ctx)
-    if (r) return r
+    if (r) return stillEnglish(r) ? r : namesInText(r)
   }
-  return ru.text(channel, text, ctx)
+  const shown = ru.text(channel, text, ctx)
+  // A line still (partly) in English keeps its names in Latin, like the rest of it.
+  return shown === text || stillEnglish(shown) ? shown : namesInText(shown)
+}
+
+/** Whether a lowercase English word (three letters or more) is left, besides names and ids. */
+function stillEnglish(text: string): boolean {
+  return /\b[a-z]{3,}\b/.test(text)
+}
+
+/** Who did something, as an event row shows it: «мир», a tribe, or a person's name in Cyrillic. */
+export function simActor(actor: string | null | undefined): string {
+  if (getLocale() === 'en' || !actor) return actor ?? ''
+  const shown = ru.text('event', actor)
+  return shown === actor ? displayName(actor) : namesInText(shown)
 }
 
 const named =

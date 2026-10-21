@@ -3,6 +3,7 @@ import { deterministicAppearanceIndex, resolveAgeStage, HUMAN_ATLAS_COLS } from 
 import { pickHumanSprite } from '../../../../shared/sprites'
 import type { LightSource } from '../../../scenes/shared/room-draw'
 import { TILE_PX } from '../../../scenes/shared/room-constants'
+import { personName } from '../../../../shared/personName'
 
 /**
  * What a room scene is made of, apart from how it is drawn. The room is a
@@ -48,7 +49,7 @@ export function placeOccupants(occupants: readonly SceneOccupant[], slots: Reado
     )
     return {
       id: occ.org.id,
-      name: occ.org.name,
+      name: personName(occ.org),
       px: cx * TILE_PX,
       py: cy * TILE_PX,
       frame: row * HUMAN_ATLAS_COLS + col,

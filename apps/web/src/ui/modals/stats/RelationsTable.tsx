@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { TribalRelation } from '../../../shared/types'
 import { lineageColor } from '../../../shared/constants'
 import { t, type MessageKey } from '../../../i18n'
+import { displayName } from '../../../i18n/names'
 
 const STATUS_KEYS: Record<TribalRelation['status'], MessageKey> = {
   ally: 'stats.relation.ally',
@@ -38,11 +39,11 @@ export function RelationsTable({
         return (
           <div key={i} className="stats-rel-row">
             <span className="stats-rel-name" style={{ color: lineageColor(r.a) }}>
-              {lineageNames[r.a] ?? r.a}
+              {displayName(lineageNames[r.a]) || r.a}
             </span>
             <span className="stats-rel-muted">↔</span>
             <span className="stats-rel-name" style={{ color: lineageColor(r.b) }}>
-              {lineageNames[r.b] ?? r.b}
+              {displayName(lineageNames[r.b]) || r.b}
             </span>
             <div className="stats-rel-bar-wrap">
               <div className="stats-rel-bar" style={{ width: barW, background: barColor }} />

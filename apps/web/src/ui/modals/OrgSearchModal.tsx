@@ -8,6 +8,7 @@ import { Modal } from './Modal'
 import { t } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
 import { sexOf, simText } from '../../i18n/simtext'
+import { displayName, nameMatches } from '../../i18n/names'
 
 const DAY_LENGTH = 600
 
@@ -78,7 +79,7 @@ export function OrgSearchModal({ organisms, onTrack, onClose, lineageNames }: Pr
     return () => document.removeEventListener('pointerdown', handler)
   }, [tribeOpen])
 
-  const tribeName = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
+  const tribeName = (lid: string) => displayName(lineageNames?.[lid]) || (lid ?? '').slice(0, 6)
   const currentTribeLabel = lineageF === 'all' ? t('search.allTribes') : tribeName(lineageF)
 
   const lineages = useMemo(() => [...new Set(organisms.map((o) => o.lineage_id))].sort(), [organisms])
@@ -100,7 +101,7 @@ export function OrgSearchModal({ organisms, onTrack, onClose, lineageNames }: Pr
         // keystroke.
         if (
           q &&
-          !(o.name ?? '').toLowerCase().includes(q) &&
+          !nameMatches(o.name ?? '', q) &&
           !(o.thought ?? '').toLowerCase().includes(q) &&
           !(o.lineage_id ?? '').toLowerCase().includes(q)
         )

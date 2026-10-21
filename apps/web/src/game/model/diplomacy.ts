@@ -1,6 +1,7 @@
 import type { WorldState } from '../../shared/types'
 import { enemiesOf } from '../render/battles'
 import { t } from '../../i18n'
+import { displayName } from '../../i18n/names'
 
 export interface Relations {
   /** Names of tribes the tribe is allied or defended with. */
@@ -18,7 +19,7 @@ export function relationsOf(
   world: Pick<WorldState, 'treaties' | 'battles' | 'lineage_names'>,
   lineage: string,
 ): Relations {
-  const name = (id: string) => world.lineage_names?.[id] ?? id.slice(0, 6)
+  const name = (id: string) => displayName(world.lineage_names?.[id]) || id.slice(0, 6)
   const out = { allies: new Set<string>(), friends: new Set<string>(), vassals: new Set<string>() }
   for (const t of world.treaties ?? []) {
     let other: string

@@ -105,14 +105,15 @@ describe('world and economy names', () => {
   })
 
   it('name everything a person can hold and a caravan can carry', () => {
-    // The literal keys the simulation puts in a person's `tools`, outside its tests.
+    // The literal keys the simulation puts in a person's `tools`, outside its tests (rustfmt
+    // breaks a long call over lines).
     const dir = new URL(SIM + '../', import.meta.url)
     const sources = readdirSync(dir, { recursive: true, encoding: 'utf8' })
       .filter((file) => file.endsWith('.rs') && !/(^|\/)tests?(\.rs|\/)/.test(file))
       .map((file) => readFileSync(new URL(file, dir), 'utf8'))
     const keys = new Set<string>()
     for (const source of sources) {
-      for (const m of source.matchAll(/tools\.(?:insert|entry)\("([^"]+)"|add_good\("([^"]+)"/g))
+      for (const m of source.matchAll(/tools\s*\.\s*(?:insert|entry)\(\s*"([^"]+)"|add_good\(\s*"([^"]+)"/g))
         keys.add(m[1] ?? m[2])
     }
     const held = [...keys]

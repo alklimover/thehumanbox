@@ -8,6 +8,7 @@ import {
   type PlacedLabel,
   type SettlementLabel,
 } from '../../settlement-labels'
+import { displayName } from '../../../../i18n/names'
 
 /**
  * The town and city names `layers/buildings.ts` collects as it draws buildings, rebuilt from the
@@ -38,7 +39,7 @@ export function collectSettlementLabels(
     const show = rank !== 0
     const fade = major ? 1 : Math.max(0, Math.min(1, (zoom - 0.68) / 0.16))
     if ((!show || fade === 0) && !peril) continue
-    const name = s.name ?? lineageNames[s.lineage_id] ?? s.lineage_id.slice(0, 6)
+    const name = displayName(s.name ?? lineageNames[s.lineage_id]) || s.lineage_id.slice(0, 6)
     const title = name.toUpperCase()
     out.push({
       x: (cx - ox) * TILE,
