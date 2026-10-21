@@ -1,5 +1,6 @@
 import type { WorldState } from '../../shared/types'
 import { enemiesOf } from '../render/battles'
+import { t } from '../../i18n'
 
 export interface Relations {
   /** Names of tribes the tribe is allied or defended with. */
@@ -48,8 +49,8 @@ export function relationsOf(
 /** "allied with X, Y · trades with Z", or null when a tribe stands alone. */
 export function relationsLine(r: Relations): string | null {
   const parts: string[] = []
-  if (r.allies.length) parts.push(`allied with ${r.allies.slice(0, 3).join(', ')}`)
-  if (r.vassals.length) parts.push(`bound to ${r.vassals.slice(0, 2).join(', ')}`)
-  if (r.friends.length) parts.push(`at peace with ${r.friends.slice(0, 3).join(', ')}`)
+  if (r.allies.length) parts.push(t('model.relations.allies', { names: r.allies.slice(0, 3).join(', ') }))
+  if (r.vassals.length) parts.push(t('model.relations.vassals', { names: r.vassals.slice(0, 2).join(', ') }))
+  if (r.friends.length) parts.push(t('model.relations.friends', { names: r.friends.slice(0, 3).join(', ') }))
   return parts.length ? parts.join(' · ') : null
 }

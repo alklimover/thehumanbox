@@ -8,6 +8,8 @@ import { Tooltip } from '../toolbar/Tooltip'
 import { RenameForm } from './RenameForm'
 import { ageInYears } from '../../game/model/calendar'
 import { shownGeneration } from '../../game/model/generations'
+import { t, tn } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
 
 function Bar({ label, value, color, tip }: { label: string; value: number; color: string; tip?: string }) {
   const labelEl = (
@@ -52,7 +54,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
   if (!org) return null
   if (!org.lineage_id || !org.traits || !org.name) return null
 
-  const tn = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
+  const tribeName = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
   const on = (oid: string) => {
     const other = useWorldStore.getState().byId.get(oid)
     return other ? personName(other) : (oid ?? '').slice(0, 5)
@@ -60,6 +62,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
   const isSick = org.infection > 0.15
   const sexLabel = sexWords ? (org.sex === 'female' ? sexWords[1] : sexWords[0]) : undefined
   const convoCount = org.conversation_count ?? 0
+  const female = org.sex === 'female'
 
   return (
     <div
@@ -72,18 +75,16 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
           {org.surname ? <span className="org-surname"> {org.surname}</span> : null}
         </span>
         {isSick && (
-          <Tooltip
-            tip={`Infected (${(org.infection * 100).toFixed(0)}%) - illness spreads through close contact with others`}
-          >
+          <Tooltip tip={t('panel.org.infected', { pct: (org.infection * 100).toFixed(0) })}>
             <span className="org-sick-badge" style={{ cursor: 'default' }}>
-              sick
+              {t(female ? 'panel.org.sickFemale' : 'panel.org.sick')}
             </span>
           </Tooltip>
         )}
         {org.pregnant && (
-          <Tooltip tip="Pregnant - a child will be born in ~3 in-world days">
+          <Tooltip tip={t('panel.org.pregnantTip')}>
             <span className="org-pregnant-badge" style={{ cursor: 'default' }}>
-              expecting
+              {t('panel.org.expecting')}
             </span>
           </Tooltip>
         )}
@@ -91,7 +92,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
           <Tooltip
             tip={
               <span>
-                <span style={{ opacity: 0.6 }}>their words for the two kinds</span>
+                <span style={{ opacity: 0.6 }}>{t('panel.org.sexWords')}</span>
                 <br />
                 <span style={{ color: '#7ab0e0' }}>
                   <b>{sexWords[0]}</b>
@@ -101,7 +102,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
                   <b>{sexWords[1]}</b>
                 </span>
                 <br />
-                <span style={{ opacity: 0.5 }}>coined by the founding generation</span>
+                <span style={{ opacity: 0.5 }}>{t('panel.org.sexWordsCoined')}</span>
               </span>
             }
           >
@@ -114,17 +115,20 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
           </Tooltip>
         )}
         <Tooltip
-          tip={`Generation ${shownGeneration(org.generation)} · ${ageInYears(org.age)} old (${org.age.toLocaleString()} ticks)`}
+          tip={tn('panel.org.metaTip', org.age, {
+            gen: shownGeneration(org.generation),
+            age: ageInYears(org.age),
+          })}
         >
           <span className="org-meta" style={{ cursor: 'default' }}>
-            Generation {shownGeneration(org.generation)} · {ageInYears(org.age)}
+            {t('panel.org.meta', { gen: shownGeneration(org.generation), age: ageInYears(org.age) })}
           </span>
         </Tooltip>
         <span className="org-action-btns">
           <button
             className="org-action-btn org-rename-btn"
-            title="give this person a name"
-            aria-label="Rename person"
+            title={t('panel.org.renameTip')}
+            aria-label={t('panel.org.renameAria')}
             onClick={(e) => {
               e.stopPropagation()
               startRename(org.id)
@@ -135,7 +139,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
           {convoCount > 0 && onConvos && (
             <button
               className="org-action-btn org-convo-btn"
-              title={`${convoCount} conversation${convoCount !== 1 ? 's' : ''}`}
+              title={tn('panel.org.conversations', convoCount)}
               onClick={(e) => {
                 e.stopPropagation()
                 onConvos()
@@ -146,7 +150,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
           )}
           <button
             className="org-action-btn org-tree-btn"
-            title="family tree"
+            title={t('panel.org.familyTree')}
             onClick={(e) => {
               e.stopPropagation()
               useUIStore.getState().openFamilyTree(org.id)
@@ -157,7 +161,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
           {onTrack && (
             <button
               className="org-action-btn org-track-btn"
-              title="track in world"
+              title={t('panel.org.track')}
               onClick={(e) => {
                 e.stopPropagation()
                 onTrack()
@@ -171,9 +175,9 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
 
       {renamingOrgId === org.id && <RenameForm org={org} />}
       {org.attracted_to && !org.partner_id && (
-        <Tooltip tip="This organism is drawn to another - they are building attraction and may bond">
+        <Tooltip tip={t('panel.org.attractionTip')}>
           <div className="org-attraction" style={{ cursor: 'default' }}>
-            drawn to someone ✦
+            {t(female ? 'panel.org.attractionFemale' : 'panel.org.attraction')}
           </div>
         </Tooltip>
       )}
@@ -184,7 +188,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
         <div className="org-attributes">
           {org.attributes.slice(0, 8).map((attr) => (
             <span key={attr} className="org-attr-tag">
-              {attr}
+              {simLabel('attribute', attr)}
             </span>
           ))}
           {org.attributes.length > 8 && (
@@ -193,32 +197,15 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
         </div>
       )}
 
+      <Bar label={t('panel.org.energy')} value={org.energy} color="#55dd55" tip={t('panel.org.energyTip')} />
       <Bar
-        label="E"
-        value={org.energy}
-        color="#55dd55"
-        tip="Energy - depletes over time, restored by eating food tiles. At 0% the organism starves."
-      />
-      <Bar
-        label="H"
+        label={t('panel.org.hydration')}
         value={org.hydration}
         color="#4499ff"
-        tip="Hydration - depletes over time, restored by drinking water. At 0% the organism dehydrates."
+        tip={t('panel.org.hydrationTip')}
       />
-      <Bar
-        label="♥"
-        value={org.health}
-        color="#ff6644"
-        tip="Health - damaged by starvation, infection, and combat. Recovers slowly when needs are met."
-      />
-      {isSick && (
-        <Bar
-          label="🤒"
-          value={org.infection}
-          color="#bbff44"
-          tip="Infection level - organism is sick and may spread illness to others nearby. Clears over time or near shelter."
-        />
-      )}
+      <Bar label="♥" value={org.health} color="#ff6644" tip={t('panel.org.healthTip')} />
+      {isSick && <Bar label="🤒" value={org.infection} color="#bbff44" tip={t('panel.org.infectionTip')} />}
 
       <div className="trait-grid">
         <TraitBar value={org.traits.curiosity} color="#88aaff" />
@@ -229,35 +216,41 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
         <TraitBar value={org.traits.resilience} color="#ff8844" />
       </div>
       <div className="trait-labels">
-        <Tooltip tip="Curiosity - drives exploration and willingness to take risks">
-          <span style={{ cursor: 'default' }}>cur</span>
+        <Tooltip tip={t('panel.org.trait.curTip')}>
+          <span style={{ cursor: 'default' }}>{t('panel.org.trait.cur')}</span>
         </Tooltip>
-        <Tooltip tip="Aggression - determines combat and territorial behaviour">
-          <span style={{ cursor: 'default' }}>agg</span>
+        <Tooltip tip={t('panel.org.trait.aggTip')}>
+          <span style={{ cursor: 'default' }}>{t('panel.org.trait.agg')}</span>
         </Tooltip>
-        <Tooltip tip="Fear - how cautious the organism is around danger and predators">
-          <span style={{ cursor: 'default' }}>fear</span>
+        <Tooltip tip={t('panel.org.trait.fearTip')}>
+          <span style={{ cursor: 'default' }}>{t('panel.org.trait.fear')}</span>
         </Tooltip>
-        <Tooltip tip="Memory - how many locations they can remember and how well">
-          <span style={{ cursor: 'default' }}>mem</span>
+        <Tooltip tip={t('panel.org.trait.memTip')}>
+          <span style={{ cursor: 'default' }}>{t('panel.org.trait.mem')}</span>
         </Tooltip>
-        <Tooltip tip="Social - tendency to form bonds, trade, and travel with groups">
-          <span style={{ cursor: 'default' }}>soc</span>
+        <Tooltip tip={t('panel.org.trait.socTip')}>
+          <span style={{ cursor: 'default' }}>{t('panel.org.trait.soc')}</span>
         </Tooltip>
-        <Tooltip tip="Resilience - resistance to disease, temperature stress, and starvation">
-          <span style={{ cursor: 'default' }}>res</span>
+        <Tooltip tip={t('panel.org.trait.resTip')}>
+          <span style={{ cursor: 'default' }}>{t('panel.org.trait.res')}</span>
         </Tooltip>
       </div>
 
       <div className="org-memory">
-        <Tooltip tip={`${org.memory_count?.food ?? 0} food locations memorized`}>
-          <span style={{ cursor: 'default' }}>f{org.memory_count?.food ?? 0}</span>
+        <Tooltip tip={t('panel.org.memFoodTip', { n: org.memory_count?.food ?? 0 })}>
+          <span style={{ cursor: 'default' }}>
+            {t('panel.org.memFood', { n: org.memory_count?.food ?? 0 })}
+          </span>
         </Tooltip>
-        <Tooltip tip={`${org.memory_count?.water ?? 0} water sources memorized`}>
-          <span style={{ cursor: 'default' }}>w{org.memory_count?.water ?? 0}</span>
+        <Tooltip tip={t('panel.org.memWaterTip', { n: org.memory_count?.water ?? 0 })}>
+          <span style={{ cursor: 'default' }}>
+            {t('panel.org.memWater', { n: org.memory_count?.water ?? 0 })}
+          </span>
         </Tooltip>
-        <Tooltip tip={`${org.memory_count?.danger ?? 0} danger zones memorized`}>
-          <span style={{ cursor: 'default' }}>d{org.memory_count?.danger ?? 0}</span>
+        <Tooltip tip={t('panel.org.memDangerTip', { n: org.memory_count?.danger ?? 0 })}>
+          <span style={{ cursor: 'default' }}>
+            {t('panel.org.memDanger', { n: org.memory_count?.danger ?? 0 })}
+          </span>
         </Tooltip>
       </div>
 
@@ -273,7 +266,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
                 style={{ color: att >= 0.25 ? '#55ff88' : att <= -0.25 ? '#ff5544' : '#aaa' }}
               >
                 {att >= 0.25 ? '♥' : att <= -0.25 ? '✕' : '~'}
-                {tn(lid)}
+                {tribeName(lid)}
               </span>
             ))}
         </div>
@@ -281,7 +274,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
 
       {org.friends && Object.keys(org.friends).length > 0 && (
         <div className="org-attitudes">
-          <span style={{ fontSize: '7px', color: '#ffd070', marginRight: 2 }}>friends:</span>
+          <span style={{ fontSize: '7px', color: '#ffd070', marginRight: 2 }}>{t('panel.org.friends')}</span>
           {Object.entries(org.friends)
             .slice(0, 3)
             .map(([id, name], i) => (

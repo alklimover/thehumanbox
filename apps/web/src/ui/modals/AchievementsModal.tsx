@@ -22,21 +22,19 @@ const TEXT: Record<string, { title: MessageKey; detail: MessageKey }> = {
   },
 }
 
-/** An achievement in the player's language. The goal number comes from the English detail it replaces. */
+/** An achievement in the player's language, from its id and the numbers achievementsFor gives. */
 function localized(a: Achievement): Achievement {
   const text = TEXT[a.id]
-  const goal = Number(/\d+/.exec(a.detail)?.[0] ?? 0)
-  const count = a.progress && /^(\d+) of (\d+)$/.exec(a.progress)
-  const year = a.progress && /^(\d+)% of the first year$/.exec(a.progress)
   return {
     ...a,
     title: text ? t(text.title) : a.title,
-    detail: text ? t(text.detail, { n: goal }) : a.detail,
-    progress: count
-      ? t('achievements.progress', { done: Number(count[1]), goal: Number(count[2]) })
-      : year
-        ? t('achievements.firstYear', { percent: Number(year[1]) })
-        : a.progress,
+    detail: text ? t(text.detail, { n: a.goal ?? 0 }) : a.detail,
+    progress:
+      a.done !== undefined && a.goal !== undefined
+        ? t('achievements.progress', { done: a.done, goal: a.goal })
+        : a.yearPercent !== undefined
+          ? t('achievements.firstYear', { percent: a.yearPercent })
+          : a.progress,
   }
 }
 

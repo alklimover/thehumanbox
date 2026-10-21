@@ -5,7 +5,6 @@ import { PERIL_HELP, remainingLine, visibleLineages } from '../../game/model/tri
 import { lineageColor, lineageWord } from '../../shared/constants'
 import { Modal } from './Modal'
 import { t } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
 
 interface LineageInfo {
   count: number
@@ -14,12 +13,12 @@ interface LineageInfo {
   orgs: OrganismState[]
 }
 
-/** "industrial age · empire · ✧-10", leaving out what is not known. `facts` holds the simulation's ids. */
+/** "industrial age · empire · ✧-10", leaving out what is not known. lineageFacts already names era and government. */
 function factsLine(f: LineageFacts | undefined): string {
   if (!f) return ''
   return [
-    f.era ? t('lineages.era', { era: simLabel('era', f.era) }) : '',
-    f.government ? simLabel('government', f.government) : '',
+    f.era ? t('lineages.era', { era: f.era }) : '',
+    f.government ?? '',
     f.faith !== undefined ? `✧${f.faith}` : '',
   ]
     .filter(Boolean)

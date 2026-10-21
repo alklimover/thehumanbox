@@ -2,6 +2,8 @@
 // from 0 (the founders); people count from 1 (the founders are the first
 // generation). See sim/agents/generations.rs.
 
+import { t, tn } from '../../i18n'
+
 export interface LineageGenerations {
   lineage_id: string
   /** The generation of the oldest living member, counted from 1. */
@@ -25,6 +27,6 @@ export function generationsOf(
 
 /** "generation 4 (6 generations so far)", for a tribe card. */
 export function generationLine(g: LineageGenerations): string {
-  const oldest = `oldest living generation ${g.oldest}`
-  return g.lived > g.oldest ? `${oldest} · ${g.lived} generations so far` : oldest
+  const oldest = t('model.generations.oldest', { n: g.oldest })
+  return g.lived > g.oldest ? tn('model.generations.lived', g.lived, { oldest }) : oldest
 }

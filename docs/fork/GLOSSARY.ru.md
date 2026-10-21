@@ -266,3 +266,35 @@
 | fallen (battle plaque) | павшие | «набег · 7 павших»; skirmish → стычка, raid → набег, siege → осада |
 | room roles | хозяин, супруг, ребёнок, родич, гость, чужак, посетитель, молящийся, пивовар, жрец | host, partner, child, kin, guest, stranger, patron, worshipper, brewer, priest |
 | «{tribe} forge / village / tavern» | «Кузница племени Lupif», «Деревня племени Lupif» | имя племени остаётся в именительном падеже |
+
+### Боковые панели, карточки человека и племени
+
+| English | Русский | Заметки |
+|---|---|---|
+| alive / dead / gone (people panel) | живые / умершие / исчезли | заголовки разделов прописными, как в оригинале |
+| starred / star / unstar | отмеченные / отметить / снять отметку | |
+| "{era} age" | «{era}» | `simLabel('era')` даёт полное имя («каменный век»), слово «век» не добавляем |
+| died of … at … | «Умер / Умерла в возрасте N дней. Причина: …» | без пола — «Причина смерти: …»; возраст в родительном: «1 дня», «5 дней», «412 тактов» |
+| partner (in a life story) | супруг / супруга | по полу партнёра; без пола — «супруг(а)» |
+| sick (badge) | болен / больна | по полу человека |
+| newborn | новорождённый / новорождённая | |
+| mental state | душевное состояние | comfort → комфорт, loneliness → одиночество, boredom → скука, fatigue → усталость, hope → надежда, awe → благоговение, gratitude → благодарность, jealousy → зависть, anger → гнев, regret → сожаление, spiritual → духовность |
+| learning (person) | обучение | confidence → уверенность, experience → опыт, choices tried → испробовано, useful lessons → уроки впрок |
+| inventory (person) | пожитки | |
+| degree (university) | — | philosophy → философия, arts → искусства, law → право, theology → богословие, engineering → инженерное дело, science → естественные науки |
+| kin & friends | родные и друзья | mother → мать, father → отец, child → ребёнок, friend → друг, rival → соперник |
+| personal bonds | личные связи | trusts → доверяет, fears → боится |
+| eldest (tribe) | старейший | «старейший: Anna, 22 дня» |
+| families (tribe) | семьи | «Mira ×5, старшему 41 день (долгожители)» |
+| relations line (tribe) | союзники / вассальные узы / добрые соседи | allied with / bound to / at peace with |
+| lost lately | недавние потери | «война — 3 · старость — 1» |
+| granary / bakery / pen | амбар / пекарня / загон | «амбар: 12 мер зерна», «пекарня: 3 каравая», «загон: 5 голов скота» |
+| wealth gap (tribe card, hover card) | «богатство: резкий разрыв» | even / uneven / stark → небольшой / заметный / резкий разрыв |
+| coin of an age | ракушки, бусины, монеты, денарии, флорины, фунты, доллары, кредиты, токены, эрги, креды, синты, звёзды, эссенция | shells … essence; считаем через `tn`: «4 ракушки», «25 ракушек» |
+| trade line (territory) | торговый путь / товар / караван в пути / закупка / доход от торговли / обмен натурой | |
+| skill rank | мастер / умелец / подмастерье / ученик | master / skilled / journeyman / apprentice |
+| title badge (person) | Вождь, Старейшина, Лекарь/Лекарка, Охотник/Охотница, Воин/Воительница, Жрец/Жрица … | женская форма — по полу человека |
+| wildlife (panel) | животные | группы во множественном числе: кролики, стада, белые медведи; «+2 в отлёте» |
+| world history (panel) | история мира | births → рождения, combat → бои, gifts → дары, outbreaks → вспышки |
+| important / all (event filter) | важное / всё | |
+| tick label | т1 234 | в узкой колонке; в подсказке — «с такта 1 234» |

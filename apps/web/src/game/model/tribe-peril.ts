@@ -1,4 +1,5 @@
-import { t } from '../../i18n'
+import { t, type MessageKey } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
 import type { PerilCause, TribePeril, WorldState } from '../../shared/types'
 
 /** What is killing a tribe, and the power that helps most. */
@@ -54,17 +55,17 @@ export function tribeHome(
 }
 
 /** How each cause of death reads on a tribe card. */
-const LOSS_WORDS: Record<string, string> = {
-  war: 'war',
-  combat: 'fights',
-  beasts: 'beasts',
-  drowning: 'drowning',
-  fire: 'fire',
-  disaster: 'disaster',
-  sickness: 'sickness',
-  starvation: 'hunger',
-  dehydration: 'thirst',
-  old_age: 'old age',
+const LOSS_WORDS: Record<string, MessageKey> = {
+  war: 'model.loss.war',
+  combat: 'model.loss.combat',
+  beasts: 'model.loss.beasts',
+  drowning: 'model.loss.drowning',
+  fire: 'model.loss.fire',
+  disaster: 'model.loss.disaster',
+  sickness: 'model.loss.sickness',
+  starvation: 'model.loss.starvation',
+  dehydration: 'model.loss.dehydration',
+  old_age: 'model.loss.old_age',
 }
 
 /** "3 to war · 1 to old age", worst first; null when nobody died lately. */
@@ -75,6 +76,9 @@ export function lossLine(losses: Record<string, number> | undefined): string | n
   if (rows.length === 0) return null
   return rows
     .slice(0, 3)
-    .map(([cause, n]) => `${n} to ${LOSS_WORDS[cause] ?? cause.replace(/_/g, ' ')}`)
+    .map(([cause, n]) => {
+      const word = LOSS_WORDS[cause]
+      return t('model.loss.item', { n, cause: word ? t(word) : simLabel('deathCause', cause) })
+    })
     .join(' · ')
 }

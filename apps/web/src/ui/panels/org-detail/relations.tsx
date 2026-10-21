@@ -1,6 +1,7 @@
 import { Tooltip } from '../../toolbar/Tooltip'
 import { hasKin, kinLinks, type KinLink } from '../../../game/model/kin-links'
 import type { OrganismState } from '../../../shared/types'
+import { t } from '../../../i18n'
 
 /** One tie on the card: a name that selects that person when clicked. */
 function KinTag({
@@ -19,7 +20,7 @@ function KinTag({
       type="button"
       className={`relation-tag ${cls}`}
       style={{ fontSize: '9px', opacity: link.alive ? 1 : 0.6 }}
-      title={`${label}: ${link.name}${link.alive ? '' : ' (dead)'}. Click to select them.`}
+      title={t(link.alive ? 'person.kin.tip' : 'person.kin.tipDead', { label, name: link.name })}
       onClick={() => onSelectOrg?.(link.id)}
     >
       {label} {link.name}
@@ -41,19 +42,23 @@ export function KinSection({
   if (!hasKin(k)) return null
   return (
     <>
-      <div className="org-detail-section">KIN &amp; FRIENDS</div>
+      <div className="org-detail-section">{t('person.kin.title')}</div>
       <div className="relation-list">
         {k.partner && <KinTag label="♥" link={k.partner} cls="ally" onSelectOrg={onSelectOrg} />}
-        {k.mother && <KinTag label="mother" link={k.mother} cls="ally" onSelectOrg={onSelectOrg} />}
-        {k.father && <KinTag label="father" link={k.father} cls="ally" onSelectOrg={onSelectOrg} />}
+        {k.mother && (
+          <KinTag label={t('person.kin.mother')} link={k.mother} cls="ally" onSelectOrg={onSelectOrg} />
+        )}
+        {k.father && (
+          <KinTag label={t('person.kin.father')} link={k.father} cls="ally" onSelectOrg={onSelectOrg} />
+        )}
         {k.children.map((c) => (
-          <KinTag key={c.id} label="child" link={c} cls="ally" onSelectOrg={onSelectOrg} />
+          <KinTag key={c.id} label={t('person.kin.child')} link={c} cls="ally" onSelectOrg={onSelectOrg} />
         ))}
         {k.friends.map((f) => (
-          <KinTag key={f.id} label="friend" link={f} cls="ally" onSelectOrg={onSelectOrg} />
+          <KinTag key={f.id} label={t('person.kin.friend')} link={f} cls="ally" onSelectOrg={onSelectOrg} />
         ))}
         {k.rivals.map((r) => (
-          <KinTag key={r.id} label="rival" link={r} cls="enemy" onSelectOrg={onSelectOrg} />
+          <KinTag key={r.id} label={t('person.kin.rival')} link={r} cls="enemy" onSelectOrg={onSelectOrg} />
         ))}
       </div>
     </>
@@ -71,12 +76,12 @@ export function RelationsSection({ org, tn }: { org: OrganismState; tn: (lid: st
     <>
       {(allies.length > 0 || enemies.length > 0) && (
         <>
-          <div className="org-detail-section">RELATIONS</div>
+          <div className="org-detail-section">{t('person.relations.title')}</div>
           <div className="relation-list">
             {allies.map(([lid, v]) => (
               <Tooltip
                 key={lid}
-                tip={`Allied with ${tn(lid)} - ${(v * 100).toFixed(0)}% positive attitude. Likely to trade and cooperate.`}
+                tip={t('person.relations.allyTip', { tribe: tn(lid), pct: (v * 100).toFixed(0) })}
               >
                 <span className="relation-tag ally" style={{ cursor: 'default' }}>
                   ♥ {tn(lid)} {(v * 100).toFixed(0)}%
@@ -86,7 +91,7 @@ export function RelationsSection({ org, tn }: { org: OrganismState; tn: (lid: st
             {enemies.map(([lid, v]) => (
               <Tooltip
                 key={lid}
-                tip={`Hostile toward ${tn(lid)} - ${(Math.abs(v) * 100).toFixed(0)}% negative attitude. Likely to challenge or avoid.`}
+                tip={t('person.relations.enemyTip', { tribe: tn(lid), pct: (Math.abs(v) * 100).toFixed(0) })}
               >
                 <span className="relation-tag enemy" style={{ cursor: 'default' }}>
                   ✕ {tn(lid)} {(v * 100).toFixed(0)}%
@@ -111,12 +116,12 @@ export function PersonalBondsSection({ org, on }: { org: OrganismState; on: (oid
     <>
       {(trustedOrgs.length > 0 || fearedOrgs.length > 0) && (
         <>
-          <div className="org-detail-section">PERSONAL BONDS</div>
+          <div className="org-detail-section">{t('person.bondsPersonal.title')}</div>
           <div className="relation-list">
             {trustedOrgs.slice(0, 4).map(([oid, v]) => (
               <Tooltip
                 key={oid}
-                tip={`Trusts ${on(oid)} - personal bond at ${(v * 100).toFixed(0)}%. Built through shared experiences and cooperation.`}
+                tip={t('person.bondsPersonal.trustTip', { name: on(oid), pct: (v * 100).toFixed(0) })}
               >
                 <span className="relation-tag ally" style={{ fontSize: '9px', cursor: 'default' }}>
                   ◆ {on(oid)} {(v * 100).toFixed(0)}
@@ -126,7 +131,10 @@ export function PersonalBondsSection({ org, on }: { org: OrganismState; on: (oid
             {fearedOrgs.slice(0, 4).map(([oid, v]) => (
               <Tooltip
                 key={oid}
-                tip={`Fears ${on(oid)} - negative bond at ${(Math.abs(v) * 100).toFixed(0)}%. Result of past conflict or aggression.`}
+                tip={t('person.bondsPersonal.fearTip', {
+                  name: on(oid),
+                  pct: (Math.abs(v) * 100).toFixed(0),
+                })}
               >
                 <span className="relation-tag enemy" style={{ fontSize: '9px', cursor: 'default' }}>
                   ◇ {on(oid)} {(v * 100).toFixed(0)}

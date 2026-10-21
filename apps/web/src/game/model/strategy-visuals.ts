@@ -1,9 +1,13 @@
+import { t } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
+
+/** Each tribe guidance's map mark; `label` is its name as shown (simLabel 'strategy'). */
 export const STRATEGY_VISUALS = {
-  hunt: { symbol: '⌖', label: 'hunt', color: '#e6a85c' },
-  explore: { symbol: '✦', label: 'explore', color: '#70c8ff' },
-  settle: { symbol: '⌂', label: 'settle', color: '#8ed081' },
-  trade: { symbol: '⇄', label: 'trade', color: '#e6ca72' },
-  defend: { symbol: '◆', label: 'defend', color: '#ff806d' },
+  hunt: { symbol: '⌖', label: simLabel('strategy', 'hunt'), color: '#e6a85c' },
+  explore: { symbol: '✦', label: simLabel('strategy', 'explore'), color: '#70c8ff' },
+  settle: { symbol: '⌂', label: simLabel('strategy', 'settle'), color: '#8ed081' },
+  trade: { symbol: '⇄', label: simLabel('strategy', 'trade'), color: '#e6ca72' },
+  defend: { symbol: '◆', label: simLabel('strategy', 'defend'), color: '#ff806d' },
 } as const
 
 export type StrategyName = keyof typeof STRATEGY_VISUALS
@@ -94,5 +98,5 @@ export function strategyBeaconPositions(
 
 export function strategyTimeLabel(ticksRemaining: number): string {
   const days = Math.max(1, Math.ceil(ticksRemaining / 600))
-  return `${days}d`
+  return t('model.strategy.days', { days })
 }

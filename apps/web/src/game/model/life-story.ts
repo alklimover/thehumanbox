@@ -3,6 +3,9 @@
 // children, trade, how they died) and their most telling life events. Nothing
 // here is a new fact; it only puts the existing ones into words.
 
+import { t, tn, type PluralKey } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
+
 /** A day in ticks, the same as DAY_LENGTH in ui/panels/org-detail/format.ts. */
 const DAY_TICKS = 600
 
@@ -36,6 +39,11 @@ function nameOf(p: StoryPerson): string {
   return p.custom_name?.trim() || p.name
 }
 
+/** The message for a sentence whose Russian verb takes the person's gender. */
+function bySex<K extends string>(sex: string | undefined, neutral: K, male: K, female: K): K {
+  return sex === 'female' ? female : sex === 'male' ? male : neutral
+}
+
 /** The story as a list of sentences, in the order they read. */
 export function lifeStory(
   org: StoryPerson,
@@ -48,30 +56,45 @@ export function lifeStory(
 
   const mother = org.parent_id ? byId.get(org.parent_id) : undefined
   const father = org.father_id ? byId.get(org.father_id) : undefined
-  if (mother && father) lines.push(`Child of ${nameOf(mother)} and ${nameOf(father)}.`)
-  else if (mother || father) lines.push(`Child of ${nameOf((mother ?? father) as StoryPerson)}.`)
+  if (mother && father)
+    lines.push(t('model.story.parents', { mother: nameOf(mother), father: nameOf(father) }))
+  else if (mother) lines.push(t('model.story.mother', { name: nameOf(mother) }))
+  else if (father) lines.push(t('model.story.father', { name: nameOf(father) }))
 
-  if (org.specialty) lines.push(`Took up the trade of ${org.specialty}.`)
-  if (org.is_leader) lines.push('Rules the tribe as its chief.')
+  if (org.specialty) lines.push(t('model.story.trade', { trade: simLabel('specialty', org.specialty) }))
+  if (org.is_leader) lines.push(t('model.story.chief'))
 
   if (org.partner_id) {
     const partner = byId.get(org.partner_id)
-    lines.push(partner ? `Partnered with ${nameOf(partner)}.` : 'Has a partner.')
+    lines.push(
+      partner
+        ? t(
+            bySex(partner.sex, 'model.story.partner', 'model.story.partnerMale', 'model.story.partnerFemale'),
+            { name: nameOf(partner) },
+          )
+        : t('model.story.hasPartner'),
+    )
   }
 
   const children = org.children_count ?? 0
-  if (children > 0) lines.push(`Parent of ${children} ${children === 1 ? 'child' : 'children'}.`)
+  if (children > 0) lines.push(tn('model.story.children', children))
 
   for (const e of events.filter((e) => MAJOR.has(e.category)).slice(-MAX_EVENTS)) {
     lines.push(`${e.text.charAt(0).toUpperCase()}${e.text.slice(1)}.`)
   }
 
   if (org.alive) {
-    lines.push(`Living, ${days} day${days === 1 ? '' : 's'} old.`)
+    lines.push(tn('model.story.living', days))
   } else if (org.death_cause) {
-    lines.push(`Died of ${org.death_cause} at ${days} day${days === 1 ? '' : 's'} old.`)
+    const key: PluralKey = bySex(
+      org.sex,
+      'model.story.diedOf',
+      'model.story.diedOfMale',
+      'model.story.diedOfFemale',
+    )
+    lines.push(tn(key, days, { cause: simLabel('deathCause', org.death_cause) }))
   } else {
-    lines.push(`Died at ${days} day${days === 1 ? '' : 's'} old.`)
+    lines.push(tn(bySex(org.sex, 'model.story.died', 'model.story.diedMale', 'model.story.diedFemale'), days))
   }
   return lines
 }

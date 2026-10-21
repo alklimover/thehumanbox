@@ -3,20 +3,25 @@ import { cbColor } from '../../../shared/constants'
 import { MiniBar } from './bars'
 import { ASPIRATION_EMOJI, ASPIRATION_TIPS, ZODIAC_GLYPH, ZODIAC_FLAVOR } from './icons'
 import type { OrganismState, OrgDetail } from '../../../shared/types'
+import { t, tn, type MessageKey } from '../../../i18n'
+import { simLabel } from '../../../i18n/sim'
+
+/** A catalog line for an id, or nothing when the id has none. */
+const lineFor = (keys: Record<string, MessageKey>, id: string) => (keys[id] ? t(keys[id]) : '')
 
 export function AspirationSection({ org }: { org: OrganismState }) {
   return (
     <>
       {org.aspiration && (
         <>
-          <div className="org-detail-section">ASPIRATION</div>
+          <div className="org-detail-section">{t('person.aspiration.title')}</div>
           <div className="relation-list">
             <span
               className="relation-tag"
               style={{ background: '#1a1408', color: '#f6d062', cursor: 'default' }}
-              title={ASPIRATION_TIPS[org.aspiration] ?? ''}
+              title={lineFor(ASPIRATION_TIPS, org.aspiration)}
             >
-              {ASPIRATION_EMOJI[org.aspiration] ?? '✦'} {org.aspiration}
+              {ASPIRATION_EMOJI[org.aspiration] ?? '✦'} {simLabel('aspiration', org.aspiration)}
             </span>
           </div>
         </>
@@ -30,34 +35,34 @@ export function LearningSection({ detail }: { detail: OrgDetail | null }) {
     <>
       {detail?.learning && detail.learning.states > 0 && (
         <>
-          <div className="org-detail-section">LEARNING</div>
+          <div className="org-detail-section">{t('person.learning.title')}</div>
           <div className="trait-full-grid">
             <MiniBar
-              label="confidence"
+              label={t('person.learning.confidence')}
               value={detail.learning.confidence}
               color="#79d6b0"
-              tip="How consistently this person has found rewarding choices across situations."
+              tip={t('person.learning.confidenceTip')}
             />
             <div className="trait-full-row">
-              <Tooltip tip="Distinct situations this person has learned from.">
+              <Tooltip tip={t('person.learning.experienceTip')}>
                 <span className="trait-full-label" style={{ cursor: 'default' }}>
-                  experience
+                  {t('person.learning.experience')}
                 </span>
               </Tooltip>
-              <span className="bar-pct">{detail.learning.states} states</span>
+              <span className="bar-pct">{tn('person.learning.states', detail.learning.states)}</span>
             </div>
             <div className="trait-full-row">
-              <Tooltip tip="Situation-specific actions this person has actually attempted.">
+              <Tooltip tip={t('person.learning.triedTip')}>
                 <span className="trait-full-label" style={{ cursor: 'default' }}>
-                  choices tried
+                  {t('person.learning.tried')}
                 </span>
               </Tooltip>
               <span className="bar-pct">{detail.learning.tried_actions}</span>
             </div>
             <div className="trait-full-row">
-              <Tooltip tip="Situations where this person currently knows at least one promising response.">
+              <Tooltip tip={t('person.learning.lessonsTip')}>
                 <span className="trait-full-label" style={{ cursor: 'default' }}>
-                  useful lessons
+                  {t('person.learning.lessons')}
                 </span>
               </Tooltip>
               <span className="bar-pct">{detail.learning.promising_states}</span>
@@ -74,17 +79,17 @@ export function ZodiacSection({ org }: { org: OrganismState }) {
     <>
       {org.zodiac && (
         <>
-          <div className="org-detail-section">BORN UNDER</div>
+          <div className="org-detail-section">{t('person.zodiac.title')}</div>
           <div className="relation-list">
             <span
               className="relation-tag"
               style={{ background: '#0e1018', color: '#9ad0f0', cursor: 'default' }}
-              title={ZODIAC_FLAVOR[org.zodiac] ?? ''}
+              title={lineFor(ZODIAC_FLAVOR, org.zodiac)}
             >
-              {ZODIAC_GLYPH[org.zodiac] ?? '✦'} {org.zodiac}
+              {ZODIAC_GLYPH[org.zodiac] ?? '✦'} {simLabel('zodiac', org.zodiac)}
             </span>
             <span style={{ color: '#666', fontSize: 11, marginLeft: 6, fontStyle: 'italic' }}>
-              {ZODIAC_FLAVOR[org.zodiac] ?? ''}
+              {lineFor(ZODIAC_FLAVOR, org.zodiac)}
             </span>
           </div>
         </>
@@ -96,52 +101,22 @@ export function ZodiacSection({ org }: { org: OrganismState }) {
 export function TraitsSection({ org }: { org: OrganismState }) {
   return (
     <>
-      <div className="org-detail-section">TRAITS</div>
+      <div className="org-detail-section">{t('person.traits.title')}</div>
       <div className="trait-full-grid">
         {(
           [
-            [
-              'curiosity',
-              org.traits.curiosity,
-              '#88aaff',
-              'Curiosity - drives exploration and risk-taking. High curiosity organisms wander further and discover more.',
-            ],
-            [
-              'aggression',
-              org.traits.aggression,
-              '#ff6655',
-              'Aggression - determines combat initiation and territorial behaviour. High aggression = more challenges.',
-            ],
-            [
-              'fear',
-              org.traits.fear,
-              '#ffcc44',
-              'Fear - how quickly they flee danger. High fear means early retreat; low fear means standing ground.',
-            ],
-            [
-              'memory',
-              org.traits.memory_strength,
-              '#aa88ff',
-              'Memory - how many locations they retain and how strongly. Better memory = smarter navigation.',
-            ],
-            [
-              'social',
-              org.traits.social_tendency,
-              '#55ddaa',
-              'Social tendency - drives bonding, trading, and group travel. High social organisms form tribes faster.',
-            ],
-            [
-              'resilience',
-              org.traits.resilience,
-              '#ff8844',
-              'Resilience - resistance to disease, extreme temperatures, and starvation. Longer lifespan at high values.',
-            ],
-          ] as [string, number, string, string][]
+            ['person.traits.curiosity', org.traits.curiosity, '#88aaff', 'person.traits.curiosityTip'],
+            ['person.traits.aggression', org.traits.aggression, '#ff6655', 'person.traits.aggressionTip'],
+            ['person.traits.fear', org.traits.fear, '#ffcc44', 'person.traits.fearTip'],
+            ['person.traits.memory', org.traits.memory_strength, '#aa88ff', 'person.traits.memoryTip'],
+            ['person.traits.social', org.traits.social_tendency, '#55ddaa', 'person.traits.socialTip'],
+            ['person.traits.resilience', org.traits.resilience, '#ff8844', 'person.traits.resilienceTip'],
+          ] as [MessageKey, number, string, MessageKey][]
         ).map(([label, val, col, tip]) => (
           <div key={label} className="trait-full-row">
-            <Tooltip tip={tip}>
+            <Tooltip tip={t(tip)}>
               <span className="trait-full-label" style={{ cursor: 'default' }}>
-                {label}
+                {t(label)}
               </span>
             </Tooltip>
             <div className="bar-track">

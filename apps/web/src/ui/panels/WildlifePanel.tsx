@@ -2,8 +2,9 @@ import { memo } from 'react'
 import clsx from 'clsx'
 import { useShallow } from 'zustand/react/shallow'
 import { useWorldStore } from '../../state/worldStore'
-import { wildlifeCounts } from '../../game/model/wildlife'
+import { isHerdLabel, wildlifeCounts } from '../../game/model/wildlife'
 import { Tooltip } from '../toolbar/Tooltip'
+import { t } from '../../i18n'
 
 /** What lives on the land: game to hunt, herds, and what hunts people. */
 function WildlifePanelImpl() {
@@ -16,7 +17,7 @@ function WildlifePanelImpl() {
   if (stamp.length === 0) return null
   return (
     <>
-      <div className="section-title">WILDLIFE</div>
+      <div className="section-title">{t('panel.wildlife.title')}</div>
       <div className="history-grid">
         {stamp.map((row) => {
           const [label, count, away, danger] = row.split(':')
@@ -25,10 +26,10 @@ function WildlifePanelImpl() {
               <Tooltip
                 tip={
                   danger === '1'
-                    ? 'Hunts people when hungry'
-                    : label === 'herds'
-                      ? 'Sheep, cows, horses and chickens'
-                      : 'Wild game, hunted for food: overhunting thins it'
+                    ? t('panel.wildlife.dangerTip')
+                    : isHerdLabel(label!)
+                      ? t('panel.wildlife.herdTip')
+                      : t('panel.wildlife.gameTip')
                 }
               >
                 <span
@@ -40,7 +41,9 @@ function WildlifePanelImpl() {
               </Tooltip>
               <span className="hist-val">
                 {count}
-                {Number(away) > 0 && <span className="wildlife-away"> +{away} away</span>}
+                {Number(away) > 0 && (
+                  <span className="wildlife-away">{t('panel.wildlife.away', { n: Number(away) })}</span>
+                )}
               </span>
             </span>
           )

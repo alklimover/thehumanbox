@@ -8,8 +8,11 @@ import { hud } from './hud'
 import { life } from './life'
 import { map } from './map'
 import { modals } from './modals'
+import { model } from './model'
 import { onboarding } from './onboarding'
+import { panels } from './panels'
 import { people } from './people'
+import { person } from './person'
 import { scenarios } from './scenarios'
 import { settings } from './settings'
 import { shortcuts } from './shortcuts'
@@ -31,8 +34,11 @@ const AREAS = {
   life,
   map,
   modals,
+  model,
   onboarding,
+  panels,
   people,
+  person,
   scenarios,
   settings,
   shortcuts,
