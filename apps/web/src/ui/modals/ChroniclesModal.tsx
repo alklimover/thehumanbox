@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { StoryEntry, HeadlineInfo } from '../../shared/types'
 import { lineageColor } from '../../shared/constants'
 import { Modal } from './Modal'
+import { t } from '../../i18n'
 
 const DAY_LENGTH = 600
 
@@ -20,18 +21,24 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
   const timeline = [...headlines]
 
   return (
-    <Modal open onClose={onClose} className="lang-modal chronicles-modal" title="Chronicles" hideTitle>
+    <Modal
+      open
+      onClose={onClose}
+      className="lang-modal chronicles-modal"
+      title={t('chronicles.title')}
+      hideTitle
+    >
       <div className="lang-modal-header">
-        <span className="lang-modal-title">CHRONICLES</span>
+        <span className="lang-modal-title">{t('chronicles.heading')}</span>
         <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', marginRight: 8 }}>
-          {(['history', 'lives'] as Tab[]).map((t) => (
+          {(['history', 'lives'] as Tab[]).map((id) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={id}
+              onClick={() => setTab(id)}
               style={{
-                background: tab === t ? 'rgba(216,178,112,0.18)' : 'transparent',
-                border: `1px solid ${tab === t ? 'rgba(216,178,112,0.5)' : '#2a2520'}`,
-                color: tab === t ? '#e0c98f' : '#998',
+                background: tab === id ? 'rgba(216,178,112,0.18)' : 'transparent',
+                border: `1px solid ${tab === id ? 'rgba(216,178,112,0.5)' : '#2a2520'}`,
+                color: tab === id ? '#e0c98f' : '#998',
                 padding: '3px 10px',
                 borderRadius: 3,
                 fontSize: 10,
@@ -40,27 +47,27 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
                 textTransform: 'uppercase',
               }}
             >
-              {t === 'history' ? 'World History' : 'Lives'}
+              {id === 'history' ? t('chronicles.tab.history') : t('chronicles.tab.lives')}
             </button>
           ))}
         </div>
-        <button aria-label="Close" className="close-btn" onClick={onClose}>
+        <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
       <div className="lang-modal-body">
         {tab === 'history' ? (
           <>
-            <p className="lang-modal-sub">
-              The great turns of this world — eras, wars, dynasties and wonders.
-            </p>
+            <p className="lang-modal-sub">{t('chronicles.history.sub')}</p>
             {timeline.length === 0 ? (
-              <div className="lang-no-stories">No notable events yet. The story is just beginning.</div>
+              <div className="lang-no-stories">{t('chronicles.history.empty')}</div>
             ) : (
               <div className="chronicle-list">
                 {timeline.map((h, i) => (
                   <div key={`${h.tick}-${i}`} className="chronicle-row">
-                    <span className="chronicle-day">day {Math.floor(h.tick / DAY_LENGTH)}</span>
+                    <span className="chronicle-day">
+                      {t('life.day', { n: Math.floor(h.tick / DAY_LENGTH) })}
+                    </span>
                     <span className="chronicle-text">{h.text}</span>
                   </div>
                 ))}
@@ -69,18 +76,16 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
           </>
         ) : (
           <>
-            <p className="lang-modal-sub">
-              Stories told by the world's inhabitants, ordered by when they were lived.
-            </p>
+            <p className="lang-modal-sub">{t('chronicles.lives.sub')}</p>
             {sortedStories.length === 0 ? (
-              <div className="lang-no-stories">
-                No stories yet. Stories appear after organisms complete a full day cycle.
-              </div>
+              <div className="lang-no-stories">{t('chronicles.lives.empty')}</div>
             ) : (
               <div className="chronicle-list">
                 {sortedStories.map((s, i) => (
                   <div key={i} className="chronicle-row">
-                    <span className="chronicle-day">day {Math.floor(s.tick / DAY_LENGTH)}</span>
+                    <span className="chronicle-day">
+                      {t('life.day', { n: Math.floor(s.tick / DAY_LENGTH) })}
+                    </span>
                     <span className="chronicle-name" style={{ color: lineageColor(s.lineage_id) }}>
                       {s.org_name}
                     </span>

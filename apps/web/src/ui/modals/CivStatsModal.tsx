@@ -7,6 +7,9 @@ import { normalizeLineageEras } from '../../shared/lineageEras'
 import { useSceneStore } from '../../state/scene'
 import { farmStage } from '../../game/model/farms'
 import { getBuildingState } from '../../game/model/building-state'
+import { moonPhaseName } from '../../game/model/calendar'
+import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
 
 interface Props {
   world: WorldState
@@ -22,35 +25,91 @@ const GUIDANCE: Array<{
 }> = [
   {
     value: 'hunt',
-    label: 'secure food',
-    description: 'focus hunters on tracking, trapping, and bringing food home',
-    reward: 'food reserves for every living member',
+    label: t('civ.guide.hunt.label'),
+    description: t('civ.guide.hunt.description'),
+    reward: t('civ.guide.hunt.reward'),
   },
   {
     value: 'explore',
-    label: 'explore',
-    description: 'push into unknown terrain and act on new discoveries',
-    reward: 'trail maps and a curiosity surge',
+    label: t('civ.guide.explore.label'),
+    description: t('civ.guide.explore.description'),
+    reward: t('civ.guide.explore.reward'),
   },
   {
     value: 'settle',
-    label: 'settle & build',
-    description: 'gather materials, rest safely, and expand the settlement',
-    reward: 'communal wood and stone reserves',
+    label: t('civ.guide.settle.label'),
+    description: t('civ.guide.settle.description'),
+    reward: t('civ.guide.settle.reward'),
   },
   {
     value: 'trade',
-    label: 'trade',
-    description: 'seek exchanges, markets, and foreign trade partners',
-    reward: 'shared wealth for the lineage',
+    label: t('civ.guide.trade.label'),
+    description: t('civ.guide.trade.description'),
+    reward: t('civ.guide.trade.reward'),
   },
   {
     value: 'defend',
-    label: 'defend',
-    description: 'sound alarms, fortify territory, and protect vulnerable kin',
-    reward: 'restored health, courage, and morale',
+    label: t('civ.guide.defend.label'),
+    description: t('civ.guide.defend.description'),
+    reward: t('civ.guide.defend.reward'),
   },
 ]
+
+// The simulation's season ids (the cosmos calendar), named as this window has always shown them.
+const SEASON_KEYS: Record<string, MessageKey> = {
+  abundance: 'civ.season.abundance',
+  decline: 'civ.season.decline',
+  scarcity: 'civ.season.scarcity',
+  recovery: 'civ.season.recovery',
+}
+
+// Battle sizes as the simulation sends them (the Rust enum names).
+const SCALE_KEYS: Record<string, MessageKey> = {
+  Skirmish: 'civ.scale.Skirmish',
+  Raid: 'civ.scale.Raid',
+  Siege: 'civ.scale.Siege',
+  Battle: 'civ.scale.Battle',
+  War: 'civ.scale.War',
+}
+
+const OUTCOME_KEYS: Record<string, MessageKey> = {
+  completed: 'civ.outcome.completed',
+  expired: 'civ.outcome.expired',
+  redirected: 'civ.outcome.redirected',
+  failed: 'civ.outcome.failed',
+}
+
+// Book topics (BookTopic::name in the simulation).
+const TOPIC_KEYS: Record<string, MessageKey> = {
+  history: 'civ.topic.history',
+  philosophy: 'civ.topic.philosophy',
+  science: 'civ.topic.science',
+  medicine: 'civ.topic.medicine',
+  religion: 'civ.topic.religion',
+  poetry: 'civ.topic.poetry',
+  law: 'civ.topic.law',
+  engineering: 'civ.topic.engineering',
+  geography: 'civ.topic.geography',
+  mathematics: 'civ.topic.mathematics',
+  astronomy: 'civ.topic.astronomy',
+  fiction: 'civ.topic.fiction',
+  biography: 'civ.topic.biography',
+  economics: 'civ.topic.economics',
+  drama: 'civ.topic.drama',
+}
+
+/** A faith's name in the player's language; a duplicate keeps its " rel7" suffix as sent. */
+function religionName(name: string): string {
+  const match = /^(.*) (rel\d+)$/.exec(name)
+  return match ? `${simLabel('religion', match[1])} ${match[2]}` : simLabel('religion', name)
+}
+
+/** The words for a simulation value from one of the tables above, or the value itself when unknown. */
+function keyed(keys: Record<string, MessageKey>, value: string | null | undefined): string {
+  if (!value) return ''
+  const key = keys[value]
+  return key ? t(key) : value
+}
 
 function hasEnterableBuilding(world: WorldState, kinds: ReadonlySet<string>, lineageId: string): boolean {
   const matching = (world.buildings ?? []).filter((building) => {
@@ -164,25 +223,31 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
       !active.completed &&
       active.strategy !== strategy &&
       !(await askConfirm({
-        title: 'Change campaign?',
-        body: `Redirect ${lineageById(lineageId)} from ${active.strategy} to ${strategy}.\n\nProgress on the current campaign is archived.`,
-        confirmLabel: 'redirect',
+        title: t('civ.guide.confirmTitle'),
+        body: t('civ.guide.confirmBody', {
+          tribe: lineageById(lineageId),
+          from: simLabel('strategy', active.strategy),
+          to: simLabel('strategy', strategy),
+        }),
+        confirmLabel: t('civ.guide.confirmLabel'),
       }))
     ) {
       return
     }
 
     setGuidanceBusy((current) => ({ ...current, [lineageId]: true }))
-    setGuidanceResult((current) => ({ ...current, [lineageId]: 'guiding…' }))
+    setGuidanceResult((current) => ({ ...current, [lineageId]: t('civ.guide.busy') }))
     void onGuide(lineageId, strategy)
       .then((ok) => {
         setGuidanceResult((current) => ({
           ...current,
-          [lineageId]: ok ? `${strategy} campaign started` : 'guidance rejected',
+          [lineageId]: ok
+            ? t('civ.guide.started', { strategy: simLabel('strategy', strategy) })
+            : t('civ.guide.rejected'),
         }))
       })
       .catch(() => {
-        setGuidanceResult((current) => ({ ...current, [lineageId]: 'guidance unavailable' }))
+        setGuidanceResult((current) => ({ ...current, [lineageId]: t('civ.guide.unavailable') }))
       })
       .finally(() => {
         setGuidanceBusy((current) => ({ ...current, [lineageId]: false }))
@@ -272,34 +337,36 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
   }
 
   return (
-    <Modal open onClose={onClose} className="civ-modal" title={'\u{1F30D} Civilization'}>
-      <button aria-label="Close" className="close-btn civ-close" onClick={onClose}>
+    <Modal open onClose={onClose} className="civ-modal" title={`\u{1F30D} ${t('civ.title')}`}>
+      <button aria-label={t('common.close')} className="close-btn civ-close" onClick={onClose}>
         ✕
       </button>
       {world.cosmos && (
         <div className="civ-calendar">
           <div className="civ-cal-item">
-            <span className="civ-cal-label">year</span>
-            <span className="civ-cal-value">{world.cosmos.year + 1}</span>
-            <span className="civ-cal-sub">day {world.cosmos.day_of_year + 1} of 84</span>
+            <span className="civ-cal-label">{t('civ.cal.year')}</span>
+            <span className="civ-cal-value">{fmtNumber(world.cosmos.year + 1)}</span>
+            <span className="civ-cal-sub">{t('civ.cal.dayOf', { day: world.cosmos.day_of_year + 1 })}</span>
           </div>
           <span className="civ-cal-sep" aria-hidden="true" />
           <div className="civ-cal-item">
             <span className="civ-cal-moon">{moonGlyphs[world.cosmos.moon_phase] ?? '🌑'}</span>
-            <span className="civ-cal-value">{world.cosmos.moon_phase.replace(/_/g, ' ')}</span>
-            <span className="civ-cal-sub">{Math.round(world.cosmos.moon_illum * 100)}% lit</span>
+            <span className="civ-cal-value">{moonPhaseName(world.cosmos.moon_phase)}</span>
+            <span className="civ-cal-sub">
+              {t('civ.cal.lit', { percent: Math.round(world.cosmos.moon_illum * 100) })}
+            </span>
           </div>
           <span className="civ-cal-sep" aria-hidden="true" />
           <div className="civ-cal-item">
-            <span className="civ-cal-label">season</span>
-            <span className="civ-cal-value">{world.season}</span>
+            <span className="civ-cal-label">{t('civ.cal.season')}</span>
+            <span className="civ-cal-value">{keyed(SEASON_KEYS, world.season)}</span>
           </div>
           {world.current_era && (
             <>
               <span className="civ-cal-sep" aria-hidden="true" />
               <div className="civ-cal-item">
-                <span className="civ-cal-label">world tech</span>
-                <span className="civ-cal-value">{world.current_era}</span>
+                <span className="civ-cal-label">{t('civ.cal.worldTech')}</span>
+                <span className="civ-cal-value">{simLabel('era', world.current_era)}</span>
               </div>
             </>
           )}
@@ -308,18 +375,18 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
       <div className="civ-modal-grid">
         <div className="civ-cols">
           <section className="civ-section civ-section--span">
-            <h3>Lineages</h3>
+            <h3>{t('civ.lineages.title')}</h3>
             <div className="civ-table-wrap">
               <table className="civ-table" role="table">
                 <thead role="rowgroup">
                   <tr role="row">
-                    <th role="columnheader">Name</th>
-                    <th role="columnheader">Lineage Era</th>
-                    <th role="columnheader">Pop</th>
-                    <th role="columnheader">Next</th>
-                    <th role="columnheader">Gov</th>
-                    <th role="columnheader">Currency</th>
-                    <th role="columnheader" aria-label="Actions"></th>
+                    <th role="columnheader">{t('civ.col.name')}</th>
+                    <th role="columnheader">{t('civ.col.era')}</th>
+                    <th role="columnheader">{t('civ.col.pop')}</th>
+                    <th role="columnheader">{t('civ.col.next')}</th>
+                    <th role="columnheader">{t('civ.col.gov')}</th>
+                    <th role="columnheader">{t('civ.col.currency')}</th>
+                    <th role="columnheader" aria-label={t('civ.col.actions')}></th>
                   </tr>
                 </thead>
                 <tbody role="rowgroup">
@@ -351,29 +418,37 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                     const canEnterTavern = hasEnterableBuilding(world, TAVERN_BUILDINGS, l.id)
                     return (
                       <tr key={l.id} role="row">
-                        <td role="cell" data-label="Name">
+                        <td role="cell" data-label={t('civ.col.name')}>
                           {lineageById(l.id)}
                         </td>
-                        <td role="cell" data-label="Lineage Era">
-                          {ERA_EMOJI[era] ?? ''} {era}
+                        <td role="cell" data-label={t('civ.col.era')}>
+                          {ERA_EMOJI[era] ?? ''} {simLabel('era', era)}
                         </td>
-                        <td role="cell" data-label="Pop">
-                          {l.count}
+                        <td role="cell" data-label={t('civ.col.pop')}>
+                          {fmtNumber(l.count)}
                         </td>
-                        <td role="cell" data-label="Next">
+                        <td role="cell" data-label={t('civ.col.next')}>
                           {progress?.next_era ? (
                             <div className="civ-era-progress">
                               <span className={progress.ready ? 'civ-era-ready' : 'civ-era-next'}>
-                                {progress.next_era}
+                                {simLabel('era', progress.next_era)}
                               </span>
                               {!worldPopulationReady && (
                                 <span className="civ-era-gate">
-                                  world population {worldPopulation}/{worldPopulationRequired}
+                                  {t('civ.worldPopulation', {
+                                    current: worldPopulation,
+                                    required: worldPopulationRequired,
+                                  })}
                                 </span>
                               )}
                               {progress.missing.length > 0 && (
                                 <span className="civ-era-missing">
-                                  missing {progress.missing.slice(0, 3).join(', ')}
+                                  {t('civ.missing', {
+                                    list: progress.missing
+                                      .slice(0, 3)
+                                      .map((d) => simLabel('discovery', d))
+                                      .join(', '),
+                                  })}
                                   {progress.missing.length > 3 ? ' +' : ''}
                                 </span>
                               )}
@@ -382,15 +457,15 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                             <span className="civ-era-next">-</span>
                           )}
                         </td>
-                        <td role="cell" data-label="Gov">
-                          {gov ? `${GOV_EMOJI[gov.kind] ?? ''} ${gov.kind}` : '-'}
+                        <td role="cell" data-label={t('civ.col.gov')}>
+                          {gov ? `${GOV_EMOJI[gov.kind] ?? ''} ${simLabel('government', gov.kind)}` : '-'}
                         </td>
-                        <td role="cell" data-label="Currency">
+                        <td role="cell" data-label={t('civ.col.currency')}>
                           {currencies[l.id] ?? '-'}
                         </td>
                         <td
                           role="cell"
-                          data-label="Actions"
+                          data-label={t('civ.col.actions')}
                           className={
                             activeStrategy || (hasBrewing && canEnterTavern)
                               ? 'civ-cell-actions'
@@ -406,7 +481,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                                     : 'civ-strategy-active'
                                 }
                               >
-                                {activeStrategy.strategy} {objectivePercent}%
+                                {simLabel('strategy', activeStrategy.strategy)} {objectivePercent}%
                               </span>
                             )}
                             {hasBrewing && canEnterTavern && (
@@ -417,7 +492,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                                   onClose()
                                 }}
                               >
-                                🍻 tavern
+                                🍻 {t('civ.tavern')}
                               </button>
                             )}
                           </div>
@@ -431,12 +506,10 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
             <div className="civ-campaign-board">
               <div className="civ-campaign-board-heading">
                 <div>
-                  <span className="civ-campaign-board-kicker">Player guidance</span>
-                  <h4>Lineage campaigns</h4>
+                  <span className="civ-campaign-board-kicker">{t('civ.board.kicker')}</span>
+                  <h4>{t('civ.board.title')}</h4>
                 </div>
-                <span className="civ-campaign-board-help">
-                  Lineages still choose their own actions; successful aligned actions fill the goal.
-                </span>
+                <span className="civ-campaign-board-help">{t('civ.board.help')}</span>
               </div>
               <div className="civ-campaign-cards">
                 {lineages.map((lineage) => {
@@ -455,32 +528,40 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                       <div className="civ-campaign-card-head">
                         <div>
                           <span className="civ-campaign-lineage">{lineageById(lineage.id)}</span>
-                          <span className="civ-campaign-pop">{lineage.count} people</span>
+                          <span className="civ-campaign-pop">{tn('civ.people', lineage.count)}</span>
                         </div>
                         {active ? (
                           <span className="civ-campaign-badge">
-                            {active.completed ? 'completed' : (meta?.label ?? active.strategy)}
+                            {active.completed
+                              ? t('civ.campaign.completed')
+                              : (meta?.label ?? simLabel('strategy', active.strategy))}
                           </span>
                         ) : (
-                          <span className="civ-campaign-badge idle">awaiting guidance</span>
+                          <span className="civ-campaign-badge idle">{t('civ.campaign.awaiting')}</span>
                         )}
                       </div>
 
                       {active ? (
                         <>
                           <p className="civ-campaign-description">
-                            {meta?.description ?? `focus on ${active.strategy}`}
+                            {meta?.description ??
+                              t('civ.campaign.focusOn', { strategy: simLabel('strategy', active.strategy) })}
                           </p>
                           <div className="civ-campaign-progress-copy">
+                            <span>{t('civ.campaign.progress', { progress, target })}</span>
                             <span>
-                              {progress}/{target} aligned actions
+                              {active.completed
+                                ? t('civ.campaign.rewardEarned')
+                                : tn('civ.campaign.ticksLeft', remaining)}
                             </span>
-                            <span>{active.completed ? 'reward earned' : `${remaining} ticks left`}</span>
                           </div>
                           <span
                             className="civ-campaign-card-progress"
                             role="progressbar"
-                            aria-label={`${lineageById(lineage.id)} ${active.strategy} campaign`}
+                            aria-label={t('civ.campaign.aria', {
+                              tribe: lineageById(lineage.id),
+                              strategy: simLabel('strategy', active.strategy),
+                            })}
                             aria-valuemin={0}
                             aria-valuemax={target}
                             aria-valuenow={Math.min(progress, target)}
@@ -488,20 +569,20 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                             <span style={{ width: `${percent}%` }} />
                           </span>
                           <span className="civ-campaign-reward">
-                            Reward: {meta?.reward ?? 'lineage morale'}
+                            {t('civ.campaign.reward', {
+                              reward: meta?.reward ?? t('civ.campaign.defaultReward'),
+                            })}
                           </span>
                         </>
                       ) : (
-                        <p className="civ-campaign-description">
-                          Choose a soft objective to give this lineage a visible goal and completion reward.
-                        </p>
+                        <p className="civ-campaign-description">{t('civ.campaign.idle')}</p>
                       )}
 
                       <div className="civ-campaign-card-actions">
                         {onGuide && (
                           <select
                             className="civ-guide-select"
-                            aria-label={`Guide ${lineageById(lineage.id)}`}
+                            aria-label={t('civ.campaign.guideAria', { tribe: lineageById(lineage.id) })}
                             value=""
                             disabled={Boolean(guidanceBusy[lineage.id])}
                             onChange={(event) => {
@@ -509,7 +590,9 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                               if (strategy) guideLineage(lineage.id, strategy)
                             }}
                           >
-                            <option value="">{active ? 'change campaign…' : 'start campaign…'}</option>
+                            <option value="">
+                              {active ? t('civ.campaign.change') : t('civ.campaign.start')}
+                            </option>
                             {GUIDANCE.map((strategy) => (
                               <option key={strategy.value} value={strategy.value}>
                                 {strategy.label}
@@ -531,14 +614,16 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
             {campaignHistory.length > 0 && (
               <div className="civ-campaign-history">
                 <div className="civ-campaign-history-head">
-                  <span className="civ-campaign-history-title">Recent campaigns</span>
+                  <span className="civ-campaign-history-title">{t('civ.history.title')}</span>
                   {campaignHistory.length > 6 && (
                     <button
                       type="button"
                       className="civ-campaign-history-toggle"
                       onClick={() => setShowAllCampaigns((current) => !current)}
                     >
-                      {showAllCampaigns ? 'show recent' : `show all ${campaignHistory.length}`}
+                      {showAllCampaigns
+                        ? t('civ.history.showRecent')
+                        : t('civ.history.showAll', { n: campaignHistory.length })}
                     </button>
                   )}
                 </div>
@@ -555,15 +640,20 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                           {icon}
                         </span>
                         <span className="civ-campaign-name">
-                          {campaign.lineage_name || lineageById(campaign.lineage_id)} · {campaign.strategy}
+                          {campaign.lineage_name || lineageById(campaign.lineage_id)} ·{' '}
+                          {simLabel('strategy', campaign.strategy)}
                         </span>
                         <span className="civ-campaign-result">
-                          {campaign.reason === 'lineage_extinct' ? 'lineage ended' : campaign.outcome}
+                          {campaign.reason === 'lineage_extinct'
+                            ? t('civ.history.extinct')
+                            : keyed(OUTCOME_KEYS, campaign.outcome)}
                         </span>
                         <span className="civ-campaign-effort">
                           {campaign.progress}/{campaign.target}
                         </span>
-                        <span className="civ-campaign-tick">t{campaign.ended_tick}</span>
+                        <span className="civ-campaign-tick">
+                          {t('civ.history.tick', { tick: campaign.ended_tick })}
+                        </span>
                       </div>
                     )
                   })}
@@ -573,23 +663,27 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Governments &amp; Leaders</h3>
-            {governments.length === 0 && <div className="civ-empty">No governments yet</div>}
+            <h3>{t('civ.gov.title')}</h3>
+            {governments.length === 0 && <div className="civ-empty">{t('civ.gov.empty')}</div>}
             {governments.map((g) => (
               <div key={g.lineage_id} className="civ-row">
                 <span className="civ-row-head">
-                  {GOV_EMOJI[g.kind] ?? ''} {g.kind}
+                  {GOV_EMOJI[g.kind] ?? ''} {simLabel('government', g.kind)}
                 </span>
                 <span className="civ-row-sub">{lineageById(g.lineage_id)}</span>
-                {g.leader_id && <span className="civ-row-tag">leader: {orgById(g.leader_id)}</span>}
+                {g.leader_id && (
+                  <span className="civ-row-tag">
+                    {t('civ.gov.leader', { name: orgById(g.leader_id) ?? '' })}
+                  </span>
+                )}
                 {typeof g.treasury === 'number' && (
-                  <span className="civ-row-tag">treasury: {g.treasury}</span>
+                  <span className="civ-row-tag">{t('civ.gov.treasury', { n: g.treasury })}</span>
                 )}
                 {g.laws && g.laws.length > 0 && (
                   <div className="civ-row-laws">
                     {g.laws.map((l) => (
                       <span key={l} className="civ-chip">
-                        {l}
+                        {simLabel('law', l)}
                       </span>
                     ))}
                   </div>
@@ -599,19 +693,21 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Religions</h3>
-            {religions.length === 0 && <div className="civ-empty">No religions founded yet</div>}
+            <h3>{t('civ.religion.title')}</h3>
+            {religions.length === 0 && <div className="civ-empty">{t('civ.religion.empty')}</div>}
             {religions.map((r) => {
               const lineageId = r.founder_lineage ?? r.lineage_id ?? ''
               const canEnterTemple = hasEnterableBuilding(world, TEMPLE_BUILDINGS, lineageId)
               return (
                 <div key={r.id} className="civ-row">
                   <span className="civ-row-head">
-                    {'\u{271D}\u{FE0F}'} {r.name}
+                    {'\u{271D}\u{FE0F}'} {religionName(r.name)}
                   </span>
-                  <span className="civ-row-sub">{r.kind}</span>
-                  <span className="civ-row-tag">{r.adherents} adherents</span>
-                  <span className="civ-row-tag">founded by {lineageById(lineageId)}</span>
+                  <span className="civ-row-sub">{simLabel('religion', r.kind)}</span>
+                  <span className="civ-row-tag">{tn('civ.religion.adherents', r.adherents ?? 0)}</span>
+                  <span className="civ-row-tag">
+                    {t('civ.religion.foundedBy', { tribe: lineageById(lineageId) })}
+                  </span>
                   {canEnterTemple ? (
                     <button
                       className="civ-row-link"
@@ -620,10 +716,10 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                         onClose()
                       }}
                     >
-                      enter temple →
+                      {t('civ.religion.enterTemple')}
                     </button>
                   ) : (
-                    <span className="civ-row-tag">temple unavailable</span>
+                    <span className="civ-row-tag">{t('civ.religion.noTemple')}</span>
                   )}
                 </div>
               )
@@ -631,77 +727,87 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Conflicts</h3>
-            {battles.length === 0 && <div className="civ-empty">No battles yet</div>}
+            <h3>{t('civ.conflict.title')}</h3>
+            {battles.length === 0 && <div className="civ-empty">{t('civ.conflict.empty')}</div>}
             {battles.map((b) => {
               const atk = b.attackers.map(lineageById).join(', ')
               const def = b.defenders.map(lineageById).join(', ')
               const outcomeLabel =
                 b.outcome === 'AttackerVictory'
-                  ? `${atk} won`
+                  ? t('civ.conflict.won', { side: atk })
                   : b.outcome === 'DefenderVictory'
-                    ? `${def} won`
+                    ? t('civ.conflict.won', { side: def })
                     : b.outcome === 'Stalemate'
-                      ? 'stalemate'
+                      ? t('civ.conflict.stalemate')
                       : null
               return (
                 <div key={b.id} className="civ-row">
                   <span className="civ-row-head">
-                    {'\u{2694}\u{FE0F}'} {b.scale}
+                    {'\u{2694}\u{FE0F}'} {keyed(SCALE_KEYS, b.scale)}
                   </span>
                   <span className="civ-row-sub">
-                    {atk} vs {def}
+                    {t('civ.conflict.vs', { attackers: atk, defenders: def })}
                   </span>
                   <span className="civ-row-tag">
-                    {'\u{1F480}'} {b.casualties_a + b.casualties_d}
+                    {'\u{1F480}'} {fmtNumber(b.casualties_a + b.casualties_d)}
                   </span>
-                  <span className="civ-row-tag">{b.ended ? (outcomeLabel ?? 'ended') : 'ongoing'}</span>
+                  <span className="civ-row-tag">
+                    {b.ended ? (outcomeLabel ?? t('civ.conflict.ended')) : t('civ.conflict.ongoing')}
+                  </span>
                 </div>
               )
             })}
           </section>
 
           <section className="civ-section">
-            <h3>Diplomacy</h3>
-            {treaties.length === 0 && <div className="civ-empty">No treaties yet</div>}
-            {treaties.map((t, i) => (
-              <div key={`${t.a_lineage}-${t.b_lineage}-${i}`} className="civ-row">
+            <h3>{t('civ.diplomacy.title')}</h3>
+            {treaties.length === 0 && <div className="civ-empty">{t('civ.diplomacy.empty')}</div>}
+            {treaties.map((treaty, i) => (
+              <div key={`${treaty.a_lineage}-${treaty.b_lineage}-${i}`} className="civ-row">
                 <span className="civ-row-head">
-                  {'\u{1F91D}'} {lineageById(t.a_lineage)} &amp; {lineageById(t.b_lineage)}
+                  {'\u{1F91D}'} {lineageById(treaty.a_lineage)} &amp; {lineageById(treaty.b_lineage)}
                 </span>
-                <span className="civ-row-tag">{(t.kind ?? 'treaty').replace(/_/g, ' ')}</span>
+                <span className="civ-row-tag">
+                  {treaty.kind ? simLabel('treaty', treaty.kind) : t('civ.diplomacy.treaty')}
+                </span>
               </div>
             ))}
           </section>
 
           <section className="civ-section">
-            <h3>Buildings</h3>
-            {buildingRows.length === 0 && <div className="civ-empty">Nothing built yet</div>}
+            <h3>{t('civ.buildings.title')}</h3>
+            {buildingRows.length === 0 && <div className="civ-empty">{t('civ.buildings.empty')}</div>}
             <div className="civ-build-grid">
               {buildingRows.map(([kind, count]) => (
                 <span key={kind} className="civ-chip">
-                  {kind}: {count}
+                  {simLabel('building', kind)}: {fmtNumber(count)}
                 </span>
               ))}
-              {buildingOverflow > 0 && <span className="civ-chip">+{buildingOverflow} more</span>}
+              {buildingOverflow > 0 && (
+                <span className="civ-chip">{t('civ.more', { n: buildingOverflow })}</span>
+              )}
             </div>
           </section>
 
           <section className="civ-section">
-            <h3>Settlements</h3>
+            <h3>{t('civ.settlements.title')}</h3>
             {!world.settlements?.length ? (
-              <div className="civ-empty">No stable settlements yet</div>
+              <div className="civ-empty">{t('civ.settlements.empty')}</div>
             ) : (
               world.settlements.map((settlement) => (
                 <div key={settlement.lineage_id} className="civ-row">
                   <span className="civ-row-head">
                     {settlement.tier >= 5 ? '🏙️' : settlement.tier >= 3 ? '🏘️' : '⛺'} {settlement.name}
                   </span>
-                  <span className="civ-row-sub">{settlement.tier_name}</span>
-                  <span className="civ-row-tag">{settlement.population} people</span>
-                  <span className="civ-row-tag">{settlement.building_count} completed buildings</span>
+                  <span className="civ-row-sub">{simLabel('settlement', settlement.tier_name)}</span>
+                  <span className="civ-row-tag">{tn('civ.people', settlement.population)}</span>
+                  <span className="civ-row-tag">
+                    {tn('civ.settlements.buildings', settlement.building_count)}
+                  </span>
                   {settlement.capacity > 0 && (
-                    <span className="civ-row-tag">capacity {settlement.capacity}</span>
+                    <span className="civ-row-tag">
+                      {t('civ.settlements.capacity', { n: settlement.capacity })}
+                    </span>
                   )}
                 </div>
               ))
@@ -709,24 +815,32 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Agriculture</h3>
+            <h3>{t('civ.farms.title')}</h3>
             {!world.farms?.length ? (
-              <div className="civ-empty">No fields have been plowed yet</div>
+              <div className="civ-empty">{t('civ.farms.empty')}</div>
             ) : (
               <>
                 <div className="civ-build-grid">
-                  <span className="civ-chip">🌱 growing: {farmSummary.stages.growing}</span>
-                  <span className="civ-chip">🌾 harvest ready: {farmSummary.stages.mature}</span>
-                  <span className="civ-chip">🟫 fallow: {farmSummary.stages.fallow}</span>
+                  <span className="civ-chip">
+                    🌱 {t('civ.farms.growing', { n: farmSummary.stages.growing })}
+                  </span>
+                  <span className="civ-chip">
+                    🌾 {t('civ.farms.ready', { n: farmSummary.stages.mature })}
+                  </span>
+                  <span className="civ-chip">
+                    🟫 {t('civ.farms.fallow', { n: farmSummary.stages.fallow })}
+                  </span>
                   {farmSummary.projectedYield > 0 && (
-                    <span className="civ-chip">projected food: {farmSummary.projectedYield}</span>
+                    <span className="civ-chip">
+                      {t('civ.farms.projected', { n: farmSummary.projectedYield })}
+                    </span>
                   )}
                 </div>
                 {farmSummary.crops.length > 0 && (
                   <div className="civ-build-grid" style={{ marginTop: 8 }}>
                     {farmSummary.crops.map(([crop, count]) => (
                       <span key={crop} className="civ-chip">
-                        {crop}: {count} {count === 1 ? 'field' : 'fields'}
+                        {tn('civ.farms.crop', count, { crop: simLabel('good', crop) })}
                       </span>
                     ))}
                   </div>
@@ -736,19 +850,19 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Goods in Circulation</h3>
-            {goodsTotalRows.length === 0 && <div className="civ-empty">No crafted goods held yet</div>}
+            <h3>{t('civ.goods.title')}</h3>
+            {goodsTotalRows.length === 0 && <div className="civ-empty">{t('civ.goods.empty')}</div>}
             <div className="civ-build-grid">
               {goodsTotalRows.map(([kind, total]) => (
-                <span key={kind} className="civ-chip" title={kind.replace(/_/g, ' ')}>
-                  {GOOD_EMOJI[kind] ?? '🧰'} {kind.replace(/_/g, ' ')}: {total}
+                <span key={kind} className="civ-chip" title={simLabel('good', kind)}>
+                  {GOOD_EMOJI[kind] ?? '🧰'} {simLabel('good', kind)}: {fmtNumber(total)}
                 </span>
               ))}
-              {goodsOverflow > 0 && <span className="civ-chip">+{goodsOverflow} more</span>}
+              {goodsOverflow > 0 && <span className="civ-chip">{t('civ.more', { n: goodsOverflow })}</span>}
             </div>
             {goodsTotalRows.length > 0 && (
               <div style={{ marginTop: 8, fontSize: 11, color: '#888' }}>
-                by lineage:
+                {t('civ.goods.byLineage')}
                 <div style={{ marginTop: 4 }}>
                   {[...goodsByLineage.entries()]
                     .sort((a, b) => {
@@ -768,7 +882,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                       return (
                         <div key={lid} className="civ-row" style={{ padding: '2px 0' }}>
                           <span className="civ-row-head">{lname}</span>
-                          <span className="civ-row-tag">{total} held</span>
+                          <span className="civ-row-tag">{t('civ.goods.held', { n: total })}</span>
                           <span className="civ-row-sub">{top}</span>
                         </div>
                       )
@@ -779,53 +893,50 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Recent Books</h3>
-            {books.length === 0 && <div className="civ-empty">No books written yet</div>}
+            <h3>{t('civ.books.title')}</h3>
+            {books.length === 0 && <div className="civ-empty">{t('civ.books.empty')}</div>}
             {books.slice(0, 6).map((b) => (
               <div key={b.id} className="civ-row">
                 <span className="civ-row-head">
                   {'\u{1F4D6}'} {b.title}
                 </span>
                 <span className="civ-row-sub">
-                  {b.author_name} on {b.topic}
+                  {t('civ.books.byline', { author: b.author_name ?? '', topic: keyed(TOPIC_KEYS, b.topic) })}
                 </span>
-                <span className="civ-row-tag">{b.copies} copies</span>
+                <span className="civ-row-tag">{tn('civ.books.copies', b.copies ?? 0)}</span>
               </div>
             ))}
           </section>
 
           <section className="civ-section">
-            <h3>Artworks</h3>
-            {artworks.length === 0 && <div className="civ-empty">Nothing made yet</div>}
+            <h3>{t('civ.art.title')}</h3>
+            {artworks.length === 0 && <div className="civ-empty">{t('civ.art.empty')}</div>}
             {artworks.slice(0, 6).map((a) => (
               <div key={a.id} className="civ-row">
                 <span className="civ-row-head">
                   {ART_EMOJI[a.kind] ?? ''} {a.title}
                 </span>
-                <span className="civ-row-sub">by {a.creator_name}</span>
+                <span className="civ-row-sub">{t('civ.art.by', { name: a.creator_name })}</span>
               </div>
             ))}
           </section>
 
           <section className="civ-section">
-            <h3>Trade Network</h3>
+            <h3>{t('civ.trade.title')}</h3>
             {tradeRoutes.length === 0 && caravans.length === 0 ? (
-              <div className="civ-empty">
-                No routes yet — Iron-era merchants need two established settlements, currency, navigation, and
-                a trade workspace.
-              </div>
+              <div className="civ-empty">{t('civ.trade.empty')}</div>
             ) : (
               <>
                 <div className="civ-row">
                   <span className="civ-row-head">
-                    {'\u{1F6E4}\u{FE0F}'} {tradeRoutes.length} route{tradeRoutes.length === 1 ? '' : 's'}
+                    {'\u{1F6E4}\u{FE0F}'} {tn('civ.trade.routes', tradeRoutes.length)}
                   </span>
-                  <span className="civ-row-tag">
-                    {caravans.length} caravan{caravans.length === 1 ? '' : 's'} traveling
-                  </span>
+                  <span className="civ-row-tag">{tn('civ.trade.caravans', caravans.length)}</span>
                   <span className="civ-row-sub">
-                    {tradeRoutes.reduce((sum, route) => sum + route.deliveries, 0)} deliveries ·{' '}
-                    {tradeRoutes.reduce((sum, route) => sum + route.volume, 0)} goods moved
+                    {t('civ.trade.totals', {
+                      deliveries: tradeRoutes.reduce((sum, route) => sum + route.deliveries, 0),
+                      moved: tradeRoutes.reduce((sum, route) => sum + route.volume, 0),
+                    })}
                   </span>
                 </div>
                 {[...tradeRoutes]
@@ -847,10 +958,16 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                           {lineageById(route.lineage_a)} ↔ {lineageById(route.lineage_b)}
                         </span>
                         <span className="civ-row-sub">
-                          {distance} tiles · {route.deliveries} delivered · {route.volume} volume
+                          {t('civ.trade.route', {
+                            distance,
+                            delivered: route.deliveries,
+                            volume: route.volume,
+                          })}
                         </span>
                         {routeCaravans.length > 0 && (
-                          <span className="civ-row-tag">{routeCaravans.length} en route</span>
+                          <span className="civ-row-tag">
+                            {t('civ.trade.enRoute', { n: routeCaravans.length })}
+                          </span>
                         )}
                       </div>
                     )
@@ -869,11 +986,15 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                           {lineageById(caravan.receiver_lineage)}
                         </span>
                         <span className="civ-row-sub">
-                          {GOOD_EMOJI[caravan.cargo] ?? '\u{1F4E6}'} {caravan.amount}{' '}
-                          {caravan.cargo.replace(/_/g, ' ')} · {Math.round(progress * 100)}%
+                          {GOOD_EMOJI[caravan.cargo] ?? '\u{1F4E6}'}{' '}
+                          {t('civ.trade.cargo', {
+                            amount: caravan.amount,
+                            good: simLabel('good', caravan.cargo),
+                          })}{' '}
+                          · {Math.round(progress * 100)}%
                         </span>
                         <span className="civ-row-tag">
-                          {eta === 0 ? 'ready to unload' : `${eta} ticks away`}
+                          {eta === 0 ? t('civ.trade.unloading') : tn('civ.trade.ticksAway', eta)}
                         </span>
                       </div>
                     )
@@ -883,29 +1004,28 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Recent Trades</h3>
+            <h3>{t('civ.trades.title')}</h3>
             {(() => {
               const trades = world.trades ?? []
               if (trades.length === 0) {
-                return <div className="civ-empty">No trades yet (needs barter / currency)</div>
+                return <div className="civ-empty">{t('civ.trades.empty')}</div>
               }
               const nameById = new Map<string, string>()
               for (const o of world.organisms) nameById.set(o.id, o.name)
-              return trades.slice(0, 6).map((t, i) => {
-                const buyer = nameById.get(t.buyer_id) ?? t.buyer_id.slice(0, 6)
-                const seller = nameById.get(t.seller_id) ?? t.seller_id.slice(0, 6)
+              return trades.slice(0, 6).map((trade, i) => {
+                const buyer = nameById.get(trade.buyer_id) ?? trade.buyer_id.slice(0, 6)
+                const seller = nameById.get(trade.seller_id) ?? trade.seller_id.slice(0, 6)
                 return (
-                  <div key={`${t.tick}-${i}`} className="civ-row">
+                  <div key={`${trade.tick}-${i}`} className="civ-row">
                     <span className="civ-row-head">
                       {'\u{1F4B0}'} {seller} → {buyer}
                     </span>
                     <span className="civ-row-sub">
-                      {GOOD_EMOJI[t.good] ?? ''} {t.amount} {t.good.replace(/_/g, ' ')}
+                      {GOOD_EMOJI[trade.good] ?? ''}{' '}
+                      {t('civ.trade.cargo', { amount: trade.amount, good: simLabel('good', trade.good) })}
                     </span>
-                    <span className="civ-row-tag">
-                      {t.price} coin{t.price === 1 ? '' : 's'}
-                    </span>
-                    <span className="civ-row-tag">tick {t.tick}</span>
+                    <span className="civ-row-tag">{tn('civ.trades.coins', trade.price)}</span>
+                    <span className="civ-row-tag">{t('civ.tick', { tick: trade.tick })}</span>
                   </div>
                 )
               })
@@ -913,11 +1033,11 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
           </section>
 
           <section className="civ-section">
-            <h3>Headlines</h3>
-            {headlines.length === 0 && <div className="civ-empty">No notable events yet</div>}
+            <h3>{t('civ.headlines.title')}</h3>
+            {headlines.length === 0 && <div className="civ-empty">{t('civ.headlines.empty')}</div>}
             {headlines.slice(0, 12).map((h, i) => (
               <div key={`${h.tick}-${i}`} className="civ-headline">
-                <span className="civ-headline-tick">tick {h.tick}</span>
+                <span className="civ-headline-tick">{t('civ.tick', { tick: h.tick })}</span>
                 <span className="civ-headline-text">{h.text}</span>
               </div>
             ))}

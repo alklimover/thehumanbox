@@ -1,3 +1,5 @@
+import { fmtNumber } from '../../../i18n'
+import { simLabel } from '../../../i18n/sim'
 import type { WorldState } from '../../../shared/types'
 
 export function TraitAverages({ organisms }: { organisms: WorldState['organisms'] }) {
@@ -24,11 +26,13 @@ export function TraitAverages({ organisms }: { organisms: WorldState['organisms'
         const v = (sums[k] ?? 0) / n
         return (
           <div key={k} className="trait-row">
-            <span className="trait-label">{k.replace('_', ' ')}</span>
+            <span className="trait-label">{simLabel('attribute', k)}</span>
             <div className="trait-bar-wrap">
               <div className="trait-bar" style={{ width: `${Math.round(v * 100)}%` }} />
             </div>
-            <span className="trait-val">{v.toFixed(2)}</span>
+            <span className="trait-val">
+              {fmtNumber(v, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
           </div>
         )
       })}

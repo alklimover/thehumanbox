@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { generationCounts } from '../../../game/model/generation-counts'
+import { fmtNumber, t } from '../../../i18n'
 import type { OrganismState } from '../../../shared/types'
 
 /** How many living people there are in each generation, as bars. */
@@ -8,7 +9,7 @@ export function GenerationBars({ organisms }: { organisms: OrganismState[] }) {
   if (rows.length === 0) {
     return (
       <div style={{ color: '#444', fontSize: 11, textAlign: 'center', padding: '12px 0' }}>
-        nobody is alive
+        {t('stats.nobodyAlive')}
       </div>
     )
   }
@@ -17,7 +18,7 @@ export function GenerationBars({ organisms }: { organisms: OrganismState[] }) {
     <div className="gen-bars" style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {rows.map((r) => (
         <div key={r.generation} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
-          <span style={{ width: 52, color: '#888' }}>gen {r.generation}</span>
+          <span style={{ width: 52, color: '#888' }}>{t('stats.generation', { n: r.generation })}</span>
           <span style={{ flex: 1, height: 8, background: '#1a1a1a', borderRadius: 2, overflow: 'hidden' }}>
             <span
               style={{
@@ -28,7 +29,7 @@ export function GenerationBars({ organisms }: { organisms: OrganismState[] }) {
               }}
             />
           </span>
-          <span style={{ width: 32, textAlign: 'right', color: '#bbb' }}>{r.living}</span>
+          <span style={{ width: 32, textAlign: 'right', color: '#bbb' }}>{fmtNumber(r.living)}</span>
         </div>
       ))}
     </div>

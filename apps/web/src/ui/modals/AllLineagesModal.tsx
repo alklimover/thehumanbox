@@ -1,15 +1,29 @@
 import type { OrganismState, TribePeril } from '../../shared/types'
 import { useUIStore } from '../../state/store'
-import { factsLine, type LineageFacts } from '../../game/model/lineage-facts'
+import type { LineageFacts } from '../../game/model/lineage-facts'
 import { PERIL_HELP, remainingLine, visibleLineages } from '../../game/model/tribe-peril'
 import { lineageColor, lineageWord } from '../../shared/constants'
 import { Modal } from './Modal'
+import { t } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
 
 interface LineageInfo {
   count: number
   minGen: number
   maxGen: number
   orgs: OrganismState[]
+}
+
+/** "industrial age · empire · ✧-10", leaving out what is not known. `facts` holds the simulation's ids. */
+function factsLine(f: LineageFacts | undefined): string {
+  if (!f) return ''
+  return [
+    f.era ? t('lineages.era', { era: simLabel('era', f.era) }) : '',
+    f.government ? simLabel('government', f.government) : '',
+    f.faith !== undefined ? `✧${f.faith}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
 }
 
 interface Props {
@@ -31,10 +45,10 @@ export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, 
   )
 
   return (
-    <Modal open onClose={onClose} className="lang-modal" title="All lineages" hideTitle>
+    <Modal open onClose={onClose} className="lang-modal" title={t('lineages.title')} hideTitle>
       <div className="lang-modal-header">
-        <span className="lang-modal-title">ALL LINEAGES ({Object.keys(lineages).length})</span>
-        <button aria-label="Close" className="close-btn" onClick={onClose}>
+        <span className="lang-modal-title">{t('lineages.heading', { n: Object.keys(lineages).length })}</span>
+        <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
@@ -58,7 +72,12 @@ export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, 
               }}
               className={'lineage-row all-lineages-row' + (cause ? ' peril' : '')}
               title={
-                cause ? `On the brink: ${remainingLine(info.count)}, ${PERIL_HELP[cause].reason}` : undefined
+                cause
+                  ? t('lineages.brink', {
+                      remaining: remainingLine(info.count),
+                      reason: PERIL_HELP[cause].reason,
+                    })
+                  : undefined
               }
             >
               <span className="lineage-dot" style={{ background: lineageColor(lid) }} />
@@ -68,8 +87,9 @@ export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, 
                 {info.count}
               </span>
               <span className="lineage-gen">
-                g{info.minGen}
-                {info.maxGen > info.minGen ? `–${info.maxGen}` : ''}
+                {t('lineages.gen', {
+                  gen: `${info.minGen}${info.maxGen > info.minGen ? `–${info.maxGen}` : ''}`,
+                })}
               </span>
               <span className="lineage-strat">
                 {lineageWords?.[lid]?.home ||

@@ -1,3 +1,4 @@
+import { t } from '../../../i18n'
 import type { WorldState } from '../../../shared/types'
 import { DAY_LENGTH } from './constants'
 
@@ -13,14 +14,14 @@ export function DiscoveryTimeline({ events }: { events: WorldState['events'] }) 
     .slice(-20)
 
   if (milestones.length === 0) {
-    return <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>no discoveries yet</div>
+    return <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>{t('stats.noDiscoveries')}</div>
   }
 
   return (
     <div className="stats-timeline">
       {milestones.map((e, i) => (
         <div key={i} className="stats-timeline-row">
-          <span className="stats-tick">d{Math.floor(e.tick / DAY_LENGTH)}</span>
+          <span className="stats-tick">{t('stats.day', { n: Math.floor(e.tick / DAY_LENGTH) })}</span>
           <span className="stats-actor">{e.actor}</span>
           <span className="stats-detail">{e.detail}</span>
         </div>

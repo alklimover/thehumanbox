@@ -1,15 +1,19 @@
 import type { Message, PluralForms } from '../define'
+import { civ } from './civ'
 import { common } from './common'
 import { dialogs } from './dialogs'
 import { errors } from './errors'
 import { header } from './header'
 import { hud } from './hud'
+import { life } from './life'
+import { modals } from './modals'
 import { onboarding } from './onboarding'
 import { people } from './people'
 import { scenarios } from './scenarios'
 import { settings } from './settings'
 import { shortcuts } from './shortcuts'
 import { splash } from './splash'
+import { stats } from './stats'
 import { status } from './status'
 import { toasts } from './toasts'
 import { tools } from './tools'
@@ -17,17 +21,21 @@ import { toolTips } from './tools-tips'
 
 /** Every area of the interface. Add a new area here; its keys join MessageKey. */
 const AREAS = {
+  civ,
   common,
   dialogs,
   errors,
   header,
   hud,
+  life,
+  modals,
   onboarding,
   people,
   scenarios,
   settings,
   shortcuts,
   splash,
+  stats,
   status,
   toasts,
   tools,

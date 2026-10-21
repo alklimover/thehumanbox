@@ -204,3 +204,34 @@
 | reason / cause (concepts) | повод / причина | |
 | duty / debt (concepts) | обязанность / долг | |
 | animal names | как в доке | те же слова, что у инструментов (`catalog/tools.ts`) |
+
+### Окна: цивилизация, статистика, люди, летописи
+
+| English | Русский | Заметки |
+|---|---|---|
+| campaign (lineage guidance) | курс | «Курсы племён», «сменить курс…», «курс задан: разведка»; «Player guidance» — «Ваша воля» |
+| aligned actions | действия по курсу | «действий по курсу: 3/10» |
+| outcome (campaign) | выполнен / время вышло / сменён / провален | completed / expired / redirected / failed |
+| lineage (column, list) | племя | «Все племена», колонка «Племя»; узкие колонки: Эпоха, Люди, Следующая, Власть, Валюта |
+| government (section) | власть | «Власть и правители»; leader → правитель, treasury → казна |
+| battle scale | стычка / набег / осада / битва / война | Skirmish / Raid / Siege / Battle / War |
+| stalemate / won | ничья / победа: … | «победа: Lupif» — имя в именительном |
+| adherents | последователи | |
+| fallow / harvest ready | под паром / созрело | |
+| goods in circulation | товары в обороте | |
+| book topic | тема книги | fiction → проза, biography → жизнеописание, economics → хозяйство, law → право |
+| route / delivery / caravan en route | торговый путь / доставка / в пути | |
+| legend (stats) | легенда | заголовки: «Падает звезда», «Гора пробуждается», «Гнев бога» … |
+| wealth gap | разрыв в богатстве | even / uneven / stark → небольшой / заметный / резкий |
+| relation status | союз / нейтралитет / соперники | ally / neutral / rivals |
+| emotional state (life story) | настроение | devastated → опустошённость, desperately lonely → отчаянное одиночество, terrified → ужас, lonely → одиночество, restless → беспокойство, starving → голод, stable → спокойствие |
+| life event category | — | love → любовь, loss → утрата, trauma → потрясение, witnessed → увиденное, partnership → союз, graduated → выучка, religion → вера, betrayal → предательство |
+| memory kind | — | core → главное, episode → случай, fact → знание, bond → связь, place → место, dream → сон |
+| conversation kinds | первая встреча / разговор пары / прощание / болтовня / сплетни / радостная весть / ссора | courtship / bonded / farewell / chat / gossip / excited / argue |
+| notable (lens) | выдающиеся | «выберите, кого показать» |
+| ancestors (family tree) | предки | «живых: 12 · предков: 30 · поколений: 4» |
+| infidelity | измена | |
+| abbreviations in tight places | дн. (дней), пок. / п. (поколение) | «12 дн. · п.3»; в просторных местах пишем полностью |
+| quotes around speech / thought | «…» | |
+| difficulty | сложность | calm / normal / harsh → спокойная / обычная / суровая |
+| scenarios (window) | сцены | как в меню «✦ сцены»; кнопка — «начать» |
