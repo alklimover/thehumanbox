@@ -4,7 +4,14 @@
 import { getLocale } from '../locale'
 import { SIM_TABLES, type SimDomain } from '../sim/tables'
 import { milestoneDescription } from '../sim/milestone'
-import { makeSimText, type Sex, type SimTextChannel, type SimTextContext, type SimTextTable } from './engine'
+import {
+  genderize,
+  makeSimText,
+  type Sex,
+  type SimTextChannel,
+  type SimTextContext,
+  type SimTextTable,
+} from './engine'
 import { actions } from './ru/actions'
 import { events } from './ru/events'
 import { headlines } from './ru/headlines'
@@ -41,6 +48,34 @@ function labelId(domain: string, id: string): string | null {
 
 const ru = makeSimText(RU_SIM_TEXT_TABLES, labelId)
 
+// A person's reflection (Organism::reflect_internally in organism/organism/inner.rs):
+// "{mood}{, a <aspiration> at heart}: {frame} — {memory, lowercased}" or
+// "I am {name}{, a <aspiration> at heart}, here in the world". Its parts come
+// from several places, so it is taken apart here rather than by a template.
+const REFLECTION =
+  /^(.+?)(?:, a ([a-z]+) at heart)?: (I remember|I think of them|I haven't forgotten|I know this|that place|I dreamt) — (.+)$/s
+const SELF = /^I am (.+?)(?:, a ([a-z]+) at heart)?, here in the world$/
+const FRAME: Record<string, string> = {
+  'I remember': 'я помню',
+  'I think of them': 'я думаю о них',
+  "I haven't forgotten": 'я не [забыл|забыла]',
+  'I know this': 'я знаю',
+  'that place': 'то место',
+  'I dreamt': 'мне снилось',
+}
+
+function reflection(text: string, ctx: SimTextContext | undefined): string | null {
+  const heart = (asp: string | undefined) => (asp ? `, в душе ${labelId('aspiration', asp) ?? asp}` : '')
+  const self = SELF.exec(text)
+  if (self) return `я — ${self[1]}${heart(self[2])}, здесь, в этом мире`
+  const m = REFLECTION.exec(text)
+  if (!m) return null
+  const mood = ru.part('thought', m[1], ctx)
+  if (mood === null) return null
+  const memory = ru.part('memory', m[4], ctx) ?? m[4]
+  return `${mood}${heart(m[2])}: ${genderize(FRAME[m[3]], ctx?.sex)} — ${memory}`
+}
+
 /** The text to show for something the simulation wrote; English stays as it is. */
 export function simText(
   channel: SimTextChannel,
@@ -48,12 +83,16 @@ export function simText(
   ctx?: SimTextContext,
 ): string {
   if (getLocale() === 'en') return text ?? ''
+  if (text && channel === 'thought') {
+    const r = reflection(text, ctx)
+    if (r) return r
+  }
   return ru.text(channel, text, ctx)
 }
 
 /** Whether the Russian tables know a text (for the untranslated-text check). */
 export function hasSimText(channel: SimTextChannel, text: string): boolean {
-  return ru.knows(channel, text)
+  return (channel === 'thought' && reflection(text, {}) !== null) || ru.knows(channel, text)
 }
 
 /** The person's sex as simText wants it. */

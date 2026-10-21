@@ -95,12 +95,21 @@ const CACHE_LIMIT = 20_000
 /** A translator over a set of tables. Results are cached per channel, sex and text. */
 export function makeSimText(tables: readonly SimTextTable[], label: IdLabeler) {
   const exact = new Map<string, SimTextEntry>()
+  // Literals by their folded form: inside composed lines the simulation may
+  // lowercase a phrase and drop its period ("I remember — the world is real").
+  const folded = new Map<string, SimTextEntry>()
+  const fold = (t: string) =>
+    t
+      .toLowerCase()
+      .replace(/[.!]+$/, '')
+      .trim()
   const byHead = new Map<string, Template[]>()
   const loose: Template[] = []
   for (const table of tables) {
     for (const [key, entry] of Object.entries(table)) {
       if (!key.includes('{')) {
         exact.set(key, entry)
+        if (!folded.has(fold(key))) folded.set(fold(key), entry)
         continue
       }
       const t = compileTemplate(key, entry)
@@ -164,6 +173,14 @@ export function makeSimText(tables: readonly SimTextTable[], label: IdLabeler) {
       const ru = translate(text[0].toLowerCase() + text.slice(1), channel, ctx, depth)
       if (ru) return ru[0].toUpperCase() + ru.slice(1)
     }
+    if (depth > 0) {
+      const f = folded.get(fold(text))
+      const ru = f === undefined ? undefined : pick(f, channel)
+      if (ru !== undefined) {
+        const out = genderize(ru, ctx.sex).replace(/[.!]+$/, '')
+        return /^[a-z]/.test(text) && !/^I\b/.test(text) ? out[0].toLowerCase() + out.slice(1) : out
+      }
+    }
     return null
   }
 
@@ -179,6 +196,10 @@ export function makeSimText(tables: readonly SimTextTable[], label: IdLabeler) {
       if (cache.size >= CACHE_LIMIT) cache.clear()
       if (!ctx.sexOf) cache.set(key, ru)
       return ru
+    },
+    /** A text inside a composed line: matched like a nested placeholder value. */
+    part(channel: SimTextChannel, text: string, ctx: SimTextContext = {}): string | null {
+      return translate(text, channel, ctx, 1)
     },
     /** Whether a table knows the text (for coverage checks and the dev check). */
     knows(channel: SimTextChannel, text: string): boolean {

@@ -52,3 +52,13 @@ describe('simText engine', () => {
     )
   })
 })
+
+describe('composed lines', () => {
+  it('finds a lowercased phrase without its period', () => {
+    const t = makeSimText(
+      [{ 'The world is real and I am part of it.': 'Мир настоящий, и я — его часть.' }],
+      () => null,
+    )
+    expect(t.part('memory', 'the world is real and i am part of it')).toBe('мир настоящий, и я — его часть')
+  })
+})

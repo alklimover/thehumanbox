@@ -51,6 +51,11 @@ describe('Russian simulation text tables', () => {
     expect(bad).toEqual([])
   })
 
+  it('spell out both forms where the feminine changes the stem («принёс» → «принесла»)', () => {
+    // A bare ending after a word with «ё» gives «принёсла», «прошёлла».
+    expect(texts.filter((t) => /[ёЁ][а-яё]*\[(?:\|[^\]]*|[а-я]+)\]/.test(t))).toEqual([])
+  })
+
   it('write Russian with balanced gender markup', () => {
     const bad = texts.filter(
       (t) =>
