@@ -38,6 +38,7 @@ const WORLD_TABLES: SimDomain[] = [
   'settlement',
   'strategy',
   'milestone',
+  'festival',
 ]
 
 const missing = (domain: SimDomain, ids: string[]) => ids.filter((id) => !(id in SIM_TABLES[domain]))
@@ -87,6 +88,19 @@ describe('world and economy names', () => {
     ).toEqual([])
     const techNames = [...rust('tech/tech_tree/ancient.rs').matchAll(/name: "([^"]+)"/g)].map((m) => m[1])
     expect(missing('discovery', techNames)).toEqual([])
+  })
+
+  it('name every seasonal festival, and nothing else', () => {
+    const source = rust('civ/society/festivals.rs')
+    const seasons = source.slice(source.indexOf('fn festival_for_season('), source.indexOf('impl Simulation'))
+    const festivals = [...seasons.matchAll(/FestivalKind::\w+, "([^"]+)"/g)].map((m) => m[1])
+    expect(festivals).toHaveLength(4)
+    expect(missing('festival', festivals)).toEqual([])
+    expect(Object.keys(SIM_TABLES.festival).sort()).toEqual([...festivals].sort())
+    expect(simLabel('festival', 'Harvest Feast')).toBe('Harvest Feast')
+    setLocaleForTests('ru')
+    expect(simLabel('festival', 'Harvest Feast')).toBe('праздник урожая')
+    expect(simLabel('festival', 'First Feast')).toBe('First Feast')
   })
 
   it('keep each milestone line word for word', () => {
