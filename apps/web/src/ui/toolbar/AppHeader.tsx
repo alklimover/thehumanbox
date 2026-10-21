@@ -159,7 +159,10 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
           })()}
         {world?.current_era && world.current_era !== 'genesis' && world.current_era !== 'equilibrium' && (
           <Tooltip
-            tip={tip(t('header.era', { era: simLabelAsSent('era', world.current_era) }), t('header.era.body'))}
+            tip={tip(
+              t('header.era', { era: simLabelAsSent('era', world.current_era) }),
+              t('header.era.body'),
+            )}
           >
             <span className={clsx('hdr-chip', 'era-badge', `era-${world.current_era}`)}>
               {simLabelAsSent('era', world.current_era)}

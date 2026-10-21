@@ -76,10 +76,19 @@ describe('territory card trade line', () => {
 describe('territory card cargo', () => {
   afterEach(() => setLocaleForTests('en'))
 
-  it('names a practice counter carried as cargo in the player\'s language', () => {
+  it("names a practice counter carried as cargo in the player's language", () => {
     const w = {
       trade_routes: [{ id: 1, lineage_a: 'red', lineage_b: 'blue', volume: 3, deliveries: 1 }],
-      caravans: [{ id: 7, route_id: 1, sender_lineage: 'blue', receiver_lineage: 'red', cargo: 'play cello', unit_price: 4 }],
+      caravans: [
+        {
+          id: 7,
+          route_id: 1,
+          sender_lineage: 'blue',
+          receiver_lineage: 'red',
+          cargo: 'play cello',
+          unit_price: 4,
+        },
+      ],
     } as unknown as Pick<WorldState, 'trade_routes' | 'caravans'>
     expect(tradeOfTribe(w, 'red')).toContain('buying play cello at 4 each')
     setLocaleForTests('ru')

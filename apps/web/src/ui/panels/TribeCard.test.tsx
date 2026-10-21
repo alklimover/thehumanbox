@@ -86,7 +86,7 @@ describe('TribeCard', () => {
     expect(host.querySelector('.tribe-card-rename')?.textContent).toContain('Bren')
   })
 
-  it('names the festival under way in the player\'s language', () => {
+  it("names the festival under way in the player's language", () => {
     const host = document.createElement('div')
     document.body.append(host)
     const root = createRoot(host)

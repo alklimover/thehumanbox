@@ -92,10 +92,7 @@ export function InventorySection({ org }: { org: OrganismState }) {
             <div className="org-detail-section">{t('person.inventory.title')}</div>
             <div className="relation-list">
               {entries.map(([kind, count]) => (
-                <Tooltip
-                  key={kind}
-                  tip={t('person.inventory.item', { item: cargoLabel(kind), n: count })}
-                >
+                <Tooltip key={kind} tip={t('person.inventory.item', { item: cargoLabel(kind), n: count })}>
                   <span
                     className="relation-tag"
                     style={{ background: '#0a1a1a', color: '#88e6d4', cursor: 'default' }}

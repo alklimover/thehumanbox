@@ -38,8 +38,8 @@ export function simLabelAsSent(domain: SimDomain, id: string | null | undefined)
  * counters ("play cello") the simulation keeps among a person's tools and trades with them.
  */
 export function cargoLabel(id: string | null | undefined): string {
-  if (id && !Object.hasOwn(SIM_TABLES.good, id) && Object.hasOwn(SIM_TABLES.practice, id)) return simLabel('practice', id)
-  return simLabel('good', id)
+  const practice = !!id && !Object.hasOwn(SIM_TABLES.good, id) && Object.hasOwn(SIM_TABLES.practice, id)
+  return simLabel(practice ? 'practice' : 'good', id)
 }
 
 /** Whether a table knows this id (for coverage checks and dev warnings). */

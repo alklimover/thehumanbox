@@ -112,7 +112,8 @@ describe('world and economy names', () => {
       .map((file) => readFileSync(new URL(file, dir), 'utf8'))
     const keys = new Set<string>()
     for (const source of sources) {
-      for (const m of source.matchAll(/tools\.(?:insert|entry)\("([^"]+)"|add_good\("([^"]+)"/g)) keys.add(m[1] ?? m[2])
+      for (const m of source.matchAll(/tools\.(?:insert|entry)\("([^"]+)"|add_good\("([^"]+)"/g))
+        keys.add(m[1] ?? m[2])
     }
     const held = [...keys]
     const practices = held.filter((key) => !(key in SIM_TABLES.good))
