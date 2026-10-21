@@ -459,6 +459,7 @@ async function start(msg: StartMsg) {
   stepsPerEmit = Math.max(1, Math.floor(msg.stepsPerEmit ?? stepsPerEmit))
   autosaveEveryMs = msg.autosaveEveryMs ?? DEFAULT_AUTOSAVE_MS
 
+  post({ type: 'boot', stage: 'engine' })
   try {
     await init({ module_or_path: wasmUrl })
   } catch (e) {
@@ -539,6 +540,7 @@ async function start(msg: StartMsg) {
     }
   }
   try {
+    post({ type: 'boot', stage: 'reading' })
     if (!resetApplied && !saved) saved = await loadWorld(worldId)
   } catch (e) {
     // A read failure is not proof that no save exists. Keep the new world
@@ -559,6 +561,7 @@ async function start(msg: StartMsg) {
   if (saved) {
     try {
       if (saved.blob.byteLength === 0) throw new Error(t('errors.worker.saveEmpty'))
+      post({ type: 'boot', stage: 'restoring', tick: saved.tick })
       sim = Sim.fromSerialized(BigInt(saved.seed), saved.blob)
       const restoredTick = Number(sim.tickCount())
       if (restoredTick !== saved.tick) {
@@ -607,6 +610,7 @@ async function start(msg: StartMsg) {
   }
   if (reloadPreparing) return
   if (!sim) {
+    post({ type: 'boot', stage: 'creating' })
     sim = new Sim(BigInt(seed))
   }
 

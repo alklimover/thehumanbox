@@ -9,6 +9,7 @@ import { isDesktopStartupPending } from './shared/desktopStartup'
 import { applyDocumentLocale, t } from './i18n'
 import { reportLocaleToDesktop } from './i18n/desktop-locale'
 import './i18n/dev'
+import { installBootStages } from './fork/boot-stages'
 
 initAnalytics()
 applyDocumentLocale()
@@ -74,3 +75,4 @@ window.addEventListener('thb-snapshot-progress', (e: Event) => {
     text.textContent = t('splash.downloading', { loaded: kb(detail.loaded) })
   }
 })
+installBootStages()
