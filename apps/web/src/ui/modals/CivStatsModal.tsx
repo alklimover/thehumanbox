@@ -10,7 +10,7 @@ import { getBuildingState } from '../../game/model/building-state'
 import { moonPhaseName } from '../../game/model/calendar'
 import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
 import { cargoLabel, simLabel, simLabelAsSent } from '../../i18n/sim'
-import { simText } from '../../i18n/simtext'
+import { simArtworkTitle, simBookTitle, simFaithName, simText } from '../../i18n/simtext'
 
 interface Props {
   world: WorldState
@@ -97,12 +97,6 @@ const TOPIC_KEYS: Record<string, MessageKey> = {
   biography: 'civ.topic.biography',
   economics: 'civ.topic.economics',
   drama: 'civ.topic.drama',
-}
-
-/** A faith's name in the player's language; a duplicate keeps its " rel7" suffix as sent. */
-function religionName(name: string): string {
-  const match = /^(.*) (rel\d+)$/.exec(name)
-  return match ? `${simLabel('religion', match[1])} ${match[2]}` : simLabel('religion', name)
 }
 
 /** The words for a simulation value from one of the tables above, or the value itself when unknown. */
@@ -702,7 +696,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
               return (
                 <div key={r.id} className="civ-row">
                   <span className="civ-row-head">
-                    {'\u{271D}\u{FE0F}'} {religionName(r.name)}
+                    {'\u{271D}\u{FE0F}'} {simFaithName(r.name)}
                   </span>
                   <span className="civ-row-sub">{simLabel('religion', r.kind)}</span>
                   <span className="civ-row-tag">{tn('civ.religion.adherents', r.adherents ?? 0)}</span>
@@ -899,7 +893,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
             {books.slice(0, 6).map((b) => (
               <div key={b.id} className="civ-row">
                 <span className="civ-row-head">
-                  {'\u{1F4D6}'} {b.title}
+                  {'\u{1F4D6}'} {simBookTitle(b.title)}
                 </span>
                 <span className="civ-row-sub">
                   {t('civ.books.byline', { author: b.author_name ?? '', topic: keyed(TOPIC_KEYS, b.topic) })}
@@ -915,7 +909,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
             {artworks.slice(0, 6).map((a) => (
               <div key={a.id} className="civ-row">
                 <span className="civ-row-head">
-                  {ART_EMOJI[a.kind] ?? ''} {a.title}
+                  {ART_EMOJI[a.kind] ?? ''} {simArtworkTitle(a.title)}
                 </span>
                 <span className="civ-row-sub">{t('civ.art.by', { name: a.creator_name })}</span>
               </div>

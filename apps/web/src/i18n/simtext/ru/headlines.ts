@@ -74,7 +74,7 @@ export const headlines: SimTextTable = {
     '🌱 Племя {name} оправляется: снова людей — {population}.',
   'are recovering, {population} strong again': 'оправляется: снова людей — {population}',
   '✝️ A schism splits {parent_name}: the {sect_name} sect breaks away with {len} believers.':
-    '✝️ Раскол в вере {parent_name}: секта {sect_name} отделяется, верующих — {len}.',
+    '✝️ Раскол в вере «{parent_name|faith}»: отделяется секта «{sect_name|faith}», верующих — {len}.',
   '📅 Year {year} begins.': '📅 Начался {year}-й год.',
   'Year {year} begins. The seasons turn again.':
     'Начался {year}-й год. Времена года снова сменяют друг друга.',

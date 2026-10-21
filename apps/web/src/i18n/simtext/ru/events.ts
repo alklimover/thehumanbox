@@ -118,7 +118,7 @@ export const events: SimTextTable = {
   'learned {arg0} through a nearby encounter': 'перенял[а] у соседей: {arg0|discovery}',
   "{name}'s settlement grew from {arg1} to {tier_name}":
     'Поселение {name} выросло: {arg1|settlement} → {tier_name|settlement}',
-  'our people founded {name}': 'наш народ основал веру: {name|religion}',
+  'our people founded {name}': 'наш народ основал веру: {name|faith}',
   'started a {name} using {wood} wood, {stone} stone, and {wealth} wealth':
     'начал[а] строить: {name|building} (дерево {wood}, камень {stone}, богатство {wealth})',
   'expecting {child_name} (due in ~2 days)': 'ждёт ребёнка ({child_name}), роды через пару дней',
@@ -184,7 +184,7 @@ export const events: SimTextTable = {
   '{lname} learned farming from its neighbours': '{lname}: земледелию научились у соседей',
   'moved in with {host_name}': 'переехал[а] к {host_name}',
   'lost parent {dead_name}': 'потеря родителя: {dead_name}',
-  "wrote '{title}'": 'написал[а] «{title}»',
+  "wrote '{title}'": 'написал[а] книгу «{title|book}»',
   // The long tail of the event feed and the life log.
   'charted the constellations': '[нанёс|нанесла] созвездия на карту',
   'sent a diplomatic signal to a neighbouring tribe': 'подал[а] дипломатический знак соседнему племени',
@@ -344,4 +344,97 @@ export const events: SimTextTable = {
   'began restoring fire-scarred land by replanting vegetation':
     'начал[а] возрождать выжженную землю, подсаживая растения',
   'began herding animals': 'начал[а] пасти животных',
+  // Faiths, books, artworks and eras.
+  "created cave_painting '{title}'": 'создал[а] наскальный рисунок «{title|artwork}»',
+  "created sculpture '{title}'": 'создал[а] скульптуру «{title|artwork}»',
+  "created fresco '{title}'": 'создал[а] фреску «{title|artwork}»',
+  "created painting '{title}'": 'создал[а] картину «{title|artwork}»',
+  "created photograph '{title}'": 'создал[а] фотографию «{title|artwork}»',
+  "created film '{title}'": 'создал[а] фильм «{title|artwork}»',
+  "created digital '{title}'": 'создал[а] цифровую работу «{title|artwork}»',
+  'the faith of {name} reached {b} followers': 'у веры «{name|faith}» уже последователей: {b}',
+  'lineage {lid} elder founded {religion_name}, an organised {name} faith':
+    'старейшина рода {lid} основал[а] веру «{religion_name|faith}» ({name|religion})',
+  'excommunicated {target_name} from {religion_name}':
+    'отлучил[а] {target_name} от веры «{religion_name|faith}»',
+  '{sect_name} split from {name}, tearing the religious community apart':
+    'секта «{sect_name|faith}» откололась от веры «{name|faith}» и расколола общину',
+  'persuaded {stranger_name} of lineage {stranger_lid} to follow {religion_name}':
+    'убедил[а] {stranger_name} из рода {stranger_lid} принять веру «{religion_name|faith}»',
+  '{lname} entered the {name} era: {flavour}': '{lname} — новая эпоха: {name|era}. {flavour}',
+  'the {mname} era begins: {flavour}': 'в мире наступает новая эпоха: {mname|era}. {flavour}',
+  'People gather what grows and shelter where they can.':
+    'Люди собирают то, что растёт, и укрываются где придётся.',
+  'People shape stone tools and learn to make fire at will.':
+    'Люди обтёсывают каменные орудия и учатся разводить огонь, когда захотят.',
+  'Metal is smelted from ore, and tools and weapons begin to last.':
+    'Из руды выплавляют металл, и орудия с оружием служат дольше.',
+  'Iron replaces bronze in the fields and at war.': 'Железо вытесняет бронзу и в поле, и на войне.',
+  'Writing, law and coinage bind the tribes into cities.':
+    'Письменность, закон и монета сплачивают племена в города.',
+  'Guilds, castles and churches shape the work and the calendar.':
+    'Гильдии, замки и церкви задают порядок труда и календарь.',
+  'Scholars copy and argue, and new ideas spread quickly.':
+    'Учёные переписывают книги и спорят, новые идеи расходятся быстро.',
+  'Machines and factories draw people from the fields to the towns.':
+    'Машины и фабрики уводят людей с полей в города.',
+  'Electricity and the telegraph carry light and news everywhere.':
+    'Электричество и телеграф несут свет и вести повсюду.',
+  'Information flows through networks and every home has a screen.':
+    'Сведения текут по сетям, и в каждом доме есть экран.',
+  'Splitting the atom gives power enough for whole cities.': 'Расщеплённый атом даёт энергию целым городам.',
+  'Rockets leave the air behind and people look down on the whole world.':
+    'Ракеты покидают атмосферу, и люди смотрят сверху на весь мир.',
+  'Computers do the counting, and the work moves onto screens.':
+    'Счёт ведут компьютеры, и работа перебирается на экраны.',
+  'Quantum machines solve problems no ordinary engine could.':
+    'Квантовые машины решают задачи, непосильные обычным.',
+  'Sunlight is gathered in vast fields and runs the world.':
+    'Солнечный свет собирают на огромных полях, и он движет миром.',
+  'Stars are copied on Earth, and power is cheap beyond measure.':
+    'На Земле зажигают подобие звёзд, и энергия дешевле некуда.',
+  'People read and edit the code of life itself.': 'Люди читают и правят сам код жизни.',
+  'Whole cities turn in orbit above the clouds.': 'Над облаками по орбите кружат целые города.',
+  'Bases on the Moon mine its dust and keep its light.': 'Лунные базы добывают лунную пыль и хранят её свет.',
+  'Red-dust towns on Mars hold the first off-world tribe.':
+    'В городах среди красной пыли Марса живёт первое неземное племя.',
+  'Minds and machines are linked, and the net is part of every life.':
+    'Разум и машины связаны, и сеть стала частью каждой жизни.',
+  'Thought itself is read, shared and shaped by machines.': 'Машины читают, передают и формируют саму мысль.',
+  'People outgrow their first bodies and choose what they become.':
+    'Люди перерастают свои первые тела и сами выбирают, кем стать.',
+  'Ships cross the gaps between stars and carry whole tribes with them.':
+    'Корабли пересекают пустоту между звёздами и везут целые племена.',
+  'Machine minds outpace their makers and the old rules fall away.':
+    'Машинный разум обгоняет своих создателей, и старые правила рушатся.',
+  'Empires spread across the arms of the galaxy.': 'Империи раскинулись по рукавам галактики.',
+  'A shell of solar collectors wraps the star that feeds the tribes.':
+    'Оболочка из солнечных коллекторов окутывает звезду, что кормит племена.',
+  'A civilisation runs on the full light of its star.': 'Цивилизация живёт на всём свете своей звезды.',
+  'A civilisation runs on the light of a whole galaxy.': 'Цивилизация живёт на свете целой галактики.',
+  'Stars are steered, lit and sometimes let go.': 'Звёзды направляют, зажигают, а порой отпускают.',
+  'Clouds of gas are shaped into worlds and homes.': 'Из облаков газа лепят миры и дома.',
+  'The tribes reach across the whole universe.': 'Племена дотянулись через всю вселенную.',
+  'Other universes are visited and traded with.': 'В другие вселенные ходят в гости и торгуют с ними.',
+  'Minds rise past the limits of matter and of time.': 'Разум выходит за пределы материи и времени.',
+  'Something older than the world stirs at the edges of the map.':
+    'На краях карты шевелится нечто древнее самого мира.',
+  'People are born in the dark between worlds and call it home.':
+    'Люди рождаются во тьме между мирами и зовут её домом.',
+  'Time itself is measured, bent and kept by the tribes.': 'Племена измеряют, изгибают и хранят само время.',
+  'Every event that ever happened can be read back.':
+    'Любое событие, что когда-либо случилось, можно прочесть заново.',
+  'The slow running-down of the world is tended like a garden.':
+    'За медленным угасанием мира ухаживают, как за садом.',
+  'Dreams become real places that the tribes walk into.':
+    'Сны становятся настоящими местами, куда племена входят.',
+  'The stories of the tribes are sung as if they are the world.':
+    'Сказания племён поют так, будто они и есть мир.',
+  'A maker shapes new worlds from the stuff of the old.': 'Творец лепит новые миры из вещества старых.',
+  'Gods walk among the tribes and answer for what they do.':
+    'Боги ходят среди племён и отвечают за свои дела.',
+  'The last era of the old world, and the first of something new.':
+    'Последняя эпоха старого мира и первая — чего-то нового.',
+  'The world begins again, and the tribes remember all of it.':
+    'Мир начинается заново, и племена помнят всё.',
 }

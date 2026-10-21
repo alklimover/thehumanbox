@@ -12,6 +12,7 @@ import {
   type SimTextContext,
   type SimTextTable,
 } from './engine'
+import { NAME_DOMAINS, artworkTitle, bookTitle, faithName } from './names'
 import { actions } from './ru/actions'
 import { events } from './ru/events'
 import { headlines } from './ru/headlines'
@@ -39,6 +40,8 @@ export const RU_SIM_TEXT_TABLES = [thoughts, actions, events, memories, headline
  * writes ids with spaces ("bronze working" for bronze_working).
  */
 function labelId(domain: string, id: string): string | null {
+  const named = NAME_DOMAINS[domain]
+  if (named) return named(id)
   const table = SIM_TABLES[domain as SimDomain]
   if (!table) return null
   const entry =
@@ -89,6 +92,16 @@ export function simText(
   }
   return ru.text(channel, text, ctx)
 }
+
+const named =
+  (translate: (value: string) => string | null) =>
+  (value: string | null | undefined): string =>
+    getLocale() === 'en' || !value ? (value ?? '') : (translate(value) ?? value)
+
+/** A book's title, an artwork's title and a faith's name as shown (see ./names). */
+export const simBookTitle = named(bookTitle)
+export const simArtworkTitle = named(artworkTitle)
+export const simFaithName = named(faithName)
 
 /** Whether the Russian tables know a text (for the untranslated-text check). */
 export function hasSimText(channel: SimTextChannel, text: string): boolean {

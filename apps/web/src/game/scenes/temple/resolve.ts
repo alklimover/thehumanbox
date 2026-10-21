@@ -2,6 +2,7 @@ import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
 import { t, type MessageKey } from '../../../i18n'
+import { simFaithName } from '../../../i18n/simtext'
 
 const TEMPLE_RADIUS = 20
 
@@ -108,7 +109,7 @@ export function resolveTempleScene(world: WorldState, scene: SceneId): SceneCont
   return {
     scene,
     world,
-    title: religion.name,
+    title: simFaithName(religion.name),
     subtitle,
     isDay: !!world.is_day,
     occupants: inside.slice(0, 8),
