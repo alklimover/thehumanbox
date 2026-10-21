@@ -3,6 +3,7 @@ import { useGame } from 'xipjs'
 import type { WorldState } from '../../../shared/types'
 import type { InterpRefs } from '../../../simulation/useSimulation'
 import { logger } from '../../../shared/logger'
+import { t } from '../../../i18n'
 import { vegetationSeason } from '../landscape-style'
 import { isSettled } from '../render-timing'
 import { terrainSeason } from '../terrain-season'
@@ -126,7 +127,7 @@ export function CfWorld({
       step(w)
     } catch (error) {
       logger.error('2d-world', 'GPU world drawing failed', error)
-      onDrawErrorRef.current('The world could not be drawn. Retry the renderer to restore the map.')
+      onDrawErrorRef.current(t('map.drawFailed'))
     }
   }, [interp, step])
 
@@ -149,7 +150,7 @@ export function CfWorld({
         step(w)
       } catch (error) {
         logger.error('2d-world', 'GPU world drawing failed', error)
-        onDrawErrorRef.current('The world could not be drawn. Retry the renderer to restore the map.')
+        onDrawErrorRef.current(t('map.drawFailed'))
         return false
       }
       return true

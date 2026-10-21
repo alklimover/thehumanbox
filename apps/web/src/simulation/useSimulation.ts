@@ -23,6 +23,7 @@ import { isDesktop } from '../shared/desktop'
 import { isDesktopStartupPending } from '../shared/desktopStartup'
 import { localSaveWorkerRequest } from './wasmPersistence'
 import { FrameSequence } from './frameSequence'
+import { getLocale, t } from '../i18n'
 import {
   fetchRuntimeControlState,
   WASM_BASE_TICK_MS,
@@ -448,7 +449,7 @@ export function useSimulation(source: WorldSource = 'native'): {
         setLocalSaveStatus({
           phase: 'error',
           fatal: true,
-          message: e.message || 'the local simulation worker stopped unexpectedly',
+          message: e.message || t('errors.worker.stopped'),
         })
       }
       worker.postMessage({
@@ -457,6 +458,7 @@ export function useSimulation(source: WorldSource = 'native'): {
         seed: getOwnWorldSeed(),
         reset: hasOwnWorldResetRequest(),
         recoveryId: getOwnWorldRecoveryRequest(),
+        locale: getLocale(),
       })
 
       const checkpointWorker = (): Promise<boolean> => {
@@ -526,9 +528,7 @@ export function useSimulation(source: WorldSource = 'native'): {
             setLocalSaveStatus({
               phase: 'error',
               retryable: true,
-              message:
-                request.detail?.failureMessage ??
-                'could not checkpoint the current world; refresh was cancelled safely',
+              message: request.detail?.failureMessage ?? t('errors.checkpoint.reload'),
             })
           }
         })
@@ -1013,7 +1013,7 @@ export function useSimulation(source: WorldSource = 'native'): {
     setLocalSaveStatus({ phase: 'saving', tick })
     try {
       const response = await fetch(`${API_BASE}/save`, { method: 'POST', headers: sandboxHeaders() })
-      if (!response.ok) throw new Error(`save failed (${response.status})`)
+      if (!response.ok) throw new Error(t('errors.save.failedStatus', { status: String(response.status) }))
       const result = (await response.json()) as { tick?: number; saved_at?: number }
       setLocalSaveStatus({
         phase: 'saved',
@@ -1024,7 +1024,7 @@ export function useSimulation(source: WorldSource = 'native'): {
     } catch (error) {
       setLocalSaveStatus({
         phase: 'error',
-        message: error instanceof Error ? error.message : 'save failed',
+        message: error instanceof Error ? error.message : t('errors.save.failed'),
       })
       return false
     }

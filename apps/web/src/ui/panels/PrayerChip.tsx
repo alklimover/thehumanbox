@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { PrayerInfo, WorldState } from '../../shared/types'
 import { prayerRows, prayerRowText, prayerTimeLeft, PRAYER_KINDS } from '../../game/model/prayers'
+import { t, tn } from '../../i18n'
 import { ToolSprite } from '../toolbar/ToolSprite'
 import { Tooltip } from '../toolbar/Tooltip'
 
@@ -48,11 +49,8 @@ export function PrayerChip({ world, onAnswer }: Props) {
       <Tooltip
         tip={
           <span className="tip-card">
-            <strong>prayers</strong>
-            <span>
-              {prayers.length === 1 ? 'A tribe is' : `${prayers.length} tribes are`} asking for your help.
-              Answer before they lose faith.
-            </span>
+            <strong>{t('prayers.title')}</strong>
+            <span>{prayers.length === 1 ? t('prayers.tipOne') : tn('prayers.tip', prayers.length)}</span>
           </span>
         }
       >
@@ -69,7 +67,7 @@ export function PrayerChip({ world, onAnswer }: Props) {
             setOpen((v) => !v)
           }}
           aria-expanded={open}
-          aria-label={`${prayers.length} prayers`}
+          aria-label={tn('prayers.aria', prayers.length)}
         >
           <ToolSprite icon="🙏" size={16} />
           {prayers.length}

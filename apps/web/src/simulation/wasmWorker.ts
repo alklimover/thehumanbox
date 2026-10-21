@@ -23,6 +23,8 @@ import {
   WASM_BASE_TICK_MS,
   wasmTickDelay,
 } from './runtimeControls'
+import { t } from '../i18n'
+import { isLocale, setWorkerLocale } from '../i18n/locale'
 
 type StartMsg = {
   type: 'start'
@@ -33,6 +35,8 @@ type StartMsg = {
   autosaveEveryMs?: number
   reset?: boolean
   recoveryId?: string | null
+  /** The page's interface language; a worker cannot read it from localStorage. */
+  locale?: string
 }
 type InMsg =
   | StartMsg
@@ -139,7 +143,7 @@ async function acquireWorldLock(id: string): Promise<boolean> {
       if (wait.signal.aborted) return
       post({
         type: 'error',
-        message: `could not lock local save: ${error instanceof Error ? error.message : String(error)}`,
+        message: t('errors.worker.lockFailed', { error: errorText(error) }),
       })
     })
 
@@ -167,6 +171,10 @@ async function releaseWorldLockAfterStartup() {
   await releaseLocalWorldLock()
 }
 
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function emit(deepFull: boolean) {
   if (!sim) return
   frameId += 1
@@ -182,14 +190,23 @@ function rememberRetry(next: StorageRetry<SavedWorld>) {
 }
 
 function restoreSavedWorld(saved: SavedWorld): Sim {
-  if (saved.blob.byteLength === 0) throw new Error('save is empty')
+  if (saved.blob.byteLength === 0) throw new Error(t('errors.worker.saveEmpty'))
   const candidate = Sim.fromSerialized(BigInt(saved.seed), saved.blob)
   const restoredTick = Number(candidate.tickCount())
   if (restoredTick !== saved.tick) {
     candidate.free()
-    throw new Error(`save expected tick ${saved.tick}, restored tick ${restoredTick}`)
+    throw new Error(tickMismatch('errors.worker.saveTickMismatch', saved.tick, restoredTick))
   }
   return candidate
+}
+
+function tickMismatch(
+  key: 'errors.worker.saveTickMismatch' | 'errors.worker.recoveryTickMismatch',
+  expected: number,
+  actual: number,
+): string {
+  // Raw tick numbers, as in the save, not grouped for reading.
+  return t(key, { expected: String(expected), actual: String(actual) })
 }
 
 function replaceSimulation(candidate: Sim, nextSeed: string) {
@@ -221,7 +238,7 @@ async function persist(): Promise<boolean> {
         const tick = Number(sim.tickCount())
         post({ type: 'saving', tick })
         const blob = sim.serialize()
-        if (blob.byteLength === 0) throw new Error('simulation produced an empty save')
+        if (blob.byteLength === 0) throw new Error(t('errors.worker.serializedEmpty'))
         const savedAt = Date.now()
         await saveWorld(worldId, { blob, seed, tick, savedAt })
         post({ type: 'saved', tick, savedAt })
@@ -231,7 +248,7 @@ async function persist(): Promise<boolean> {
       post({
         type: 'error',
         retryable: true,
-        message: `autosave failed: ${e instanceof Error ? e.message : String(e)}`,
+        message: t('errors.worker.autosaveFailed', { error: errorText(e) }),
       })
       return false
     }
@@ -264,9 +281,7 @@ async function retryReadStorage(): Promise<boolean> {
       post({
         type: 'error',
         retryable: true,
-        message: `local save could not be restored; recovery copy kept: ${
-          restoreError instanceof Error ? restoreError.message : String(restoreError)
-        }`,
+        message: t('errors.worker.restoreFailedKept', { error: errorText(restoreError) }),
       })
     }
   }
@@ -304,7 +319,7 @@ async function resumeAfterUnavailableRecovery(message: string): Promise<boolean>
 
 async function retryRestoreStorage(recoveryId: string): Promise<boolean> {
   if (!recoveryId.startsWith(recoveryPrefix(worldId))) {
-    return resumeAfterUnavailableRecovery('recovery request is invalid; normal local saving resumed')
+    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryInvalid'))
   }
 
   // Re-read the recovery index rather than trusting a stale settings entry.
@@ -313,23 +328,19 @@ async function retryRestoreStorage(recoveryId: string): Promise<boolean> {
   const recoveries = await listRecoveryWorlds(worldId)
   const current = findRequestedRecovery(recoveryId, recoveries)
   if (!current) {
-    return resumeAfterUnavailableRecovery('recovery copy no longer exists; normal local saving resumed')
+    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryGone'))
   }
 
   const recovery = await loadWorld(current.id)
   if (!recovery) {
-    return resumeAfterUnavailableRecovery('recovery copy no longer exists; normal local saving resumed')
+    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryGone'))
   }
 
   let candidate: Sim
   try {
     candidate = restoreSavedWorld(recovery)
   } catch (error) {
-    return resumeAfterUnavailableRecovery(
-      `recovery copy is unusable; normal local saving resumed: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    )
+    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryUnusable', { error: errorText(error) }))
   }
 
   try {
@@ -352,16 +363,16 @@ async function retryPreserveStorage(saved: SavedWorld, recoveryId: string): Prom
 }
 
 function storageRetryMessage(retry: StorageRetry<SavedWorld> | null, error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error)
+  const params = { error: errorText(error) }
   switch (retry?.kind) {
     case 'reset':
-      return `could not reset local save: ${detail}`
+      return t('errors.worker.resetFailed', params)
     case 'restore':
-      return `recovery save could not be restored: ${detail}`
+      return t('errors.worker.recoveryFailed', params)
     case 'preserve':
-      return `local save recovery copy failed; original preserved: ${detail}`
+      return t('errors.worker.preserveFailed', params)
     default:
-      return `could not read local save: ${detail}`
+      return t('errors.worker.readFailed', params)
   }
 }
 
@@ -441,6 +452,7 @@ function beginLoop(autosaveEveryMs: number) {
 async function start(msg: StartMsg) {
   if (started) return
   started = true
+  if (isLocale(msg.locale)) setWorkerLocale(msg.locale)
   worldId = msg.id
   seed = msg.seed
   tickMs = Math.max(MIN_WASM_TICK_MS, msg.tickMs ?? tickMs)
@@ -453,7 +465,7 @@ async function start(msg: StartMsg) {
     post({
       type: 'error',
       fatal: true,
-      message: `wasm init failed: ${e instanceof Error ? e.message : String(e)}`,
+      message: t('errors.worker.initFailed', { error: errorText(e) }),
     })
     return
   }
@@ -469,7 +481,7 @@ async function start(msg: StartMsg) {
     storageReady = false
     post({
       type: 'error',
-      message: 'this local world is already open in another tab; this tab will not overwrite its save',
+      message: t('errors.worker.otherTab'),
     })
   }
 
@@ -488,22 +500,24 @@ async function start(msg: StartMsg) {
       post({
         type: 'error',
         retryable: true,
-        message: `could not reset local save: ${e instanceof Error ? e.message : String(e)}`,
+        message: t('errors.worker.resetFailed', { error: errorText(e) }),
       })
     }
   }
   if (!resetApplied && msg.recoveryId && storageReady) {
     try {
-      if (!msg.recoveryId.startsWith(recoveryPrefix(worldId))) throw new Error('invalid recovery save id')
+      if (!msg.recoveryId.startsWith(recoveryPrefix(worldId))) {
+        throw new Error(t('errors.worker.recoveryIdInvalid'))
+      }
       const recovery = await loadWorld(msg.recoveryId)
       if (reloadPreparing) return
-      if (!recovery) throw new Error('recovery save no longer exists')
-      if (recovery.blob.byteLength === 0) throw new Error('recovery save is empty')
+      if (!recovery) throw new Error(t('errors.worker.recoveryMissing'))
+      if (recovery.blob.byteLength === 0) throw new Error(t('errors.worker.recoveryEmpty'))
       const candidate = Sim.fromSerialized(BigInt(recovery.seed), recovery.blob)
       const recoveredTick = Number(candidate.tickCount())
       candidate.free()
       if (recoveredTick !== recovery.tick) {
-        throw new Error(`recovery expected tick ${recovery.tick}, restored tick ${recoveredTick}`)
+        throw new Error(tickMismatch('errors.worker.recoveryTickMismatch', recovery.tick, recoveredTick))
       }
       const previousBackupId = await restoreRecoveryWorld(worldId, msg.recoveryId)
       if (reloadPreparing) return
@@ -520,7 +534,7 @@ async function start(msg: StartMsg) {
       post({
         type: 'error',
         retryable: true,
-        message: `recovery save could not be restored: ${e instanceof Error ? e.message : String(e)}`,
+        message: t('errors.worker.recoveryFailed', { error: errorText(e) }),
       })
     }
   }
@@ -538,17 +552,17 @@ async function start(msg: StartMsg) {
     post({
       type: 'error',
       retryable: worldLockAcquired,
-      message: `could not read local save: ${e instanceof Error ? e.message : String(e)}`,
+      message: t('errors.worker.readFailed', { error: errorText(e) }),
     })
   }
   if (reloadPreparing) return
   if (saved) {
     try {
-      if (saved.blob.byteLength === 0) throw new Error('save is empty')
+      if (saved.blob.byteLength === 0) throw new Error(t('errors.worker.saveEmpty'))
       sim = Sim.fromSerialized(BigInt(saved.seed), saved.blob)
       const restoredTick = Number(sim.tickCount())
       if (restoredTick !== saved.tick) {
-        throw new Error(`save expected tick ${saved.tick}, restored tick ${restoredTick}`)
+        throw new Error(tickMismatch('errors.worker.saveTickMismatch', saved.tick, restoredTick))
       }
       seed = saved.seed
       restored = true
@@ -577,18 +591,16 @@ async function start(msg: StartMsg) {
           post({
             type: 'error',
             retryable: true,
-            message: `local save recovery copy failed; original preserved: ${
-              recoveryError instanceof Error ? recoveryError.message : String(recoveryError)
-            }`,
+            message: t('errors.worker.preserveFailed', { error: errorText(recoveryError) }),
           })
         }
       }
       post({
         type: 'error',
         retryable: storageReady || storageRetry !== null,
-        message: `local save could not be restored${recoverySaved ? '; recovery copy kept' : ''}: ${
-          e instanceof Error ? e.message : String(e)
-        }`,
+        message: t(recoverySaved ? 'errors.worker.restoreFailedKept' : 'errors.worker.restoreFailed', {
+          error: errorText(e),
+        }),
       })
       sim = null
     }

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { SandboxCommand } from './sandbox'
 
 export interface ScenarioPreset {
@@ -25,8 +26,8 @@ function at(width: number, height: number, fx: number, fy: number): { x: number;
 export const SCENARIO_PRESETS: ScenarioPreset[] = [
   {
     id: 'founding-family',
-    title: 'Founding family',
-    detail: 'A couple with children settles the middle of the land, and their kin are crowned leader.',
+    title: t('scenarios.founding-family.title'),
+    detail: t('scenarios.founding-family.detail'),
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       return [
@@ -37,8 +38,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'two-tribes',
-    title: 'Two rival tribes',
-    detail: 'Two groups of five start on opposite sides of the land, each with a little wild game nearby.',
+    title: t('scenarios.two-tribes.title'),
+    detail: t('scenarios.two-tribes.detail'),
     steps: (w, h) => {
       const west = at(w, h, 0.3, 0.45)
       const east = at(w, h, 0.7, 0.55)
@@ -52,8 +53,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'wild-valley',
-    title: 'Wild valley',
-    detail: 'A herd of deer and rabbits is placed through the land, with a clear sky to start.',
+    title: t('scenarios.wild-valley.title'),
+    detail: t('scenarios.wild-valley.detail'),
     steps: (w, h) => {
       const points = [at(w, h, 0.25, 0.3), at(w, h, 0.6, 0.35), at(w, h, 0.45, 0.7)]
       return [
@@ -67,9 +68,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'apocalypse',
-    title: 'Apocalypse',
-    detail:
-      'A storm breaks over the land, a meteor falls in the middle, a plague spreads, and zombies walk the edges.',
+    title: t('scenarios.apocalypse.title'),
+    detail: t('scenarios.apocalypse.detail'),
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.25, 0.6)
@@ -85,9 +85,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'golden-age',
-    title: 'Golden age',
-    detail:
-      'Clear skies, a bounty of food and warm sun over the middle, and two families founding their tribes on the good ground.',
+    title: t('scenarios.golden-age.title'),
+    detail: t('scenarios.golden-age.detail'),
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.3, 0.5)
@@ -103,8 +102,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'tribal-war',
-    title: 'Tribal war',
-    detail: 'Two families found rival tribes on either side of the land, and the gods set them at war.',
+    title: t('scenarios.tribal-war.title'),
+    detail: t('scenarios.tribal-war.detail'),
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.3, 0.5)
@@ -118,8 +117,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'island-survival',
-    title: 'Island survival',
-    detail: 'A band of six starts in the middle with deer and rabbits about, and rain to drink.',
+    title: t('scenarios.island-survival.title'),
+    detail: t('scenarios.island-survival.detail'),
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       return [
@@ -132,9 +131,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'ice-age',
-    title: 'Ice age',
-    detail:
-      'Snow falls and a blizzard sweeps the middle while a small band and a few bears are left to endure it.',
+    title: t('scenarios.ice-age.title'),
+    detail: t('scenarios.ice-age.detail'),
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.3, 0.6)

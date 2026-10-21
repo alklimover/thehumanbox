@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { t } from '../../i18n'
 import { canUseFullscreen } from '../../shared/fullscreen'
 import { REPO_URL } from '../../shared/links'
 import { trackEvent } from '../../shared/observability'
@@ -65,24 +66,29 @@ export function PhoneMenu({ chronicleCount, isFullscreen, onToggleFullscreen, wo
       <button
         type="button"
         className="hdr-btn phone-menu-btn"
-        aria-label="Menu"
+        aria-label={t('phoneMenu.aria')}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
         <ToolSprite icon="☰" size={18} />
       </button>
-      <Modal open={open} onClose={close} className="phone-menu-modal" title="Menu" hideTitle>
+      <Modal open={open} onClose={close} className="phone-menu-modal" title={t('phoneMenu.aria')} hideTitle>
         <div className="phone-menu-head">
-          <span className="phone-menu-title">menu</span>
-          <button type="button" className="phone-menu-close" aria-label="Close menu" onClick={close}>
+          <span className="phone-menu-title">{t('phoneMenu.title')}</span>
+          <button
+            type="button"
+            className="phone-menu-close"
+            aria-label={t('phoneMenu.close')}
+            onClick={close}
+          >
             ×
           </button>
         </div>
         <div className="phone-menu-body">
           {(worldActions?.findTool || worldActions?.save) && (
             <div className="phone-menu-list phone-menu-world">
-              {worldActions.findTool && row('🔍', 'find a tool', worldActions.findTool)}
+              {worldActions.findTool && row('🔍', t('phoneMenu.findTool'), worldActions.findTool)}
               {worldActions.save && (
                 <button
                   type="button"
@@ -106,23 +112,28 @@ export function PhoneMenu({ chronicleCount, isFullscreen, onToggleFullscreen, wo
             </div>
           )}
           <div className="phone-menu-list">
-            {row('📊', 'stats', openStats)}
-            {row('👑', 'civilization', openCiv)}
-            {row('🔍', 'find people', openOrgSearch)}
+            {row('📊', t('header.stats'), openStats)}
+            {row('👑', t('header.civ'), openCiv)}
+            {row('🔍', t('header.findPeople'), openOrgSearch)}
             {row(
               '📖',
-              'chronicles',
+              t('header.chronicles'),
               openChronicles,
               chronicleCount > 0 ? <span className="btn-count">{chronicleCount}</span> : null,
             )}
-            {row('◧', 'world panel', toggleLeft, null, leftOpen)}
-            {row('◨', 'people panel', togglePanel, null, panelOpen)}
-            {row('⚙️', 'settings', openSettings)}
-            {row('🌼', 'about', openAbout)}
-            {row('⭐', 'star on GitHub', openRepo)}
-            {canFullscreen && row('⛶', isFullscreen ? 'exit fullscreen' : 'fullscreen', onToggleFullscreen)}
+            {row('◧', t('header.worldPanel'), toggleLeft, null, leftOpen)}
+            {row('◨', t('header.peoplePanel'), togglePanel, null, panelOpen)}
+            {row('⚙️', t('header.settings'), openSettings)}
+            {row('🌼', t('phoneMenu.about'), openAbout)}
+            {row('⭐', t('phoneMenu.star'), openRepo)}
+            {canFullscreen &&
+              row(
+                '⛶',
+                isFullscreen ? t('header.fullscreen.exit') : t('header.fullscreen'),
+                onToggleFullscreen,
+              )}
           </div>
-          <div className="phone-menu-section">view</div>
+          <div className="phone-menu-section">{t('phoneMenu.view')}</div>
           <MoreDropdown onAction={close} />
         </div>
       </Modal>
