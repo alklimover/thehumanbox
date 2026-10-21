@@ -1,6 +1,7 @@
 import * as os from 'node:os'
 
 import type { Settings } from './settings'
+import { worldSeedEnv } from './fork-world-seed'
 
 /**
  * Build the environment used by the downloadable game's bundled simulation:
@@ -33,6 +34,8 @@ export function buildLocalSimEnv(
     THB_MONTHLY_ROLLOVER: '0',
     THB_EXTRA_CORS_ORIGINS: 'null',
     THB_SANDBOX: '1',
+    // Fork: the seed of a world being created (fork-worlds.ts).
+    ...worldSeedEnv(),
   }
 
   // The server's default RSS watchdog (320/480 MB) is tuned for a small hosted

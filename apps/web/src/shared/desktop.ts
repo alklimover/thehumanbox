@@ -36,6 +36,17 @@ export interface UpdateCheckResult {
   message?: string
 }
 
+/** Fork: a world on disk (apps/desktop/main/fork-worlds.ts). */
+export interface WorldSlot {
+  hash: string
+  name: string | null
+  seed: string | null
+  createdAt: number | null
+  savedAt: number
+  sizeBytes: number
+  live: boolean
+}
+
 export interface DesktopBridge {
   isDesktop: true
   platform: string
@@ -70,6 +81,18 @@ export interface DesktopBridge {
     }>
     exportActive(): Promise<{ exported: boolean; filePath?: string; hash?: string }>
     resetLocal(): Promise<{ reset: boolean; exported?: boolean; filePath?: string; port?: number }>
+  }
+  /** Fork: the worlds on disk as save slots. Missing in an older desktop shell. */
+  forkWorlds?: {
+    list(): Promise<WorldSlot[]>
+    open(hash: string): Promise<{ opened: boolean }>
+    create(options: {
+      seed?: string | null
+      populationCap?: number | null
+      name?: string | null
+    }): Promise<{ created: boolean; hash: string; seed: string }>
+    rename(hash: string, name: string): Promise<WorldSlot[]>
+    trash(hash: string): Promise<WorldSlot[]>
   }
   on(
     channel: 'updater:available' | 'updater:downloaded',

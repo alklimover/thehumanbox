@@ -22,6 +22,7 @@ import {
 import { acquireDataRootLock, type DataRootLock } from "./data-lock";
 import { loadRenderer } from "./renderer-load";
 import { tr } from "./i18n";
+import { registerForkWorlds } from "./fork-worlds";
 import {
   RESTART_SIMULATION_OPERATION,
   runExclusiveDesktopOperation,
@@ -200,6 +201,7 @@ export function registerIpc(
   getWindow: () => BrowserWindow | null,
 ): void {
   ipc.handle("settings:get", () => loadSettings());
+  registerForkWorlds(ipc, getWindow);
 
   ipc.handle(
     "settings:set",
