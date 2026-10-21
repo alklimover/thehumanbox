@@ -1,3 +1,4 @@
+import { t, tn } from '../../i18n'
 import { ToolSprite } from './ToolSprite'
 import { Tooltip } from './Tooltip'
 import { TimeControl } from './TimeControl'
@@ -282,18 +283,19 @@ export function SandboxToolbar({
   // One tool on the row: a click arms or fires it.
   const renderTile = (tool: SandboxTool) => {
     const active = armedToolId === tool.id || isViewActive(tool) || isStateActive(tool)
+    const hotkey = hotkeys.get(tool.id)
     const how = isStateActive(tool)
-      ? 'happening now · click again to end it'
+      ? t('tools.how.happening')
       : active && !tool.view
-        ? 'click again or press esc to stop'
-        : `${hotkeys.has(tool.id) ? `press ${hotkeys.get(tool.id)} · ` : ''}${toolHowTo(tool, brush)}`
+        ? t('tools.how.stop')
+        : `${hotkey ? `${t('tools.how.hotkey', { key: hotkey })} · ` : ''}${toolHowTo(tool, brush)}`
     return (
       <DockTile
         key={tool.id}
         tool={tool}
         active={active}
         flashed={flashId === tool.id}
-        hotkey={hotkeys.get(tool.id)}
+        hotkey={hotkey}
         body={toolTip(tool)}
         how={how}
         onPick={pickStable}
@@ -302,7 +304,7 @@ export function SandboxToolbar({
   }
 
   return (
-    <section className="sandbox-bar" aria-label="World controls" ref={barRef}>
+    <section className="sandbox-bar" aria-label={t('tools.bar.label')} ref={barRef}>
       {armedToolId && heldName && (
         <div
           ref={heldRef}
@@ -310,7 +312,7 @@ export function SandboxToolbar({
           style={heldX === null ? undefined : { left: heldX }}
           aria-hidden="true"
         >
-          {heldName} · click the map
+          {t('tools.bar.held', { tool: heldName })}
         </div>
       )}
       <div className="dock-hint" role="status" aria-live="polite">
@@ -318,7 +320,7 @@ export function SandboxToolbar({
       </div>
 
       <div className="dock-nav" ref={navRef}>
-        <nav className="dock-tabs" aria-label="World tools">
+        <nav className="dock-tabs" aria-label={t('tools.bar.tabs')}>
           {DOCK_TABS.map((tab) => (
             <Tooltip
               key={tab.id}
@@ -326,7 +328,7 @@ export function SandboxToolbar({
                 <TipCard
                   title={tab.label}
                   body={tab.tip}
-                  how={tabEngaged(tab.id) ? 'a tool or layer here is on' : undefined}
+                  how={tabEngaged(tab.id) ? t('tools.bar.tabEngaged') : undefined}
                 />
               }
             >
@@ -338,14 +340,20 @@ export function SandboxToolbar({
               >
                 {tab.label}
                 {unseenNewTools(tab.id, seenNew).length > 0 && (
-                  <span className="dock-new" aria-label="new tools here" />
+                  <span className="dock-new" aria-label={t('tools.bar.newHere')} />
                 )}
               </button>
             </Tooltip>
           ))}
         </nav>
         {groups.length > 1 && (
-          <div className="dock-groups" role="group" aria-label={`${tabId} groups`}>
+          <div
+            className="dock-groups"
+            role="group"
+            aria-label={t('tools.bar.groups', {
+              tab: DOCK_TABS.find((tab) => tab.id === tabId)?.label ?? tabId,
+            })}
+          >
             {groups.map((g) => (
               <button
                 key={g.id}
@@ -360,7 +368,7 @@ export function SandboxToolbar({
               >
                 {groupLabel(g)}
                 {unseenNewToolsInGroup(g.id, seenNew).length > 0 && (
-                  <span className="dock-new" aria-label="new tools here" />
+                  <span className="dock-new" aria-label={t('tools.bar.newHere')} />
                 )}
               </button>
             ))}
@@ -372,7 +380,7 @@ export function SandboxToolbar({
         <div
           className={clsx('dock-tools', edges.before && 'more-before', edges.after && 'more-after')}
           role="group"
-          aria-label={`${group ? groupLabel(group) : tabId} tools`}
+          aria-label={t('tools.bar.tools', { group: group ? groupLabel(group) : tabId })}
           ref={toolsRef}
           onScroll={measureRow}
           onWheel={(e) => {
@@ -385,16 +393,25 @@ export function SandboxToolbar({
           {rowTools.map(renderTile)}
         </div>
         {usesBrush(armedTool) && (
-          <div className="dock-brush" role="group" aria-label="Brush sizes" title="Brush size · also - and =">
-            <button type="button" aria-label="Smaller brush" onClick={() => onBrush(Math.max(0, brush - 1))}>
+          <div
+            className="dock-brush"
+            role="group"
+            aria-label={t('tools.brush.sizes')}
+            title={t('tools.brush.title')}
+          >
+            <button
+              type="button"
+              aria-label={t('tools.brush.smaller')}
+              onClick={() => onBrush(Math.max(0, brush - 1))}
+            >
               −
             </button>
             {BRUSH_SIZES.map(([size, value]) => (
               <button
                 key={size}
                 type="button"
-                title={`Brush ${size} tile${size === 1 ? '' : 's'} across`}
-                aria-label={`Brush size ${size}`}
+                title={tn('tools.brush.across', size)}
+                aria-label={t('tools.brush.size', { size })}
                 aria-pressed={brush === value}
                 className={brush === value ? 'active' : undefined}
                 onClick={() => onBrush(value)}
@@ -402,7 +419,11 @@ export function SandboxToolbar({
                 {size}
               </button>
             ))}
-            <button type="button" aria-label="Larger brush" onClick={() => onBrush(Math.min(20, brush + 1))}>
+            <button
+              type="button"
+              aria-label={t('tools.brush.larger')}
+              onClick={() => onBrush(Math.min(20, brush + 1))}
+            >
               +
             </button>
           </div>

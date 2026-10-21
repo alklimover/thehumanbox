@@ -91,3 +91,28 @@
 | schism | раскол | |
 | budding colony | колония-отпочкование | |
 | era gap | разрыв эпох | |
+| brush area | область кисти | «в области кисти» |
+| tile | клетка | «радиус: 4 клетки» |
+| click / where you click | щелчок / место щелчка | «человек, ближайший к месту щелчка» |
+| (map) layer | слой карты | |
+| group (chip on the dock) | группа | группа life на вкладке life — «люди» |
+| dock tabs | жизнь / природа / ресурсы / бедствия / мир | life / nature / resources / deadly / world |
+| stone tool / tools (that people carry) | каменное орудие / орудия | не «инструменты»: инструмент — это сила бога |
+| pack | заплечный мешок | |
+| planting(s) / wild food | посадки / дикая еда | |
+| release (an animal) | выпустить | «Выпустите оленя» |
+| ruler / crown (tool) | правитель / коронация | |
+| band (a tribe with no ruler) | община | |
+| omen / awe | знамение / благоговение | |
+| talent / rare gift | талант / редкий дар | |
+| kindness (trait) | доброта | |
+| industrial age / modern | индустриальная эпоха / современность | |
+| fallout | радиоактивные осадки | |
+| smite / ward / blight / frenzy | кара / оберег / порча / ярость | названия инструментов |
+| storm / gale / tornado / blizzard | гроза / шквал / смерч / буран | |
+| snowfall / cold snap / heat wave | снегопад / похолодание / зной | |
+| rain patch / starfall | туча / звездопад | |
+| sweep / eraser | зачистка / ластик | инструменты местности |
+| marry / follow / dice | свадьба / наблюдение / жребий | названия инструментов |
+| badlands (dock label) | пустоши | в подписи инструмента; в тексте — «бесплодные земли» |
+| scenario | сценарий | |
