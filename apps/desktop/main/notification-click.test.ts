@@ -39,10 +39,10 @@ function harness(options: { failWindow?: boolean } = {}) {
     maximize() { this.calls.push('maximize') }
   }
   class FakeNotification {
-    handlers: Record<string, () => void> = {}
+    handlers: Record<string, (...args: unknown[]) => void> = {}
     static isSupported() { return true }
     constructor() { notifications.push(this) }
-    on(event: string, handler: () => void) { this.handlers[event] = handler }
+    on(event: string, handler: (...args: unknown[]) => void) { this.handlers[event] = handler }
     show() {}
   }
   const app = {
@@ -97,6 +97,20 @@ test('clicking a milestone notification with no window open creates one', async 
   notifications[0].handlers.click()
   await new Promise((resolve) => setImmediate(resolve))
   assert.equal(windows.length, 1)
+})
+
+test('a milestone notification macOS refuses to show is logged', () => {
+  const { context, notifications } = harness()
+  const warnings: unknown[][] = []
+  const warn = console.warn
+  console.warn = (...args: unknown[]) => { warnings.push(args) }
+  try {
+    vm.runInContext('notifyMilestone("Headline", "body")', context)
+    notifications[0].handlers.failed({}, 'Notifications are not allowed')
+  } finally {
+    console.warn = warn
+  }
+  assert.deepEqual(warnings, [['[main] notification failed:', 'Notifications are not allowed']])
 })
 
 test('a milestone click that cannot open a window is reported, not an unhandled rejection', async () => {
