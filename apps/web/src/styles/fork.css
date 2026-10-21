@@ -41,3 +41,10 @@
   line-height: 1;
   padding: 0 2px;
 }
+
+/* English title-cases some labels with text-transform: capitalize ("Bronze
+   Age"); Russian capitalizes only the first word, and the Russian names are
+   already written that way. */
+:lang(ru) :is(.tool-search-results strong, .trait-label, .civ-cal-value, .civ-era-next, .civ-era-ready) {
+  text-transform: none;
+}

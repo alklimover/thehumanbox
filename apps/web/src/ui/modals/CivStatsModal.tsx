@@ -461,7 +461,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                           {gov ? `${GOV_EMOJI[gov.kind] ?? ''} ${simLabel('government', gov.kind)}` : '-'}
                         </td>
                         <td role="cell" data-label={t('civ.col.currency')}>
-                          {currencies[l.id] ?? '-'}
+                          {currencies[l.id] ? simLabel('currency', currencies[l.id]) : '-'}
                         </td>
                         <td
                           role="cell"

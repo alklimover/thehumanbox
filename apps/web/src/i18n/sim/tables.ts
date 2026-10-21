@@ -17,6 +17,7 @@ import { deathCause } from './deathCause'
 import { religion } from './religion'
 import { animal } from './animal'
 import { concept } from './concept'
+import { currency } from './currency'
 import { treaty } from './treaty'
 import { mood } from './mood'
 import { personality } from './personality'
@@ -42,6 +43,7 @@ export const SIM_TABLES = {
   religion,
   animal,
   concept,
+  currency,
   treaty,
   mood,
   personality,
