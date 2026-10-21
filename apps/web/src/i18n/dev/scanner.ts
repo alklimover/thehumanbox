@@ -3,7 +3,7 @@
 // idle, so a busy frame never waits for the check.
 import { englishWords, DEFAULT_ALLOWLIST, type Allowlist } from './heuristic'
 import type { FindingKind, Report } from './report'
-import { SIM_TEXT_SELECTOR } from './sim-text'
+import { IGNORED_SELECTOR, SIM_TEXT_SELECTOR } from './sim-text'
 
 /** Attributes that are read out or shown as text. */
 export const CHECKED_ATTRIBUTES = ['title', 'placeholder', 'aria-label', 'alt'] as const
@@ -140,7 +140,7 @@ export class Scanner {
       acceptNode: (n) => {
         if (n.nodeType === Node.ELEMENT_NODE) {
           const child = n as Element
-          if (SKIPPED_TAGS.has(child.tagName) || child.hasAttribute(IGNORE_ATTRIBUTE)) {
+          if (SKIPPED_TAGS.has(child.tagName) || child.matches(IGNORED_SELECTOR)) {
             return NodeFilter.FILTER_REJECT
           }
         }
@@ -154,14 +154,14 @@ export class Scanner {
   }
 
   private skipped(el: Element): boolean {
-    return SKIPPED_TAGS.has(el.tagName) || el.closest(`[${IGNORE_ATTRIBUTE}]`) !== null
+    return SKIPPED_TAGS.has(el.tagName) || el.closest(IGNORED_SELECTOR) !== null
   }
 
   private scanText(node: Text) {
     const owner = node.parentElement
     const previous = this.owners.get(node)
     if (previous && previous !== owner) this.setMark(previous, node, null)
-    if (!owner || SKIPPED_TAGS.has(owner.tagName) || owner.closest(`[${IGNORE_ATTRIBUTE}]`)) return
+    if (!owner || SKIPPED_TAGS.has(owner.tagName) || owner.closest(IGNORED_SELECTOR)) return
     const text = (node.nodeValue ?? '').replace(/\s+/g, ' ').trim()
     const words = text ? englishWords(text, this.allow) : []
     if (words.length === 0) {

@@ -42,6 +42,9 @@ export const ALLOWED_WORDS: readonly string[] = [
   'Hz',
   // Technical and product names.
   'macOS',
+  'Mac',
+  // «id племени» in the search hint: the id is a technical word in Russian too.
+  'id',
   'Electron',
   'Chromium',
   'WebGL',
