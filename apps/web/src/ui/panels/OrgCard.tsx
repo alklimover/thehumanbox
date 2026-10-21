@@ -8,7 +8,7 @@ import { Tooltip } from '../toolbar/Tooltip'
 import { RenameForm } from './RenameForm'
 import { ageInYears } from '../../game/model/calendar'
 import { shownGeneration } from '../../game/model/generations'
-import { t, tn } from '../../i18n'
+import { fmtNumber, t, tn } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
 
 function Bar({ label, value, color, tip }: { label: string; value: number; color: string; tip?: string }) {
@@ -192,7 +192,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
             </span>
           ))}
           {org.attributes.length > 8 && (
-            <span className="org-attr-tag org-attr-more">+{org.attributes.length - 8}</span>
+            <span className="org-attr-tag org-attr-more">+{fmtNumber(org.attributes.length - 8)}</span>
           )}
         </div>
       )}
