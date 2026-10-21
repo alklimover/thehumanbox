@@ -9,7 +9,7 @@ import { farmStage } from '../../game/model/farms'
 import { getBuildingState } from '../../game/model/building-state'
 import { moonPhaseName } from '../../game/model/calendar'
 import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
-import { simLabel, simLabelAsSent } from '../../i18n/sim'
+import { cargoLabel, simLabel, simLabelAsSent } from '../../i18n/sim'
 
 interface Props {
   world: WorldState
@@ -989,7 +989,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                           {GOOD_EMOJI[caravan.cargo] ?? '\u{1F4E6}'}{' '}
                           {t('civ.trade.cargo', {
                             amount: caravan.amount,
-                            good: simLabel('good', caravan.cargo),
+                            good: cargoLabel(caravan.cargo),
                           })}{' '}
                           · {Math.round(progress * 100)}%
                         </span>
@@ -1022,7 +1022,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
                     </span>
                     <span className="civ-row-sub">
                       {GOOD_EMOJI[trade.good] ?? ''}{' '}
-                      {t('civ.trade.cargo', { amount: trade.amount, good: simLabel('good', trade.good) })}
+                      {t('civ.trade.cargo', { amount: trade.amount, good: cargoLabel(trade.good) })}
                     </span>
                     <span className="civ-row-tag">{tn('civ.trades.coins', trade.price)}</span>
                     <span className="civ-row-tag">{t('civ.tick', { tick: trade.tick })}</span>

@@ -26,6 +26,7 @@ import { settlement } from './settlement'
 import { strategy } from './strategy'
 import { milestone } from './milestone'
 import { festival } from './festival'
+import { practice } from './practice'
 
 export const SIM_TABLES = {
   era,
@@ -53,6 +54,7 @@ export const SIM_TABLES = {
   strategy,
   milestone,
   festival,
+  practice,
 }
 
 export type SimDomain = keyof typeof SIM_TABLES

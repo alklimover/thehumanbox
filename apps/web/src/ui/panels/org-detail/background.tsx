@@ -3,7 +3,7 @@ import { Bar } from './bars'
 import { TOOL_ICON } from './icons'
 import type { OrganismState, ReligionInfo } from '../../../shared/types'
 import { fmtNumber, t, type MessageKey } from '../../../i18n'
-import { prettifyId, simLabel } from '../../../i18n/sim'
+import { cargoLabel, prettifyId, simLabel } from '../../../i18n/sim'
 
 /** The subjects a university grants degrees in (pick_degree in sim/civ/civ_tick/people.rs). */
 const DEGREES: Record<string, MessageKey> = {
@@ -94,14 +94,14 @@ export function InventorySection({ org }: { org: OrganismState }) {
               {entries.map(([kind, count]) => (
                 <Tooltip
                   key={kind}
-                  tip={t('person.inventory.item', { item: simLabel('good', kind), n: count })}
+                  tip={t('person.inventory.item', { item: cargoLabel(kind), n: count })}
                 >
                   <span
                     className="relation-tag"
                     style={{ background: '#0a1a1a', color: '#88e6d4', cursor: 'default' }}
                   >
                     {TOOL_ICON[kind] ?? '🧰'}{' '}
-                    {t('person.inventory.item', { item: simLabel('good', kind), n: count })}
+                    {t('person.inventory.item', { item: cargoLabel(kind), n: count })}
                   </span>
                 </Tooltip>
               ))}

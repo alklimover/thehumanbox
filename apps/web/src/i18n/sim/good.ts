@@ -10,7 +10,8 @@ import type { SimTable } from './types'
  * - crops: `CropKind::name()`, vehicles: `TransportKind::name()` in crates/sim-core/src/sim/tech;
  * - the other keys of a person's `tools` (what `ctx.add_good` and the craft actions under
  *   crates/sim-core/src/sim/actions put there). The client lists the one-word keys as crafted goods;
- *   the keys with spaces ("play cello") are practice counters, not goods, and are left out.
+ *   the keys with spaces ("play cello") are practice counters, not goods: they live in `practice`
+ *   and `cargoLabel` falls back to them.
  */
 export const good: SimTable = {
   // Stores and materials.

@@ -33,6 +33,15 @@ export function simLabelAsSent(domain: SimDomain, id: string | null | undefined)
   return entry?.en ?? id
 }
 
+/**
+ * Something a person holds or a caravan carries: a good, or one of the practice
+ * counters ("play cello") the simulation keeps among a person's tools and trades with them.
+ */
+export function cargoLabel(id: string | null | undefined): string {
+  if (id && !Object.hasOwn(SIM_TABLES.good, id) && Object.hasOwn(SIM_TABLES.practice, id)) return simLabel('practice', id)
+  return simLabel('good', id)
+}
+
 /** Whether a table knows this id (for coverage checks and dev warnings). */
 export function hasSimLabel(domain: SimDomain, id: string): boolean {
   return id in SIM_TABLES[domain]
