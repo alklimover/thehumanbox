@@ -5,6 +5,7 @@ import { errors } from './errors'
 import { header } from './header'
 import { hud } from './hud'
 import { onboarding } from './onboarding'
+import { people } from './people'
 import { scenarios } from './scenarios'
 import { settings } from './settings'
 import { shortcuts } from './shortcuts'
@@ -22,6 +23,7 @@ const AREAS = {
   header,
   hud,
   onboarding,
+  people,
   scenarios,
   settings,
   shortcuts,
