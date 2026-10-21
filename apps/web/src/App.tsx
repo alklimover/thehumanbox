@@ -31,7 +31,7 @@ import { PrayerHint } from './ui/panels/PrayerHint'
 import { TribeCard } from './ui/panels/TribeCard'
 import { askConfirm } from './shared/confirm'
 import { toolFailure } from './ui/toolbar/tool-tips'
-import { t, tn } from './i18n'
+import { t, tn, type MessageKey } from './i18n'
 import { PAIR_TOOLS, SANDBOX_CATEGORIES, type LineageStrategy, type SandboxTool } from './simulation/sandbox'
 import { newPerils } from './game/model/peril-watch'
 import { prayerRows, prayerTool } from './game/model/prayers'
@@ -105,6 +105,15 @@ const SceneView = lazyWithRetry(() =>
 const ScenariosModal = lazyWithRetry(() =>
   import('./ui/modals/ScenariosModal').then((m) => ({ default: m.ScenariosModal })),
 )
+/** A tribe's guidance in words, for the status line once it is set. */
+const STRATEGY_WORDS: Record<LineageStrategy, MessageKey> = {
+  hunt: 'status.strategy.hunt',
+  explore: 'status.strategy.explore',
+  settle: 'status.strategy.settle',
+  trade: 'status.strategy.trade',
+  defend: 'status.strategy.defend',
+}
+
 function App() {
   return <LiveApp />
 }
@@ -231,17 +240,17 @@ function LiveApp() {
           retryable: localSaveStatus.phase === 'error' && localSaveStatus.retryable === true,
           status:
             localSaveStatus.phase === 'loading'
-              ? 'loading local save…'
+              ? t('status.save.loading')
               : localSaveStatus.phase === 'retrying'
-                ? 'retrying local storage…'
+                ? t('status.save.retrying')
                 : localSaveStatus.phase === 'ready'
                   ? localSaveStatus.restored
-                    ? `world restored at tick ${localSaveStatus.tick.toLocaleString()}`
-                    : 'new local world ready'
+                    ? t('status.save.restored', { tick: localSaveStatus.tick })
+                    : t('status.save.fresh')
                   : localSaveStatus.phase === 'saving'
-                    ? `saving tick ${localSaveStatus.tick.toLocaleString()}…`
+                    ? t('status.save.saving', { tick: localSaveStatus.tick })
                     : localSaveStatus.phase === 'saved'
-                      ? `saved locally · tick ${localSaveStatus.tick.toLocaleString()}`
+                      ? t('status.save.saved', { tick: localSaveStatus.tick })
                       : localSaveStatus.phase === 'error'
                         ? localSaveStatus.message
                         : undefined,
@@ -284,7 +293,8 @@ function LiveApp() {
     if (localSaveStatus.phase === 'saved' || localSaveStatus.phase === 'error') {
       saveFromKey.current = false
       setTemporarySandboxStatus(worldSaveRef.current?.status ?? null, 2400)
-    } else if (localSaveStatus.phase === 'saving') setTemporarySandboxStatus('saving the world…', 4000)
+    } else if (localSaveStatus.phase === 'saving')
+      setTemporarySandboxStatus(t('status.save.savingWorld'), 4000)
   }, [localSaveStatus, setTemporarySandboxStatus])
 
   useEffect(() => {
@@ -384,9 +394,9 @@ function LiveApp() {
       getWorldSource() === 'wasm'
         ? () => {
             void askConfirm({
-              title: 'Start a new world?',
-              body: 'This silent world is kept in recovery saves.',
-              confirmLabel: 'start new',
+              title: t('status.newWorld.title'),
+              body: t('status.newWorld.body'),
+              confirmLabel: t('status.newWorld.confirm'),
             }).then((ok) => {
               if (ok) requestOwnWorldReset()
             })
@@ -467,7 +477,11 @@ function LiveApp() {
         strategy,
         duration_ticks: 7200,
       })
-      setTemporarySandboxStatus(ok ? `${strategy} guidance set` : 'guidance failed')
+      setTemporarySandboxStatus(
+        ok
+          ? t('status.guidance.set', { strategy: t(STRATEGY_WORDS[strategy]) })
+          : t('status.guidance.failed'),
+      )
       return ok
     },
     [sandboxControlsEnabled, sendCommand, setTemporarySandboxStatus],
@@ -558,11 +572,11 @@ function LiveApp() {
         const prayers = world?.prayers ?? []
         const first = prayerRows(prayers, world?.tick ?? 0)[0]
         if (first) handleAnswerPrayer(first.prayer)
-        else setTemporarySandboxStatus('no one is praying')
+        else setTemporarySandboxStatus(t('status.noPrayers'))
       } else {
         const perils = [...(world?.tribes_in_peril ?? [])].sort((a, b) => a.population - b.population)
         if (!world || perils.length === 0) {
-          setTemporarySandboxStatus('no tribe is on the brink')
+          setTemporarySandboxStatus(t('status.noBrink'))
           return
         }
         const peril = perils[brinkIndex.current++ % perils.length]!
@@ -602,7 +616,7 @@ function LiveApp() {
       event.preventDefault()
       onPickTool({
         id: 'keyboard-playback',
-        label: runtimeState.paused ? 'play' : 'pause',
+        label: runtimeState.paused ? t('status.play') : t('status.pause'),
         icon: '',
         mode: 'instant',
         time: { control: runtimeState.paused ? 'resume' : 'pause' },
@@ -676,7 +690,7 @@ function LiveApp() {
     if (fresh.length > 0 && useUIStore.getState().pauseOnPeril) {
       pauseSim()
       const names = fresh.map((p) => p.tribe).join(', ')
-      setTemporarySandboxStatus(`paused: ${names} on the brink`)
+      setTemporarySandboxStatus(t('status.pausedOnBrink', { names }))
     }
   }, [world, pauseSim, setTemporarySandboxStatus])
 
@@ -833,9 +847,7 @@ function LiveApp() {
                   onRename={(lineage, name) => void sendCommand({ cmd: 'rename_tribe', lineage, name })}
                   onTeach={(lineage) =>
                     void sendCommand({ cmd: 'teach', lineage }).then((ok) =>
-                      setTemporarySandboxStatus(
-                        ok ? 'the gods taught them a secret' : 'they cannot be taught again yet',
-                      ),
+                      setTemporarySandboxStatus(ok ? t('status.teach.done') : t('status.teach.failed')),
                     )
                   }
                 />
@@ -853,18 +865,18 @@ function LiveApp() {
             <div className="waiting">
               {!localStartupFailed && <div className="waiting-spinner" aria-hidden="true" />}
               <div className="waiting-title">
-                {localStartupFailed ? 'local world could not start' : 'starting your world…'}
+                {localStartupFailed ? t('startup.failed') : t('startup.title')}
               </div>
               <div className="waiting-sub">
                 {localStartupFailed
                   ? localSaveStatus.message
                   : desktop
-                    ? 'starting the native simulation on this computer'
-                    : 'loading the private WebAssembly simulation saved in this browser'}
+                    ? t('startup.desktop')
+                    : t('startup.browser')}
               </div>
               {localStartupFailed && (
                 <button className="lang-btn" onClick={() => reloadAppSafely()}>
-                  retry local world
+                  {t('startup.retry')}
                 </button>
               )}
             </div>

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Game, World, Camera2D } from 'xipjs'
 import type { PrayerInfo, WorldState } from '../../shared/types'
+import { t } from '../../i18n'
 import type { InterpRefs } from '../../simulation/useSimulation'
 import { useUIStore } from '../../state/store'
 import { useCameraFocus } from '../../state/camera-focus'
@@ -187,7 +188,7 @@ export function WorldView({
       ref={containerRef}
       className="map2d-world"
       tabIndex={0}
-      aria-label="Interactive world map"
+      aria-label={t('map.aria')}
       style={{
         flex: 1,
         minWidth: 0,
@@ -337,7 +338,7 @@ export function WorldView({
               setRendererKey((key) => key + 1)
             }}
           >
-            Retry renderer
+            {t('map.retry')}
           </button>
         </div>
       )}

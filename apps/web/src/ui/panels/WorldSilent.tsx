@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { WorldState } from '../../shared/types'
 import { everLived, livingCount, worldEpitaph } from '../../game/model/world-end'
+import { fmtNumber, t, tn } from '../../i18n'
 import { Modal } from '../modals/LazyModal'
 
 interface Props {
@@ -29,34 +30,34 @@ export function WorldSilent({ world, onSeed, onNewWorld }: Props) {
   const close = () => setDismissed(true)
 
   return (
-    <Modal open onClose={close} className="confirm-modal world-silent" title="The world has fallen silent">
+    <Modal open onClose={close} className="confirm-modal world-silent" title={t('silent.title')}>
       <div className="confirm-body">
-        <p>The last of your people is gone. Nothing stirs in the villages they built.</p>
+        <p>{t('silent.body')}</p>
         <dl className="world-silent-stats">
-          <dt>lasted</dt>
-          <dd>
-            {e.years} {e.years === 1 ? 'year' : 'years'}
-          </dd>
-          <dt>most alive at once</dt>
-          <dd>{e.peak.toLocaleString()}</dd>
-          <dt>tribes</dt>
-          <dd>{e.tribes}</dd>
+          <dt>{t('silent.lasted')}</dt>
+          <dd>{tn('silent.years', e.years)}</dd>
+          <dt>{t('silent.peak')}</dt>
+          <dd>{fmtNumber(e.peak)}</dd>
+          <dt>{t('silent.tribes')}</dt>
+          <dd>{fmtNumber(e.tribes)}</dd>
           {e.era && (
             <>
-              <dt>furthest age</dt>
+              <dt>{t('silent.era')}</dt>
               <dd>{e.era}</dd>
             </>
           )}
-          <dt>prayers answered</dt>
+          <dt>{t('silent.answered')}</dt>
           <dd>
-            {e.answered}
-            {e.forsaken > 0 && <span className="world-silent-forsaken"> · {e.forsaken} unanswered</span>}
+            {fmtNumber(e.answered)}
+            {e.forsaken > 0 && (
+              <span className="world-silent-forsaken">{t('silent.unanswered', { n: e.forsaken })}</span>
+            )}
           </dd>
         </dl>
       </div>
       <div className="confirm-actions">
         <button className="lang-btn" onClick={close}>
-          keep watching
+          {t('silent.keepWatching')}
         </button>
         {onNewWorld && (
           <button
@@ -66,7 +67,7 @@ export function WorldSilent({ world, onSeed, onNewWorld }: Props) {
               onNewWorld()
             }}
           >
-            new world
+            {t('silent.newWorld')}
           </button>
         )}
         <button
@@ -77,7 +78,7 @@ export function WorldSilent({ world, onSeed, onNewWorld }: Props) {
             onSeed()
           }}
         >
-          seed new people
+          {t('silent.seed')}
         </button>
       </div>
     </Modal>
