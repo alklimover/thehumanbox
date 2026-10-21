@@ -1,31 +1,29 @@
-import type { SimTable } from './types'
-
-// One table per kind of simulation id. Each maps the id exactly as the
-// simulation sends it to its Russian name and, where the game showed something
-// other than the prettified id, its English name.
-const era: SimTable = {}
-const building: SimTable = {}
-const buildingFunction: SimTable = {}
-const discovery: SimTable = {}
-const specialty: SimTable = {}
-const good: SimTable = {}
-const government: SimTable = {}
-const law: SimTable = {}
-const disease: SimTable = {}
-const zodiac: SimTable = {}
-const aspiration: SimTable = {}
-const attribute: SimTable = {}
-const deathCause: SimTable = {}
-const religion: SimTable = {}
-const animal: SimTable = {}
-const concept: SimTable = {}
-const treaty: SimTable = {}
-const mood: SimTable = {}
-const personality: SimTable = {}
-const ageStage: SimTable = {}
-const settlement: SimTable = {}
-const strategy: SimTable = {}
-const milestone: SimTable = {}
+// One table per kind of simulation id, each in its own file. A table maps the
+// id exactly as the simulation sends it to its Russian name and, where the
+// game showed something other than the prettified id, its English name.
+import { era } from './era'
+import { building } from './building'
+import { buildingFunction } from './buildingFunction'
+import { discovery } from './discovery'
+import { specialty } from './specialty'
+import { good } from './good'
+import { government } from './government'
+import { law } from './law'
+import { disease } from './disease'
+import { zodiac } from './zodiac'
+import { aspiration } from './aspiration'
+import { attribute } from './attribute'
+import { deathCause } from './deathCause'
+import { religion } from './religion'
+import { animal } from './animal'
+import { concept } from './concept'
+import { treaty } from './treaty'
+import { mood } from './mood'
+import { personality } from './personality'
+import { ageStage } from './ageStage'
+import { settlement } from './settlement'
+import { strategy } from './strategy'
+import { milestone } from './milestone'
 
 export const SIM_TABLES = {
   era,
@@ -51,6 +49,6 @@ export const SIM_TABLES = {
   settlement,
   strategy,
   milestone,
-} satisfies Record<string, SimTable>
+}
 
 export type SimDomain = keyof typeof SIM_TABLES
