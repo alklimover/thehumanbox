@@ -2,6 +2,7 @@ import { lineageColor } from '../../../shared/constants'
 import type { OrganismState, OrgDetail } from '../../../shared/types'
 import { t, tn, type MessageKey } from '../../../i18n'
 import { sexByName, sexOf, simText } from '../../../i18n/simtext'
+import { displayName } from '../../../i18n/names'
 
 /** The word for each kind of memory the simulation keeps. */
 const MEMORY_KIND: Record<string, MessageKey> = {
@@ -60,7 +61,7 @@ export function BondsRememberedSection({
                             cursor: 'pointer',
                           }}
                         >
-                          ↪ {relatedOrg.name}
+                          ↪ {displayName(relatedOrg.name)}
                         </button>
                       )}
                     </span>
@@ -143,9 +144,9 @@ export function MemoriesSection({
                           borderRadius: 3,
                           cursor: 'pointer',
                         }}
-                        title={t('person.memories.goTo', { name: relatedOrg.name })}
+                        title={t('person.memories.goTo', { name: displayName(relatedOrg.name) })}
                       >
-                        ↪ {relatedOrg.name}
+                        ↪ {displayName(relatedOrg.name)}
                       </button>
                     )}
                   </span>

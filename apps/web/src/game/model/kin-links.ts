@@ -3,6 +3,8 @@
 // card can select them. Built only from what the client already has: the ids
 // on each person, the friends they name, their trust toward others, and the
 // organisms list.
+import { personName } from '../../shared/personName'
+import { displayName } from '../../i18n/names'
 
 export interface KinPerson {
   id: string
@@ -43,8 +45,8 @@ export function kinLinks(
   const link = (id: string | null | undefined, fallbackName?: string): KinLink | null => {
     if (!id) return null
     const o = byId.get(id)
-    if (o) return { id, name: o.custom_name?.trim() || o.name, alive: o.alive }
-    if (fallbackName) return { id, name: fallbackName, alive: false }
+    if (o) return { id, name: personName(o), alive: o.alive }
+    if (fallbackName) return { id, name: displayName(fallbackName), alive: false }
     return null
   }
 

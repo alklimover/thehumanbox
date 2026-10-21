@@ -20,6 +20,7 @@ import { eldestByLineage, eldestLine } from '../../game/model/tribe-eldest'
 import { ToolSprite } from '../toolbar/ToolSprite'
 import { t, tn } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
+import { displayName } from '../../i18n/names'
 
 interface Props {
   world: WorldState
@@ -131,7 +132,9 @@ export function TribeCard({ world, onAnswer, onTool, onRename, onTeach }: Props)
   const gens = generationsOf(world.lineage_generations, status.id)
   const crime = crimeLineOf(world.lineage_crime, status.id)
   const prayer = status.prayer
-  const enemies = enemiesOf(world.battles, status.id).map((l) => world.lineage_names?.[l] ?? l.slice(0, 6))
+  const enemies = enemiesOf(world.battles, status.id).map(
+    (l) => displayName(world.lineage_names?.[l]) || l.slice(0, 6),
+  )
   const field = activeBattles(world.battles).find(
     (b) => b.attackers.includes(status.id) || b.defenders.includes(status.id),
   )
@@ -150,10 +153,14 @@ export function TribeCard({ world, onAnswer, onTool, onRename, onTeach }: Props)
   }
 
   return (
-    <div className="tribe-card" role="region" aria-label={t('panel.tribe.aria', { name: status.name })}>
+    <div
+      className="tribe-card"
+      role="region"
+      aria-label={t('panel.tribe.aria', { name: displayName(status.name) })}
+    >
       <div className="tribe-card-head">
         <span className="lineage-dot" style={{ background: lineageColor(status.id) }} />
-        <TribeName key={status.id} lineage={status.id} name={status.name} onRename={onRename} />
+        <TribeName key={status.id} lineage={status.id} name={displayName(status.name)} onRename={onRename} />
         <button className="tribe-card-close" aria-label={t('common.close')} onClick={() => setFocus('all')}>
           ×
         </button>
@@ -173,7 +180,7 @@ export function TribeCard({ world, onAnswer, onTool, onRename, onTeach }: Props)
                   ui.followOrg(leadership.leader!.id)
                 }}
               >
-                {leadership.leader.name}
+                {displayName(leadership.leader.name)}
               </button>
             </>
           )}

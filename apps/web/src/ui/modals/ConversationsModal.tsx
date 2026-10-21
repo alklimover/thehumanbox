@@ -10,6 +10,7 @@ import { getLocale, t, type MessageKey } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
 import { CONVERSATION_GLOSS } from '../../i18n/sim/concept'
 import { sexLabel as sexWord } from './words'
+import { displayName } from '../../i18n/names'
 
 const DAY_LENGTH = 600
 
@@ -84,7 +85,7 @@ const ConvoBlock = memo(function ConvoBlock({
           {meta.label}
         </span>
         <span className="cv-participants">
-          <span style={{ color: selfColor, fontWeight: 600 }}>{selfOrg.name}</span>
+          <span style={{ color: selfColor, fontWeight: 600 }}>{displayName(selfOrg.name)}</span>
           <span className="cv-sep">&amp;</span>
           <span style={{ color: pColor, fontWeight: 600 }}>{entry.with_name}</span>
         </span>
@@ -151,7 +152,9 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
     return allConvos.filter((c) => c.kind === kindFilter)
   }, [allConvos, kindFilter])
   const partnerOrg = org.partner_id ? allOrgs.find((o) => o.id === org.partner_id) : null
-  const sexLabel = sexWords ? (org.sex === 'female' ? sexWords[1] : sexWords[0]) : org.sex && sexWord(org.sex)
+  const sexLabel = sexWords
+    ? displayName(org.sex === 'female' ? sexWords[1] : sexWords[0])
+    : org.sex && sexWord(org.sex)
   const kindCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const c of allConvos) counts[c.kind] = (counts[c.kind] ?? 0) + 1
@@ -178,7 +181,10 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
           )}
           {partnerOrg && (
             <span style={{ color: '#c07090', marginLeft: 8 }}>
-              ♥ <span style={{ color: lineageColor(partnerOrg.lineage_id) }}>{partnerOrg.name}</span>
+              ♥{' '}
+              <span style={{ color: lineageColor(partnerOrg.lineage_id) }}>
+                {displayName(partnerOrg.name)}
+              </span>
             </span>
           )}
         </div>

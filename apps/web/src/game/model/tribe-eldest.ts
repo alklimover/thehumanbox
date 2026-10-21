@@ -4,6 +4,7 @@
 // only changes once a day, not on every tick.
 
 import { tn } from '../../i18n'
+import { personName } from '../../shared/personName'
 
 const DAY_TICKS = 600
 
@@ -30,7 +31,7 @@ export function eldestByLineage(
     if (cur === undefined || o.age > cur) {
       oldest[o.lineage_id] = o.age
       out[o.lineage_id] = {
-        name: o.custom_name?.trim() || o.name,
+        name: personName(o),
         days: Math.floor(o.age / DAY_TICKS),
       }
     }

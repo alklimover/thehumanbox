@@ -3,6 +3,7 @@ import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
 import { t, tn } from '../../../i18n'
 import { sexOf, simText } from '../../../i18n/simtext'
+import { displayName } from '../../../i18n/names'
 
 export const TAVERN_RADIUS = 18
 
@@ -43,7 +44,7 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
   const anchor = findTavernAnchor(world, scene.lineageId)
   if (!anchor) return null
 
-  const lineageName = world.lineage_names?.[scene.lineageId] ?? scene.lineageId.slice(0, 6)
+  const lineageName = displayName(world.lineage_names?.[scene.lineageId]) || scene.lineageId.slice(0, 6)
 
   const inside: SceneOccupant[] = []
   const away: SceneOccupant[] = []

@@ -3,6 +3,7 @@
 // and every age is in ticks.
 
 import { ageInYears } from './calendar'
+import { personName } from '../../shared/personName'
 
 export interface LongestLife {
   name: string
@@ -39,7 +40,7 @@ export function longevityOf(organisms: ReadonlyArray<DeadPerson>): Longevity {
     total += o.age
     if (!longest || o.age > longest.age) {
       longest = {
-        name: o.custom_name?.trim() || o.name,
+        name: personName(o),
         lineage_id: o.lineage_id ?? '',
         age: o.age,
       }

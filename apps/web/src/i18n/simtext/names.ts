@@ -4,6 +4,7 @@
 // (create_religion in sim/actions/religion_expanded/mod.rs). Each is taken
 // apart and put together again in Russian.
 import { SIM_TABLES } from '../sim/tables'
+import { nameRu } from '../../i18n/names'
 
 /** A book's topic in the forms its title prefixes need. */
 interface Topic {
@@ -91,4 +92,6 @@ export const NAME_DOMAINS: Record<string, (value: string) => string | null> = {
   book: bookTitle,
   artwork: artworkTitle,
   faith: faithName,
+  // A word of a tribe's own language, made of the same syllables as names: «ри».
+  word: (value) => nameRu(value),
 }

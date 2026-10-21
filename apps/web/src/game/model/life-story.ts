@@ -6,6 +6,7 @@
 import { t, tn, type PluralKey } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
 import { sexOf, simText } from '../../i18n/simtext'
+import { personName } from '../../shared/personName'
 
 /** A day in ticks, the same as DAY_LENGTH in ui/panels/org-detail/format.ts. */
 const DAY_TICKS = 600
@@ -37,7 +38,7 @@ const MAJOR = new Set(['inheritance', 'friendship', 'loss', 'apprenticeship'])
 const MAX_EVENTS = 3
 
 function nameOf(p: StoryPerson): string {
-  return p.custom_name?.trim() || p.name
+  return personName(p)
 }
 
 /** The message for a sentence whose Russian verb takes the person's gender. */

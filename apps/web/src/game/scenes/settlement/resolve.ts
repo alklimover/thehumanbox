@@ -2,13 +2,14 @@ import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core
 import type { WorldState } from '../../../shared/types'
 import { t, tn } from '../../../i18n'
 import { sexOf, simText } from '../../../i18n/simtext'
+import { displayName } from '../../../i18n/names'
 
 const RADIUS = 12
 
 export function resolveSettlementScene(world: WorldState, scene: SceneId): SceneContext | null {
   if (scene.kind !== 'settlement') return null
   const { centerX, centerY, lineageId } = scene
-  const lineageName = world.lineage_names?.[lineageId] ?? lineageId.slice(0, 6)
+  const lineageName = displayName(world.lineage_names?.[lineageId]) || lineageId.slice(0, 6)
 
   const inside: SceneOccupant[] = []
   const away: SceneOccupant[] = []

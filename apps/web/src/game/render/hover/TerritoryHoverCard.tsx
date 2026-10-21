@@ -8,6 +8,7 @@ import { isMapControl, screenToMap, type MapCamera, type MapSize } from '../came
 import { pickBuildingAt, pickPersonAt } from '../cf/picking'
 import { t, tn } from '../../../i18n'
 import { simLabel } from '../../../i18n/sim'
+import { displayName } from '../../../i18n/names'
 
 interface Props {
   world: WorldState
@@ -129,14 +130,14 @@ function TribeFacts({ facts, lineage }: { facts: TerritoryCardFacts; lineage: st
             display: 'inline-block',
           }}
         />
-        {facts.name}
+        {displayName(facts.name)}
       </div>
       <div>
         {tn('map.hover.people', facts.people)}
         {facts.era ? ` · ${eraName(facts.era)}` : ''}
       </div>
       <div>
-        {facts.leader ? t('map.hover.ledBy', { leader: facts.leader }) : t('map.hover.noLeader')}
+        {facts.leader ? t('map.hover.ledBy', { leader: displayName(facts.leader) }) : t('map.hover.noLeader')}
         {facts.government ? ` (${simLabel('government', facts.government)})` : ''}
       </div>
       {facts.wealthGap && <div>{t('map.hover.wealth', { gap: facts.wealthGap })}</div>}

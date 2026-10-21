@@ -20,7 +20,7 @@ describe('reflections', () => {
       simText('thought', "still: I haven't forgotten — danger hurts. fire warms", { sex: 'female' }),
     ).toBe('тихо: я не забыла — опасность ранит. Огонь греет')
     expect(simText('thought', 'I am Lupif, a seeker at heart, here in the world')).toBe(
-      'я — Lupif, в душе искатель, здесь, в этом мире',
+      'я — Лупиф, в душе искатель, здесь, в этом мире',
     )
   })
 
