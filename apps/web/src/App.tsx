@@ -31,6 +31,7 @@ import { PrayerHint } from './ui/panels/PrayerHint'
 import { TribeCard } from './ui/panels/TribeCard'
 import { askConfirm } from './shared/confirm'
 import { toolFailure } from './ui/toolbar/tool-tips'
+import { t, tn } from './i18n'
 import { PAIR_TOOLS, SANDBOX_CATEGORIES, type LineageStrategy, type SandboxTool } from './simulation/sandbox'
 import { newPerils } from './game/model/peril-watch'
 import { prayerRows, prayerTool } from './game/model/prayers'
@@ -311,13 +312,13 @@ function LiveApp() {
         }
         setTemporarySandboxStatus(
           tool.id.endsWith('_view')
-            ? `${tool.label} ${enabled ? 'shown' : 'hidden'}`
-            : `${tool.label} map ${enabled ? 'on' : 'off'}`,
+            ? t(enabled ? 'tools.status.viewShown' : 'tools.status.viewHidden', { tool: tool.label })
+            : t(enabled ? 'tools.status.mapOn' : 'tools.status.mapOff', { tool: tool.label }),
         )
         return
       }
       if (tool.mode === 'instant') {
-        setSandboxStatus(`${tool.label}...`)
+        setSandboxStatus(t('tools.status.working', { tool: tool.label }))
         let handled = true
         if (tool.time) {
           const result =
@@ -329,12 +330,16 @@ function LiveApp() {
                   ? setSpeed(tool.time.mult)
                   : Promise.resolve(false)
           void result.then((ok) =>
-            setTemporarySandboxStatus(ok ? `${tool.label} applied` : `${tool.label} failed`),
+            setTemporarySandboxStatus(
+              t(ok ? 'tools.status.applied' : 'tools.status.failed', { tool: tool.label }),
+            ),
           )
         } else if (tool.fire) {
           void sendCommand(tool.fire).then((ok) => {
             if (ok && tool.overlay) useSkyOverlay.getState().start(tool.overlay)
-            setTemporarySandboxStatus(ok ? `${tool.label} applied` : `${tool.label} failed`)
+            setTemporarySandboxStatus(
+              t(ok ? 'tools.status.applied' : 'tools.status.failed', { tool: tool.label }),
+            )
           })
         } else {
           handled = false
@@ -372,7 +377,7 @@ function LiveApp() {
   const handleSeedPeople = useCallback(() => {
     const tool = SANDBOX_CATEGORIES.flatMap((c) => c.tools).find((t) => t.id === 'spawn5')
     if (tool && armedTool?.id !== tool.id) onPickTool(tool)
-    setSandboxStatus('click the land to seed a new tribe')
+    setSandboxStatus(t('tools.status.seedTribe'))
   }, [armedTool, onPickTool])
   const handleNewWorld = useMemo(
     () =>
@@ -407,21 +412,21 @@ function LiveApp() {
         // Following is the camera's business, not a world command: keep the nearest person in view.
         const person = nearestLivingPerson(useWorldStore.getState().world?.organisms ?? [], wx, wy, 4)
         if (!person) {
-          setTemporarySandboxStatus('follow · nobody in reach here')
+          setTemporarySandboxStatus(t('tools.status.followNobody'))
           return
         }
         useUIStore.getState().followOrg(person.id)
-        setTemporarySandboxStatus(`following ${personName(person)}`)
+        setTemporarySandboxStatus(t('tools.status.following', { name: personName(person) }))
         return
       }
       if (armedTool.id === 'name') {
         const person = nearestLivingPerson(useWorldStore.getState().world?.organisms ?? [], wx, wy, 4)
         if (!person) {
-          setTemporarySandboxStatus('name · nobody in reach here')
+          setTemporarySandboxStatus(t('tools.status.nameNobody'))
           return
         }
         useUIStore.getState().startRename(person.id)
-        setTemporarySandboxStatus(`name · type a new name for ${personName(person)}`)
+        setTemporarySandboxStatus(t('tools.status.naming', { name: personName(person) }))
         return
       }
       const pair = PAIR_TOOLS[armedTool.id]
@@ -442,10 +447,12 @@ function LiveApp() {
       const label = armedTool.label
       const x = Math.round(wx)
       const y = Math.round(wy)
-      setSandboxStatus(`${label} -> ${x}, ${y}`)
+      // The place is written as plain digits, without the grouping a number would get.
+      const at = { tool: label, x: String(x), y: String(y) }
+      setSandboxStatus(t('tools.status.at', at))
       const tool = armedTool
       void sendCommand(tool.build!(x, y, brush)).then((ok) => {
-        setTemporarySandboxStatus(ok ? `${label} applied at ${x}, ${y}` : `${label} · ${toolFailure(tool)}`)
+        setTemporarySandboxStatus(ok ? t('tools.status.appliedAt', at) : `${label} · ${toolFailure(tool)}`)
       })
     },
     [armedTool, brush, sandboxControlsEnabled, sendCommand, setTemporarySandboxStatus],
@@ -571,7 +578,7 @@ function LiveApp() {
   const runScenario = useCallback(
     (preset: ScenarioPreset, width: number, height: number) => {
       const steps = preset.steps(width, height)
-      setTemporarySandboxStatus(`${preset.title} · starting`)
+      setTemporarySandboxStatus(t('scenarios.starting', { title: preset.title }))
       void (async () => {
         let worked = 0
         for (const step of steps) {
@@ -579,8 +586,8 @@ function LiveApp() {
         }
         setTemporarySandboxStatus(
           worked === steps.length
-            ? `${preset.title} is in the world`
-            : `${preset.title}: ${worked} of ${steps.length} steps worked`,
+            ? t('scenarios.done', { title: preset.title })
+            : tn('scenarios.partial', steps.length, { title: preset.title, worked }),
         )
       })()
     },
@@ -896,7 +903,7 @@ function LiveApp() {
               ui.setOverlay(null)
               ui.setTerritoryView(false)
               ui.setViewFlag('history', false)
-              setTemporarySandboxStatus('map layers cleared')
+              setTemporarySandboxStatus(t('tools.status.layersCleared'))
             }}
           />
         )}

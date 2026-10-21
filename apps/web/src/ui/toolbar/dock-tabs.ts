@@ -1,3 +1,4 @@
+import { t } from '../../i18n'
 import { SANDBOX_CATEGORIES, type SandboxCategory, type SandboxTool } from '../../simulation/sandbox'
 
 /**
@@ -23,37 +24,37 @@ export interface DockTab {
 export const DOCK_TABS: DockTab[] = [
   {
     id: 'life',
-    label: 'life',
+    label: t('tools.tab.life'),
     icon: '🚶',
-    tip: 'People, their helpers, the monsters that stalk them, and every animal from foxes to whales',
+    tip: t('tools.tabTip.life'),
     groups: ['life', 'monsters', 'animals', 'birds', 'reptiles', 'safari'],
   },
   {
     id: 'nature',
-    label: 'nature',
+    label: t('tools.tab.nature'),
     icon: '⛰️',
-    tip: 'Terrain and biomes, the sky and the time of day, eclipses and comets, the eras, and blessings of the land',
+    tip: t('tools.tabTip.nature'),
     groups: ['terrain', 'biomes', 'sky', 'miracles', 'eras'],
   },
   {
     id: 'resources',
-    label: 'resources',
+    label: t('tools.tab.resources'),
     icon: '🍎',
-    tip: 'Food, plantings and buildings, and the blessings, weather and healing you can give',
+    tip: t('tools.tabTip.resources'),
     groups: ['resources', 'build', 'good'],
   },
   {
     id: 'deadly',
-    label: 'deadly',
+    label: t('tools.tab.deadly'),
     icon: '💀',
-    tip: 'Disasters, plagues, and war',
+    tip: t('tools.tabTip.deadly'),
     groups: ['bad'],
   },
   {
     id: 'world',
-    label: 'world',
+    label: t('tools.tab.world'),
     icon: '🗺️',
-    tip: 'Whole tribes (food and tools for every member, a forced migration, a trade of food) and the map layers',
+    tip: t('tools.tabTip.world'),
     groups: ['tribes', 'maps', 'view'],
   },
 ]
@@ -83,7 +84,7 @@ export function groupsFor(tabId: string): SandboxCategory[] {
 }
 
 /** The life tab's own group is its people; under the word "life" the chip says so. */
-const GROUP_LABELS: Record<string, string> = { life: 'people' }
+const GROUP_LABELS: Record<string, string> = { life: t('tools.chip.life') }
 
 /** What a group's chip on the bar says. */
 export function groupLabel(group: SandboxCategory): string {

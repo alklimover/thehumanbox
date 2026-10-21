@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setLocaleForTests } from '../../i18n/locale'
 import { SANDBOX_CATEGORIES, type SandboxTool } from '../../simulation/sandbox'
 import { toolHowTo, toolReach } from './tool-tips'
 
@@ -28,5 +29,16 @@ describe('a point tool says what the brush reaches', () => {
   it('says nothing about a reach for an instant tool or a layer', () => {
     expect(toolReach(toolById('rain'), 2)).toBe('')
     expect(toolHowTo(toolById('rain'), 2)).toBe('click to apply at once')
+  })
+})
+
+describe('in Russian', () => {
+  afterEach(() => setLocaleForTests('en'))
+
+  it('puts the reach in the right plural form', () => {
+    setLocaleForTests('ru')
+    expect(toolReach(toolById('road'), 1)).toBe('радиус: 1 клетка · ')
+    expect(toolReach(toolById('rain_patch'), 0)).toBe('радиус: 4 клетки · ')
+    expect(toolReach(toolById('rain_patch'), 1)).toBe('радиус: 5 клеток · ')
   })
 })

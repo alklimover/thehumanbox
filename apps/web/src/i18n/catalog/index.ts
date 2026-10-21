@@ -3,11 +3,14 @@ import { common } from './common'
 import { dialogs } from './dialogs'
 import { errors } from './errors'
 import { onboarding } from './onboarding'
+import { scenarios } from './scenarios'
 import { settings } from './settings'
 import { splash } from './splash'
+import { tools } from './tools'
+import { toolTips } from './tools-tips'
 
 /** Every area of the interface. Add a new area here; its keys join MessageKey. */
-const AREAS = { common, dialogs, errors, onboarding, settings, splash }
+const AREAS = { common, dialogs, errors, onboarding, scenarios, settings, splash, tools, toolTips }
 
 type Areas = typeof AREAS
 export type MessageKey = { [A in keyof Areas]: keyof Areas[A]['en'] & string }[keyof Areas]

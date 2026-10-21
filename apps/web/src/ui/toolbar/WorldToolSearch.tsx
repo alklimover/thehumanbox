@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { t, tn } from '../../i18n'
 import { ToolSprite } from './ToolSprite'
 import type { SandboxTool } from '../../simulation/sandbox'
 import { searchWorldTools } from './tool-search'
@@ -27,7 +28,7 @@ const ToolResults = memo(function ToolResults({
           <span>
             <strong>{tool.label}</strong>
             <small>
-              {category} · {tool.mode === 'point' ? 'place on the map' : 'apply immediately'}
+              {category} · {tool.mode === 'point' ? t('tools.search.point') : t('tools.search.instant')}
             </small>
           </span>
           <span aria-hidden="true">→</span>
@@ -96,18 +97,18 @@ export function WorldToolSearch({
     >
       <header>
         <div>
-          <span>WORLD CONTROLS</span>
-          <h2 id="tool-search-title">What would you like to do?</h2>
+          <span>{t('tools.search.kicker')}</span>
+          <h2 id="tool-search-title">{t('tools.search.title')}</h2>
         </div>
-        <button onClick={close} aria-label="Close tool search">
+        <button onClick={close} aria-label={t('tools.search.close')}>
           ×
         </button>
       </header>
       <input
         ref={input}
         type="search"
-        placeholder="Try water, heal, grass, pause…"
-        aria-label="Find a world tool"
+        placeholder={t('tools.search.placeholder')}
+        aria-label={t('tools.search.input')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
@@ -118,14 +119,10 @@ export function WorldToolSearch({
         }}
       />
       <p className="tool-search-count" role="status">
-        {results.length} tools{query ? ' found' : ' available'} · choose a tool to continue
+        {tn(query ? 'tools.search.found' : 'tools.search.available', results.length)}
       </p>
       <ToolResults results={results} onPick={pick} />
-      {!results.length && (
-        <p className="tool-search-empty">
-          No matching tools. Try a terrain type, animal, map layer, or time control.
-        </p>
-      )}
+      {!results.length && <p className="tool-search-empty">{t('tools.search.empty')}</p>}
     </dialog>,
     document.body,
   )
