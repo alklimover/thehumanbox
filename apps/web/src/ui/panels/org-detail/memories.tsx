@@ -1,6 +1,7 @@
 import { lineageColor } from '../../../shared/constants'
 import type { OrganismState, OrgDetail } from '../../../shared/types'
 import { t, tn, type MessageKey } from '../../../i18n'
+import { sexByName, sexOf, simText } from '../../../i18n/simtext'
 
 /** The word for each kind of memory the simulation keeps. */
 const MEMORY_KIND: Record<string, MessageKey> = {
@@ -44,7 +45,7 @@ export function BondsRememberedSection({
                       {t('person.bonds.bond')}
                     </span>
                     <span className="thought-text" style={{ color: emo, flex: 1 }}>
-                      {m.text}
+                      {simText('memory', m.text, { sex: sexOf(detail), sexOf: sexByName(organisms) })}
                       {relatedOrg && (
                         <button
                           onClick={() => onSelectOrg?.(relatedOrg.id)}
@@ -128,7 +129,7 @@ export function MemoriesSection({
                     {kindName(m.kind)}
                   </span>
                   <span className="thought-text" style={{ color: emoColor, flex: 1 }}>
-                    {m.text}
+                    {simText('memory', m.text, { sex: sexOf(detail), sexOf: sexByName(organisms) })}
                     {relatedOrg && (
                       <button
                         onClick={() => onSelectOrg?.(relatedOrg.id)}

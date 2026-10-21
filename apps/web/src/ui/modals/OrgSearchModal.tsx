@@ -7,6 +7,7 @@ import { OrgDetail } from '../panels/OrgDetail'
 import { Modal } from './Modal'
 import { t } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
+import { sexOf, simText } from '../../i18n/simtext'
 
 const DAY_LENGTH = 600
 
@@ -296,7 +297,9 @@ export function OrgSearchModal({ organisms, onTrack, onClose, lineageNames }: Pr
 
                 {org.alive ? (
                   <>
-                    <div className="org-search-thought">{org.thought}</div>
+                    <div className="org-search-thought">
+                      {simText('thought', org.thought, { sex: sexOf(org) })}
+                    </div>
                     <div className="org-search-bars">
                       <div
                         className="org-mini-bar"

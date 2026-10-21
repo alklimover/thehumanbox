@@ -2,6 +2,7 @@ import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
 import { t, type MessageKey } from '../../../i18n'
+import { sexOf, simText } from '../../../i18n/simtext'
 
 const RADIUS = 14
 
@@ -54,7 +55,11 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
     const entry: SceneOccupant = {
       org: o,
       role: isWorker ? 'host' : 'patron',
-      activity: isWorker ? t(words.working) : o.thought || t('map.shop.visiting'),
+      activity: isWorker
+        ? t(words.working)
+        : o.thought
+          ? simText('thought', o.thought, { sex: sexOf(o) })
+          : t('map.shop.visiting'),
     }
     if (d <= 3) inside.push(entry)
     else away.push(entry)

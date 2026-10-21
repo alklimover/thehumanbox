@@ -5,6 +5,7 @@ import { useWorldStore } from '../../state/worldStore'
 import { EVENT_ICONS, EVENT_COLORS } from '../../shared/constants'
 import { eventTarget } from '../../game/model/event-target'
 import { fmtNumber, t } from '../../i18n'
+import { sexByName, simText } from '../../i18n/simtext'
 
 /** Rows about the player's own role: prayers and how they ended. */
 const GODLY = new Set(['prayer', 'answered', 'forsaken'])
@@ -22,6 +23,7 @@ function goTo(event: SimEvent) {
 }
 
 export function EventRow({ event }: { event: SimEvent }) {
+  const actorSex = sexByName(useWorldStore.getState().world?.organisms)(event.actor)
   return (
     <div
       className={'event-row' + (GODLY.has(event.type) ? ' godly' : '')}
@@ -40,8 +42,8 @@ export function EventRow({ event }: { event: SimEvent }) {
       <span className="event-icon" style={{ color: EVENT_COLORS[event.type] }}>
         {EVENT_ICONS[event.type]}
       </span>
-      <span className="event-actor">{event.actor}</span>
-      <span className="event-detail">{event.detail}</span>
+      <span className="event-actor">{simText('event', event.actor)}</span>
+      <span className="event-detail">{simText('event', event.detail, { sex: actorSex })}</span>
     </div>
   )
 }

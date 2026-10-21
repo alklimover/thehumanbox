@@ -1,6 +1,7 @@
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
 import { t, tn } from '../../../i18n'
+import { sexOf, simText } from '../../../i18n/simtext'
 
 const RADIUS = 12
 
@@ -31,7 +32,7 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
     const entry: SceneOccupant = {
       org: o,
       role: o.is_leader ? 'host' : 'kin',
-      activity: o.thought || t('map.scene.idling'),
+      activity: o.thought ? simText('thought', o.thought, { sex: sexOf(o) }) : t('map.scene.idling'),
     }
     if (d <= 5) inside.push(entry)
     else away.push(entry)

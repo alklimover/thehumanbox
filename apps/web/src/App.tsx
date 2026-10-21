@@ -83,6 +83,7 @@ import { OCEAN, hex } from './game/render/art-palette'
 import clsx from 'clsx'
 import './App.css'
 import './pixel-theme.css'
+import { simText } from './i18n/simtext'
 
 // The map renderer (the xipjs engine plus every draw layer and sprite painter) is a
 // third of the app's JavaScript and is only needed once the first world frame has
@@ -702,7 +703,7 @@ function LiveApp() {
     const desk = window.thbDesktop
     if (!desk || !picked.headline) return
     if (document.visibilityState !== 'visible' || desktopWindowInactiveRef.current) {
-      void desk.app.notify({ title: 'The Human Box', body: picked.headline.text })
+      void desk.app.notify({ title: 'The Human Box', body: simText('headline', picked.headline.text) })
     }
   }, [world?.headlines])
 

@@ -5,6 +5,7 @@ import type { OrganismState, WorldState } from '../../shared/types'
 import { useUIStore } from '../../state/store'
 import { lazyWithRetry as lazy } from '../../shared/lazyWithRetry'
 import { t } from '../../i18n'
+import { sexOf, simText } from '../../i18n/simtext'
 
 // The person cards and the detail view (with the life-story modal) are only drawn
 // once the drawer is open, so they ship as their own chunk instead of in the first
@@ -149,7 +150,9 @@ export function RightPanel({ world, liveOrgs, deadOrgs, selectedOrg }: Props) {
                         </button>
                       )}
                     </div>
-                    <div className="org-thought">{org.thought ?? '-'}</div>
+                    <div className="org-thought">
+                      {org.thought ? simText('thought', org.thought, { sex: sexOf(org) }) : '-'}
+                    </div>
                   </div>
                 ))}
               </>

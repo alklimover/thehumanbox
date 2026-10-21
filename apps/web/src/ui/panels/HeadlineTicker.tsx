@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { t } from '../../i18n'
 import type { WorldState } from '../../shared/types'
+import { simText } from '../../i18n/simtext'
 
 interface Props {
   world: WorldState | null
@@ -11,7 +12,7 @@ export function HeadlineTicker({ world, enabled = true }: Props) {
   const lines = useMemo<string[]>(() => {
     if (!world?.headlines || world.headlines.length === 0) return []
     const newest = world.headlines.slice(0, 12)
-    return newest.map((h) => h.text ?? '').filter(Boolean)
+    return newest.map((h) => simText('headline', h.text ?? '')).filter(Boolean)
   }, [world?.headlines])
 
   if (!enabled || lines.length === 0) return null
