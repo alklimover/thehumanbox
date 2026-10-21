@@ -44,4 +44,42 @@ export const memories: SimTextTable = {
   'I am growing — my body changes and the elders watch': 'Я расту — тело меняется, и старшие смотрят на меня',
   'a young one of our people came of age, and we gathered to see them stand':
     'кто-то из наших юных повзрослел, и мы собрались посмотреть на это',
+  'I was born by the wet land where the reeds grow': 'Я [родился|родилась] у болот, где растёт тростник',
+  'I was born on the burning land': 'Я [родился|родилась] на горящей земле',
+  'the first frost arrived and the cold settled in my bones':
+    'пришли первые заморозки, и холод поселился в моих костях',
+  'we welcomed a new soul into our people by name': 'мы приняли в наш народ новую душу и дали ей имя',
+  'warmth returned, and the earth gave fresh shoots': 'вернулось тепло, и земля дала свежие ростки',
+  'I have lived one full year in this world': 'я [прожил|прожила] в этом мире целый год',
+  'the snow softened, the streams ran fast and cold': 'снег осел, ручьи побежали быстро и холодно',
+  'we celebrated a pairing — vows, dance, and food until the stars dimmed':
+    'мы праздновали союз — клятвы, пляски и угощение, пока не побледнели звёзды',
+  // Conversations, losses, knowledge.
+  'talked with {other_name} about courtship': '[говорил|говорила] с {other_name} о любви',
+  'talked with {other_name} about excited': 'радостно [поговорил|поговорила] с {other_name}',
+  'talked with {other_name} about argue': '[поспорил|поспорила] с {other_name}',
+  'talked with {other_name} about gossip': '[посплетничал|посплетничала] с {other_name}',
+  'talked with {other_name} about bonded': '[поговорил|поговорила] по душам с {other_name}',
+  'talked with {other_name} about chat': '[поболтал|поболтала] с {other_name}',
+  'overheard {a_name} and {c_name} argue': '[слышал|слышала], как спорят {a_name} и {c_name}',
+  'overheard {a_name} and {c_name} gossip': '[слышал|слышала], как сплетничают {a_name} и {c_name}',
+  'overheard {a_name} and {c_name} excited': '[слышал|слышала], как оживлённо болтают {a_name} и {c_name}',
+  'overheard {a_name} and {c_name} chat': '[слышал|слышала], как болтают {a_name} и {c_name}',
+  'I challenged {target_name_for_mem}': 'Я [бросил|бросила] вызов {target_name_for_mem}',
+  'I lost {dead_name}, who slept beside me through the years':
+    'Я [потерял|потеряла] {dead_name} — столько лет мы спали рядом',
+  'I lost my father {dead_name} when I was small': 'В детстве я [потерял|потеряла] отца — {dead_name}',
+  'I lost my mother {dead_name} when I was small': 'В детстве я [потерял|потеряла] мать — {dead_name}',
+  '{actor_name} of another people taught me without asking for return':
+    'Меня учили, ничего не прося взамен: {actor_name} из чужого народа',
+  'I gave knowledge to {target_name_for_mem}, of another people — they took it':
+    'Я [поделился|поделилась] знанием с {target_name_for_mem} из чужого народа — его приняли',
+  'I lost my friend {dead_name}': 'Я [потерял|потеряла] друга — {dead_name}',
+  'brought down a {kind} that day': 'в тот день [добыл|добыла] зверя: {kind|animal}',
+  'I saw green and violet curtains breathing across the night sky':
+    'Я [видел|видела], как по ночному небу колышутся зелёные и фиолетовые занавеси',
+  'I marvelled at the stars tonight — the world felt impossibly large':
+    'Этой ночью я [любовался|любовалась] звёздами — мир казался невозможно большим',
+  'we shared a dream tonight — bright shapes that neither of us could name':
+    'этой ночью нам снился один сон на двоих — яркие образы, которым никто из нас не знал названия',
 }
