@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { t } from '../../i18n'
 import { getDesktop } from '../../shared/desktop'
 import type { UpdateInfo } from '../../shared/desktop'
 
@@ -27,7 +28,7 @@ export function DesktopUpdateToast() {
     // Surface updater failures instead of leaving the app silently stuck.
     const offError = desktop.on('updater:error', (payload) => {
       if (!payload?.message) return
-      setError(`update failed: ${payload.message}`)
+      setError(t('toast.desktop.error', { message: payload.message }))
       setInstalling(false)
       setDismissed(false)
     })
@@ -43,10 +44,10 @@ export function DesktopUpdateToast() {
   if (dismissed) return null
 
   const isReady = state.kind === 'downloaded'
-  const title = isReady ? 'Update ready to install' : 'Update available'
+  const title = isReady ? t('toast.desktop.ready') : t('toast.desktop.available')
   const subtitle = isReady
-    ? `v${state.info.version} downloaded — restart to apply`
-    : `v${state.info.version} downloading…`
+    ? t('toast.desktop.downloaded', { version: state.info.version })
+    : t('toast.desktop.downloading', { version: state.info.version })
 
   return (
     <div style={wrap}>
@@ -68,20 +69,20 @@ export function DesktopUpdateToast() {
                 .then((result) => {
                   if (result.status !== 'downloaded') {
                     setInstalling(false)
-                    setError(result.message ?? 'update is not ready yet')
+                    setError(result.message ?? t('toast.desktop.notReady'))
                   }
                 })
                 .catch((err: unknown) => {
                   setInstalling(false)
-                  setError(err instanceof Error ? err.message : 'could not restart updater')
+                  setError(err instanceof Error ? err.message : t('toast.desktop.restartFailed'))
                 })
             }}
-            title="Restart The Human Box and install the downloaded update"
+            title={t('toast.desktop.restartTip')}
           >
-            {installing ? 'restarting…' : 'restart'}
+            {installing ? t('toast.desktop.restarting') : t('toast.desktop.restart')}
           </button>
         )}
-        <button style={dismissBtn} onClick={() => setDismissed(true)} aria-label="Dismiss">
+        <button style={dismissBtn} onClick={() => setDismissed(true)} aria-label={t('toast.dismiss')}>
           ✕
         </button>
       </div>

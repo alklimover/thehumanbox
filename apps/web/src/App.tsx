@@ -1,4 +1,5 @@
 import { personName } from './shared/personName'
+import { t, type MessageKey } from './i18n'
 import {
   Fragment,
   useCallback,
@@ -104,6 +105,15 @@ const SceneView = lazyWithRetry(() =>
 const ScenariosModal = lazyWithRetry(() =>
   import('./ui/modals/ScenariosModal').then((m) => ({ default: m.ScenariosModal })),
 )
+/** A tribe's guidance in words, for the status line once it is set. */
+const STRATEGY_WORDS: Record<LineageStrategy, MessageKey> = {
+  hunt: 'status.strategy.hunt',
+  explore: 'status.strategy.explore',
+  settle: 'status.strategy.settle',
+  trade: 'status.strategy.trade',
+  defend: 'status.strategy.defend',
+}
+
 function App() {
   return <LiveApp />
 }
@@ -230,17 +240,17 @@ function LiveApp() {
           retryable: localSaveStatus.phase === 'error' && localSaveStatus.retryable === true,
           status:
             localSaveStatus.phase === 'loading'
-              ? 'loading local save…'
+              ? t('status.save.loading')
               : localSaveStatus.phase === 'retrying'
-                ? 'retrying local storage…'
+                ? t('status.save.retrying')
                 : localSaveStatus.phase === 'ready'
                   ? localSaveStatus.restored
-                    ? `world restored at tick ${localSaveStatus.tick.toLocaleString()}`
-                    : 'new local world ready'
+                    ? t('status.save.restored', { tick: localSaveStatus.tick })
+                    : t('status.save.fresh')
                   : localSaveStatus.phase === 'saving'
-                    ? `saving tick ${localSaveStatus.tick.toLocaleString()}…`
+                    ? t('status.save.saving', { tick: localSaveStatus.tick })
                     : localSaveStatus.phase === 'saved'
-                      ? `saved locally · tick ${localSaveStatus.tick.toLocaleString()}`
+                      ? t('status.save.saved', { tick: localSaveStatus.tick })
                       : localSaveStatus.phase === 'error'
                         ? localSaveStatus.message
                         : undefined,
@@ -283,7 +293,8 @@ function LiveApp() {
     if (localSaveStatus.phase === 'saved' || localSaveStatus.phase === 'error') {
       saveFromKey.current = false
       setTemporarySandboxStatus(worldSaveRef.current?.status ?? null, 2400)
-    } else if (localSaveStatus.phase === 'saving') setTemporarySandboxStatus('saving the world…', 4000)
+    } else if (localSaveStatus.phase === 'saving')
+      setTemporarySandboxStatus(t('status.save.savingWorld'), 4000)
   }, [localSaveStatus, setTemporarySandboxStatus])
 
   useEffect(() => {
@@ -311,13 +322,13 @@ function LiveApp() {
         }
         setTemporarySandboxStatus(
           tool.id.endsWith('_view')
-            ? `${tool.label} ${enabled ? 'shown' : 'hidden'}`
-            : `${tool.label} map ${enabled ? 'on' : 'off'}`,
+            ? t(enabled ? 'status.view.shown' : 'status.view.hidden', { tool: tool.label })
+            : t(enabled ? 'status.map.on' : 'status.map.off', { tool: tool.label }),
         )
         return
       }
       if (tool.mode === 'instant') {
-        setSandboxStatus(`${tool.label}...`)
+        setSandboxStatus(t('status.tool.running', { tool: tool.label }))
         let handled = true
         if (tool.time) {
           const result =
@@ -329,12 +340,16 @@ function LiveApp() {
                   ? setSpeed(tool.time.mult)
                   : Promise.resolve(false)
           void result.then((ok) =>
-            setTemporarySandboxStatus(ok ? `${tool.label} applied` : `${tool.label} failed`),
+            setTemporarySandboxStatus(
+              t(ok ? 'status.tool.applied' : 'status.tool.failed', { tool: tool.label }),
+            ),
           )
         } else if (tool.fire) {
           void sendCommand(tool.fire).then((ok) => {
             if (ok && tool.overlay) useSkyOverlay.getState().start(tool.overlay)
-            setTemporarySandboxStatus(ok ? `${tool.label} applied` : `${tool.label} failed`)
+            setTemporarySandboxStatus(
+              t(ok ? 'status.tool.applied' : 'status.tool.failed', { tool: tool.label }),
+            )
           })
         } else {
           handled = false
@@ -372,16 +387,16 @@ function LiveApp() {
   const handleSeedPeople = useCallback(() => {
     const tool = SANDBOX_CATEGORIES.flatMap((c) => c.tools).find((t) => t.id === 'spawn5')
     if (tool && armedTool?.id !== tool.id) onPickTool(tool)
-    setSandboxStatus('click the land to seed a new tribe')
+    setSandboxStatus(t('status.seedTribe'))
   }, [armedTool, onPickTool])
   const handleNewWorld = useMemo(
     () =>
       getWorldSource() === 'wasm'
         ? () => {
             void askConfirm({
-              title: 'Start a new world?',
-              body: 'This silent world is kept in recovery saves.',
-              confirmLabel: 'start new',
+              title: t('status.newWorld.title'),
+              body: t('status.newWorld.body'),
+              confirmLabel: t('status.newWorld.confirm'),
             }).then((ok) => {
               if (ok) requestOwnWorldReset()
             })
@@ -407,21 +422,21 @@ function LiveApp() {
         // Following is the camera's business, not a world command: keep the nearest person in view.
         const person = nearestLivingPerson(useWorldStore.getState().world?.organisms ?? [], wx, wy, 4)
         if (!person) {
-          setTemporarySandboxStatus('follow · nobody in reach here')
+          setTemporarySandboxStatus(t('status.follow.nobody'))
           return
         }
         useUIStore.getState().followOrg(person.id)
-        setTemporarySandboxStatus(`following ${personName(person)}`)
+        setTemporarySandboxStatus(t('status.following', { name: personName(person) }))
         return
       }
       if (armedTool.id === 'name') {
         const person = nearestLivingPerson(useWorldStore.getState().world?.organisms ?? [], wx, wy, 4)
         if (!person) {
-          setTemporarySandboxStatus('name · nobody in reach here')
+          setTemporarySandboxStatus(t('status.name.nobody'))
           return
         }
         useUIStore.getState().startRename(person.id)
-        setTemporarySandboxStatus(`name · type a new name for ${personName(person)}`)
+        setTemporarySandboxStatus(t('status.name.type', { name: personName(person) }))
         return
       }
       const pair = PAIR_TOOLS[armedTool.id]
@@ -442,10 +457,12 @@ function LiveApp() {
       const label = armedTool.label
       const x = Math.round(wx)
       const y = Math.round(wy)
-      setSandboxStatus(`${label} -> ${x}, ${y}`)
+      // Coordinates are a place, not a quantity: no digit grouping.
+      const at = { tool: label, x: String(x), y: String(y) }
+      setSandboxStatus(t('status.tool.aiming', at))
       const tool = armedTool
       void sendCommand(tool.build!(x, y, brush)).then((ok) => {
-        setTemporarySandboxStatus(ok ? `${label} applied at ${x}, ${y}` : `${label} · ${toolFailure(tool)}`)
+        setTemporarySandboxStatus(ok ? t('status.tool.appliedAt', at) : `${label} · ${toolFailure(tool)}`)
       })
     },
     [armedTool, brush, sandboxControlsEnabled, sendCommand, setTemporarySandboxStatus],
@@ -460,7 +477,11 @@ function LiveApp() {
         strategy,
         duration_ticks: 7200,
       })
-      setTemporarySandboxStatus(ok ? `${strategy} guidance set` : 'guidance failed')
+      setTemporarySandboxStatus(
+        ok
+          ? t('status.guidance.set', { strategy: t(STRATEGY_WORDS[strategy]) })
+          : t('status.guidance.failed'),
+      )
       return ok
     },
     [sandboxControlsEnabled, sendCommand, setTemporarySandboxStatus],
@@ -551,11 +572,11 @@ function LiveApp() {
         const prayers = world?.prayers ?? []
         const first = prayerRows(prayers, world?.tick ?? 0)[0]
         if (first) handleAnswerPrayer(first.prayer)
-        else setTemporarySandboxStatus('no one is praying')
+        else setTemporarySandboxStatus(t('status.noPrayers'))
       } else {
         const perils = [...(world?.tribes_in_peril ?? [])].sort((a, b) => a.population - b.population)
         if (!world || perils.length === 0) {
-          setTemporarySandboxStatus('no tribe is on the brink')
+          setTemporarySandboxStatus(t('status.noBrink'))
           return
         }
         const peril = perils[brinkIndex.current++ % perils.length]!
@@ -571,7 +592,7 @@ function LiveApp() {
   const runScenario = useCallback(
     (preset: ScenarioPreset, width: number, height: number) => {
       const steps = preset.steps(width, height)
-      setTemporarySandboxStatus(`${preset.title} · starting`)
+      setTemporarySandboxStatus(t('status.scenario.starting', { title: preset.title }))
       void (async () => {
         let worked = 0
         for (const step of steps) {
@@ -579,8 +600,8 @@ function LiveApp() {
         }
         setTemporarySandboxStatus(
           worked === steps.length
-            ? `${preset.title} is in the world`
-            : `${preset.title}: ${worked} of ${steps.length} steps worked`,
+            ? t('status.scenario.done', { title: preset.title })
+            : t('status.scenario.partial', { title: preset.title, worked, total: steps.length }),
         )
       })()
     },
@@ -595,7 +616,7 @@ function LiveApp() {
       event.preventDefault()
       onPickTool({
         id: 'keyboard-playback',
-        label: runtimeState.paused ? 'play' : 'pause',
+        label: runtimeState.paused ? t('status.play') : t('status.pause'),
         icon: '',
         mode: 'instant',
         time: { control: runtimeState.paused ? 'resume' : 'pause' },
@@ -669,7 +690,7 @@ function LiveApp() {
     if (fresh.length > 0 && useUIStore.getState().pauseOnPeril) {
       pauseSim()
       const names = fresh.map((p) => p.tribe).join(', ')
-      setTemporarySandboxStatus(`paused: ${names} on the brink`)
+      setTemporarySandboxStatus(t('status.pausedOnBrink', { names }))
     }
   }, [world, pauseSim, setTemporarySandboxStatus])
 
@@ -826,9 +847,7 @@ function LiveApp() {
                   onRename={(lineage, name) => void sendCommand({ cmd: 'rename_tribe', lineage, name })}
                   onTeach={(lineage) =>
                     void sendCommand({ cmd: 'teach', lineage }).then((ok) =>
-                      setTemporarySandboxStatus(
-                        ok ? 'the gods taught them a secret' : 'they cannot be taught again yet',
-                      ),
+                      setTemporarySandboxStatus(ok ? t('status.teach.done') : t('status.teach.failed')),
                     )
                   }
                 />
@@ -846,18 +865,18 @@ function LiveApp() {
             <div className="waiting">
               {!localStartupFailed && <div className="waiting-spinner" aria-hidden="true" />}
               <div className="waiting-title">
-                {localStartupFailed ? 'local world could not start' : 'starting your world…'}
+                {localStartupFailed ? t('startup.failed') : t('startup.title')}
               </div>
               <div className="waiting-sub">
                 {localStartupFailed
                   ? localSaveStatus.message
                   : desktop
-                    ? 'starting the native simulation on this computer'
-                    : 'loading the private WebAssembly simulation saved in this browser'}
+                    ? t('startup.desktop')
+                    : t('startup.browser')}
               </div>
               {localStartupFailed && (
                 <button className="lang-btn" onClick={() => reloadAppSafely()}>
-                  retry local world
+                  {t('startup.retry')}
                 </button>
               )}
             </div>
@@ -896,7 +915,7 @@ function LiveApp() {
               ui.setOverlay(null)
               ui.setTerritoryView(false)
               ui.setViewFlag('history', false)
-              setTemporarySandboxStatus('map layers cleared')
+              setTemporarySandboxStatus(t('status.layersCleared'))
             }}
           />
         )}

@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useUIStore, useViewFlag } from '../../state/store'
 import { SHORTCUT_HELP } from '../../game/model/shortcuts'
+import { t } from '../../i18n'
 import { saveMapPicture } from '../../shared/mapPicture'
 import { useWorldStore } from '../../state/worldStore'
 import { Tooltip } from './Tooltip'
@@ -62,7 +63,7 @@ export function MoreDropdown({
                   findTool()
                 }}
               >
-                <span>⌕ Find a tool…</span>
+                <span>{t('more.findTool')}</span>
                 <kbd>/</kbd>
               </button>
             )}
@@ -88,180 +89,180 @@ export function MoreDropdown({
           <div className="more-dropdown-divider" />
         </>
       )}
-      <div className="more-dropdown-section">focus</div>
+      <div className="more-dropdown-section">{t('more.focus')}</div>
       <div className="more-dropdown-grid">
-        <Tooltip tip="Show every organism (clear the focus filter)">
+        <Tooltip tip={t('more.focus.all.tip')}>
           <button
             className={clsx('lang-btn', focus === 'all' && 'active')}
             aria-pressed={!!(focus === 'all')}
             onClick={() => setFocus('all')}
           >
-            · all
+            {t('more.focus.all')}
           </button>
         </Tooltip>
-        <Tooltip tip="Highlight sick organisms">
+        <Tooltip tip={t('more.focus.sick.tip')}>
           <button
             className={clsx('lang-btn', focus === 'sick' && 'active')}
             aria-pressed={!!(focus === 'sick')}
             onClick={() => setFocus(focus === 'sick' ? 'all' : 'sick')}
           >
-            🤒 sick
+            {t('more.focus.sick')}
           </button>
         </Tooltip>
-        <Tooltip tip="Highlight starving organisms">
+        <Tooltip tip={t('more.focus.hungry.tip')}>
           <button
             className={clsx('lang-btn', focus === 'hungry' && 'active')}
             aria-pressed={!!(focus === 'hungry')}
             onClick={() => setFocus(focus === 'hungry' ? 'all' : 'hungry')}
           >
-            😫 hungry
+            {t('more.focus.hungry')}
           </button>
         </Tooltip>
-        <Tooltip tip="Highlight elders">
+        <Tooltip tip={t('more.focus.elders.tip')}>
           <button
             className={clsx('lang-btn', focus === 'elders' && 'active')}
             aria-pressed={!!(focus === 'elders')}
             onClick={() => setFocus(focus === 'elders' ? 'all' : 'elders')}
           >
-            👴 elders
+            {t('more.focus.elders')}
           </button>
         </Tooltip>
-        <Tooltip tip="Highlight builders">
+        <Tooltip tip={t('more.focus.builders.tip')}>
           <button
             className={clsx('lang-btn', focus === 'builders' && 'active')}
             aria-pressed={!!(focus === 'builders')}
             onClick={() => setFocus(focus === 'builders' ? 'all' : 'builders')}
           >
-            🏗 builders
+            {t('more.focus.builders')}
           </button>
         </Tooltip>
-        <Tooltip tip="Highlight thriving organisms">
+        <Tooltip tip={t('more.focus.thriving.tip')}>
           <button
             className={clsx('lang-btn', focus === 'thriving' && 'active')}
             aria-pressed={!!(focus === 'thriving')}
             onClick={() => setFocus(focus === 'thriving' ? 'all' : 'thriving')}
           >
-            ✦ thriving
+            {t('more.focus.thriving')}
           </button>
         </Tooltip>
       </div>
 
       <div className="more-dropdown-divider" />
-      <div className="more-dropdown-section">organism decorations</div>
+      <div className="more-dropdown-section">{t('more.decorations')}</div>
       <div className="more-dropdown-grid">
-        <Tooltip tip="Colored dot per organism showing tribe affiliation">
+        <Tooltip tip={t('more.lineage.tip')}>
           <button
             className={clsx('lang-btn', lineageDot && 'active')}
             aria-pressed={!!lineageDot}
             onClick={() => setViewFlag('lineageDot', !lineageDot)}
           >
-            ⬤ lineage
+            {t('more.lineage')}
           </button>
         </Tooltip>
-        <Tooltip tip="Ring tint by health">
+        <Tooltip tip={t('more.health.tip')}>
           <button
             className={clsx('lang-btn', health && 'active')}
             aria-pressed={!!health}
             onClick={() => setViewFlag('health', !health)}
           >
-            ♥ health
+            {t('more.health')}
           </button>
         </Tooltip>
-        <Tooltip tip="Age tint: child / adult / elder">
+        <Tooltip tip={t('more.age.tip')}>
           <button
             className={clsx('lang-btn', age && 'active')}
             aria-pressed={!!age}
             onClick={() => setViewFlag('age', !age)}
           >
-            ⏳ age
+            {t('more.age')}
           </button>
         </Tooltip>
-        <Tooltip tip="Fear halo around frightened organisms">
+        <Tooltip tip={t('more.fear.tip')}>
           <button
             className={clsx('lang-btn', fear && 'active')}
             aria-pressed={!!fear}
             onClick={() => setViewFlag('fear', !fear)}
           >
-            ⚠ fear
+            {t('more.fear')}
           </button>
         </Tooltip>
-        <Tooltip tip="Bond line between partners">
+        <Tooltip tip={t('more.pairs.tip')}>
           <button
             className={clsx('lang-btn', partners && 'active')}
             aria-pressed={!!partners}
             onClick={() => setViewFlag('partners', !partners)}
           >
-            ♥♥ pairs
+            {t('more.pairs')}
           </button>
         </Tooltip>
-        <Tooltip tip="Pregnancy marker">
+        <Tooltip tip={t('more.pregnant.tip')}>
           <button
             className={clsx('lang-btn', pregnancy && 'active')}
             aria-pressed={!!pregnancy}
             onClick={() => setViewFlag('pregnancy', !pregnancy)}
           >
-            ◯ pregnant
+            {t('more.pregnant')}
           </button>
         </Tooltip>
-        <Tooltip tip="Food / water / path stigmergy">
+        <Tooltip tip={t('more.trails.tip')}>
           <button
             className={clsx('lang-btn', trails && 'active')}
             aria-pressed={!!trails}
             onClick={() => setViewFlag('trails', !trails)}
           >
-            ⋯ trails
+            {t('more.trails')}
           </button>
         </Tooltip>
-        <Tooltip tip="Highlight huts and campfires">
+        <Tooltip tip={t('more.builds.tip')}>
           <button
             className={clsx('lang-btn', structures && 'active')}
             aria-pressed={!!structures}
             onClick={() => setViewFlag('structures', !structures)}
           >
-            ⌂ builds
+            {t('more.builds')}
           </button>
         </Tooltip>
-        <Tooltip tip="Soil fertility heat">
+        <Tooltip tip={t('more.fertility.tip')}>
           <button
             className={clsx('lang-btn', fertility && 'active')}
             aria-pressed={!!fertility}
             onClick={() => setViewFlag('fertility', !fertility)}
           >
-            ✿ fertility
+            {t('more.fertility')}
           </button>
         </Tooltip>
-        <Tooltip tip="Hazard scars — violence and death">
+        <Tooltip tip={t('more.hazard.tip')}>
           <button
             className={clsx('lang-btn', hazard && 'active')}
             aria-pressed={!!hazard}
             onClick={() => setViewFlag('hazard', !hazard)}
           >
-            ✶ hazard
+            {t('more.hazard')}
           </button>
         </Tooltip>
-        <Tooltip tip="Per-lineage drift over the last ~60 sim-days">
+        <Tooltip tip={t('more.history.tip')}>
           <button
             className={clsx('lang-btn', history && 'active')}
             aria-pressed={!!history}
             onClick={() => setViewFlag('history', !history)}
           >
-            ↝ history
+            {t('more.history')}
           </button>
         </Tooltip>
-        <Tooltip tip="Frames-per-second and frame timing">
+        <Tooltip tip={t('more.perf.tip')}>
           <button
             className={clsx('lang-btn', fps && 'active')}
             aria-pressed={!!fps}
             onClick={() => setViewFlag('fps', !fps)}
           >
-            ⏱ perf
+            {t('more.perf')}
           </button>
         </Tooltip>
       </div>
 
       <div className="more-dropdown-divider" />
       <div className="more-dropdown-grid">
-        <Tooltip tip="Browse the languages lineages have invented">
+        <Tooltip tip={t('more.languages.tip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -269,10 +270,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ⌖ lang
+            {t('more.languages')}
           </button>
         </Tooltip>
-        <Tooltip tip="Add a ready-made group of people or animals to the world you are watching">
+        <Tooltip tip={t('more.scenes.tip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -280,10 +281,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ✦ scenes
+            {t('more.scenes')}
           </button>
         </Tooltip>
-        <Tooltip tip="What your world has achieved so far">
+        <Tooltip tip={t('more.feats.tip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -291,10 +292,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ★ feats
+            {t('more.feats')}
           </button>
         </Tooltip>
-        <Tooltip tip="The goals this world is playing for, and its difficulty">
+        <Tooltip tip={t('more.goals.tip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -302,10 +303,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ◎ goals
+            {t('more.goals')}
           </button>
         </Tooltip>
-        <Tooltip tip="Family tree of bloodlines and descent">
+        <Tooltip tip={t('more.tree.tip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -313,10 +314,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ⬡ tree
+            {t('more.tree')}
           </button>
         </Tooltip>
-        <Tooltip tip="Toggle the left world panel (history, lineages, events)">
+        <Tooltip tip={t('more.world.tip')}>
           <button
             className={clsx('lang-btn', leftOpen && 'active')}
             aria-pressed={!!leftOpen}
@@ -325,22 +326,22 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ⊞ world
+            {t('more.world')}
           </button>
         </Tooltip>
-        <Tooltip tip="Pause the game whenever a tribe newly falls on the brink">
+        <Tooltip tip={t('more.onBrink.tip')}>
           <button
             className={clsx('lang-btn', pauseOnPeril && 'active')}
             aria-pressed={pauseOnPeril}
             onClick={() => setPauseOnPeril(!pauseOnPeril)}
           >
-            ⏸ on brink
+            {t('more.onBrink')}
           </button>
         </Tooltip>
         <Tooltip
           tip={
             <span className="tip-card">
-              <strong>keys</strong>
+              <strong>{t('more.keys.title')}</strong>
               {SHORTCUT_HELP.map(([key, what]) => (
                 <span key={key}>
                   <b>{key}</b> {what}
@@ -349,9 +350,9 @@ export function MoreDropdown({
             </span>
           }
         >
-          <button className="lang-btn">⌨ keys</button>
+          <button className="lang-btn">{t('more.keys')}</button>
         </Tooltip>
-        <Tooltip tip="Save a picture of the world as it looks now">
+        <Tooltip tip={t('more.picture.tip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -359,10 +360,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ▣ picture
+            {t('more.picture')}
           </button>
         </Tooltip>
-        <Tooltip tip="Top organisms by age, family size, friends, wealth, knowledge, joy, grief…">
+        <Tooltip tip={t('more.notable.tip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -370,7 +371,7 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            ✦ notable
+            {t('more.notable')}
           </button>
         </Tooltip>
       </div>

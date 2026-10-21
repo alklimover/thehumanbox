@@ -3,6 +3,7 @@ import { useCameraFocus } from '../../state/camera-focus'
 import { useUIStore } from '../../state/store'
 import type { WorldState } from '../../shared/types'
 import { PERIL_HELP, remainingLine, tribeHome } from '../../game/model/tribe-peril'
+import { t, tn } from '../../i18n'
 import { Tooltip } from '../toolbar/Tooltip'
 
 interface Props {
@@ -22,20 +23,24 @@ export function PerilChip({ world }: Props) {
   const lead = perils[0]!
   const tip =
     perils.length === 1
-      ? `The ${lead.tribe} are on the brink: ${remainingLine(lead.population)}, ${PERIL_HELP[lead.cause].reason}.`
-      : `${perils.length} tribes are on the brink. Click to go to each in turn.`
+      ? t('peril.one', {
+          tribe: lead.tribe,
+          remaining: remainingLine(lead.population),
+          reason: PERIL_HELP[lead.cause].reason,
+        })
+      : tn('peril.many', perils.length)
   return (
     <Tooltip
       tip={
         <span className="tip-card">
-          <strong>on the brink</strong>
+          <strong>{t('peril.title')}</strong>
           <span>{tip}</span>
         </span>
       }
     >
       <button
         className="hdr-chip peril-chip"
-        aria-label={perils.length === 1 ? '1 tribe on the brink' : `${perils.length} tribes on the brink`}
+        aria-label={tn('peril.aria', perils.length)}
         onClick={() => {
           const peril = perils[next % perils.length]!
           setNext((n) => n + 1)

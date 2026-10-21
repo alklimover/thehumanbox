@@ -1,17 +1,56 @@
+import { t, tn } from '../../i18n'
 import type { PrayerInfo } from '../../shared/types'
 
-/** What each prayer asks for, and which tool answers it. */
-export const PRAYER_KINDS: Record<string, { plea: string; tool: string; icon: string }> = {
-  hunger: { plea: 'pray for food', tool: 'harvest', icon: '🌾' },
-  thirst: { plea: 'pray for clean water', tool: 'drink', icon: '💧' },
-  sickness: { plea: 'pray for their sick', tool: 'cure', icon: '💊' },
-  danger: { plea: 'beg to be saved from beasts', tool: 'banish', icon: '🛡️' },
-  rain: { plea: 'pray for rain', tool: 'rain', icon: '🌧️' },
-  children: { plea: 'pray for children', tool: 'love', icon: '❤️' },
-  peace: { plea: 'pray for the war to end', tool: 'peace', icon: '🕊️' },
-  knowledge: { plea: 'pray for wisdom', tool: 'inspire', icon: '💡' },
-  shelter: { plea: 'pray for shelter from the cold', tool: 'shelter', icon: '🛖' },
-  fire: { plea: 'beg the gods to put out the fire', tool: 'douse', icon: '🪣' },
+/**
+ * What each prayer asks for, and which tool answers it. `plea` is what they (the tribe's people)
+ * ask, "pray for food"; `pleaOne` is the same said of one tribe, which Russian puts in the singular.
+ */
+export const PRAYER_KINDS: Record<string, { plea: string; pleaOne: string; tool: string; icon: string }> = {
+  hunger: {
+    plea: t('prayers.plea.hunger'),
+    pleaOne: t('prayers.pleaOne.hunger'),
+    tool: 'harvest',
+    icon: '🌾',
+  },
+  thirst: {
+    plea: t('prayers.plea.thirst'),
+    pleaOne: t('prayers.pleaOne.thirst'),
+    tool: 'drink',
+    icon: '💧',
+  },
+  sickness: {
+    plea: t('prayers.plea.sickness'),
+    pleaOne: t('prayers.pleaOne.sickness'),
+    tool: 'cure',
+    icon: '💊',
+  },
+  danger: {
+    plea: t('prayers.plea.danger'),
+    pleaOne: t('prayers.pleaOne.danger'),
+    tool: 'banish',
+    icon: '🛡️',
+  },
+  rain: { plea: t('prayers.plea.rain'), pleaOne: t('prayers.pleaOne.rain'), tool: 'rain', icon: '🌧️' },
+  children: {
+    plea: t('prayers.plea.children'),
+    pleaOne: t('prayers.pleaOne.children'),
+    tool: 'love',
+    icon: '❤️',
+  },
+  peace: { plea: t('prayers.plea.peace'), pleaOne: t('prayers.pleaOne.peace'), tool: 'peace', icon: '🕊️' },
+  knowledge: {
+    plea: t('prayers.plea.knowledge'),
+    pleaOne: t('prayers.pleaOne.knowledge'),
+    tool: 'inspire',
+    icon: '💡',
+  },
+  shelter: {
+    plea: t('prayers.plea.shelter'),
+    pleaOne: t('prayers.pleaOne.shelter'),
+    tool: 'shelter',
+    icon: '🛖',
+  },
+  fire: { plea: t('prayers.plea.fire'), pleaOne: t('prayers.pleaOne.fire'), tool: 'douse', icon: '🪣' },
 }
 
 export function prayerTool(kind: string): string | null {
@@ -19,8 +58,8 @@ export function prayerTool(kind: string): string | null {
 }
 
 export function prayerPlea(p: Pick<PrayerInfo, 'kind' | 'tribe'>): string {
-  const who = p.tribe || 'A tribe'
-  return `${who} ${PRAYER_KINDS[p.kind]?.plea ?? 'pray'}`
+  const plea = PRAYER_KINDS[p.kind]?.pleaOne ?? t('prayers.pleaOne.fallback')
+  return p.tribe ? t('prayers.byTribe', { tribe: p.tribe, plea }) : t('prayers.someTribe', { plea })
 }
 
 /** Share of the prayer's time still left, 0..1. */
@@ -62,7 +101,11 @@ export function prayerRows(prayers: readonly PrayerInfo[], tick: number): Prayer
 
 export function prayerRowText(row: PrayerRow): string {
   if (row.count <= 1) return prayerPlea(row.prayer)
-  return `${row.count} tribes ${PRAYER_KINDS[row.prayer.kind]?.plea ?? 'pray'}`
+  // Rain is the one need several tribes share (GLOBAL_KINDS); its own message lets the verb agree with the count.
+  if (row.prayer.kind === 'rain') return tn('prayers.tribes.rain', row.count)
+  return tn('prayers.tribes', row.count, {
+    plea: PRAYER_KINDS[row.prayer.kind]?.plea ?? t('prayers.plea.fallback'),
+  })
 }
 
 /** Most urgent first: the prayer closest to lapsing. */

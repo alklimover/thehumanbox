@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { t } from '../../i18n'
 import { useUIStore, useViewFlag } from '../../state/store'
 
 // Long enough to read, short enough to stay out of the screenshot.
@@ -37,7 +38,7 @@ export function PhotoModeExit() {
       className={`photo-mode-exit${visible ? ' visible' : ''}`}
       onClick={() => useUIStore.getState().setViewFlag('photoMode', false)}
     >
-      exit photo mode <kbd>Esc</kbd>
+      {t('photoMode.exit')} <kbd>Esc</kbd>
     </button>
   )
 }

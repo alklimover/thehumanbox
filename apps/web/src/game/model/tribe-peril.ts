@@ -1,18 +1,19 @@
+import { t } from '../../i18n'
 import type { PerilCause, TribePeril, WorldState } from '../../shared/types'
 
 /** What is killing a tribe, and the power that helps most. */
 export const PERIL_HELP: Record<PerilCause, { reason: string; tool: string; action: string }> = {
-  sickness: { reason: 'sickness is taking them', tool: 'cure', action: 'cure them' },
-  hunger: { reason: 'they are starving', tool: 'harvest', action: 'send a harvest' },
-  thirst: { reason: 'they have no water', tool: 'rain', action: 'send rain' },
-  no_children: { reason: 'no one is left to raise children', tool: 'spawn1', action: 'send a newcomer' },
-  old_age: { reason: 'they are growing old', tool: 'spawn1', action: 'send young blood' },
-  dwindling: { reason: 'their numbers keep falling', tool: 'bless', action: 'bless them' },
-  war: { reason: 'war is killing them', tool: 'peace', action: 'make peace' },
-  beasts: { reason: 'beasts are hunting them', tool: 'banish', action: 'drive off the beasts' },
-  drowning: { reason: 'the water is taking them', tool: 'grass', action: 'raise dry land' },
-  fire: { reason: 'fire is taking them', tool: 'douse', action: 'douse the flames' },
-  disaster: { reason: 'disaster after disaster strikes them', tool: 'bless', action: 'bless them' },
+  sickness: { reason: t('peril.reason.sickness'), tool: 'cure', action: t('peril.action.cure') },
+  hunger: { reason: t('peril.reason.hunger'), tool: 'harvest', action: t('peril.action.harvest') },
+  thirst: { reason: t('peril.reason.thirst'), tool: 'rain', action: t('peril.action.rain') },
+  no_children: { reason: t('peril.reason.no_children'), tool: 'spawn1', action: t('peril.action.newcomer') },
+  old_age: { reason: t('peril.reason.old_age'), tool: 'spawn1', action: t('peril.action.youngBlood') },
+  dwindling: { reason: t('peril.reason.dwindling'), tool: 'bless', action: t('peril.action.bless') },
+  war: { reason: t('peril.reason.war'), tool: 'peace', action: t('peril.action.peace') },
+  beasts: { reason: t('peril.reason.beasts'), tool: 'banish', action: t('peril.action.banish') },
+  drowning: { reason: t('peril.reason.drowning'), tool: 'grass', action: t('peril.action.land') },
+  fire: { reason: t('peril.reason.fire'), tool: 'douse', action: t('peril.action.douse') },
+  disaster: { reason: t('peril.reason.disaster'), tool: 'bless', action: t('peril.action.bless') },
 }
 
 export function perilOf(world: Pick<WorldState, 'tribes_in_peril'>, lineage: string): TribePeril | null {
@@ -21,7 +22,8 @@ export function perilOf(world: Pick<WorldState, 'tribes_in_peril'>, lineage: str
 
 /** "only 3 left", "the last one" */
 export function remainingLine(population: number): string {
-  return population === 1 ? 'the last one' : `only ${population} left`
+  // "The last one" is about exactly one person, so this is not a plural form (Russian "one" also covers 21).
+  return population === 1 ? t('peril.lastOne') : t('peril.onlyLeft', { n: population })
 }
 
 /** Rows to show in the panel: every tribe on the brink, then the largest. */

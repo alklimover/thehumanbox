@@ -1,4 +1,5 @@
 import { typingTarget } from '../../game/model/shortcuts'
+import { t } from '../../i18n'
 
 /**
  * World actions that moved off the dock into the header's ⋯ menu (and the phone menu): finding a
@@ -22,9 +23,9 @@ export interface WorldActions {
 
 /** The save item's label for where the save is. */
 export function saveLabel(save: WorldSave): string {
-  if (save.busy) return 'Saving…'
-  if (save.error && save.retryable) return '↻ Retry save'
-  return 'Save world'
+  if (save.busy) return t('worldSave.saving')
+  if (save.error && save.retryable) return t('worldSave.retry')
+  return t('worldSave.save')
 }
 
 /** A save in progress, or one that failed for good, cannot be started again. */

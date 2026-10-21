@@ -9,6 +9,7 @@ import { worldMomentsActive } from '../world-moments'
 import { prayerEffectsActive } from '../prayer-feedback'
 import { LOW_PERF } from '../../../shared/perf'
 import { logger } from '../../../shared/logger'
+import { t as message } from '../../../i18n'
 import { zoomDetailLevel } from '../character-visuals'
 import { TILE } from '../../model/palette'
 import { OCEAN, hex } from '../art-palette'
@@ -71,7 +72,7 @@ export function CanvasWorldFallback({
       logger.error('2d-world', 'Canvas setup failed', error)
     }
     if (!canvas || !context) {
-      onDrawError('The browser could not create a 2D canvas. Try reloading this page.')
+      onDrawError(message('map.noCanvas'))
       return
     }
     const ctx = context
@@ -218,7 +219,7 @@ export function CanvasWorldFallback({
         stopped = true
         cancelAnimationFrame(raf)
         logger.error('2d-world', 'Canvas drawing failed', error)
-        onDrawError('The world could not be drawn. Retry the renderer to restore the map.')
+        onDrawError(message('map.drawFailed'))
         return
       }
       lastWorld = w
