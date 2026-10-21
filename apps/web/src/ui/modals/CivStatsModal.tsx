@@ -10,6 +10,7 @@ import { getBuildingState } from '../../game/model/building-state'
 import { moonPhaseName } from '../../game/model/calendar'
 import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
 import { cargoLabel, simLabel, simLabelAsSent } from '../../i18n/sim'
+import { simText } from '../../i18n/simtext'
 
 interface Props {
   world: WorldState
@@ -1038,7 +1039,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
             {headlines.slice(0, 12).map((h, i) => (
               <div key={`${h.tick}-${i}`} className="civ-headline">
                 <span className="civ-headline-tick">{t('civ.tick', { tick: h.tick })}</span>
-                <span className="civ-headline-text">{h.text}</span>
+                <span className="civ-headline-text">{simText('headline', h.text)}</span>
               </div>
             ))}
           </section>

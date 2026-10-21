@@ -4,6 +4,7 @@ import type { OrganismState } from '../../../shared/types'
 import { skillPercent, skillWord } from '../../../game/model/skills'
 import { t } from '../../../i18n'
 import { simLabel, simLabelAsSent } from '../../../i18n/sim'
+import { sexOf, simText } from '../../../i18n/simtext'
 
 /** A glyph for each mood word the simulation sends. */
 const MOOD_ICON: Record<string, string> = {
@@ -104,7 +105,7 @@ export function StatusChips({ org }: { org: OrganismState }) {
 export function Vitals({ org, isSick }: { org: OrganismState; isSick: boolean }) {
   return (
     <>
-      <div className="org-detail-thought">{org.thought}</div>
+      <div className="org-detail-thought">{simText('thought', org.thought, { sex: sexOf(org) })}</div>
 
       <Bar label={t('person.energy')} value={org.energy} color="#55dd55" />
       <Bar label={t('person.hydration')} value={org.hydration} color="#4499ff" />

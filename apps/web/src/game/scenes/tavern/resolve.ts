@@ -2,6 +2,7 @@ import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
 import { t, tn } from '../../../i18n'
+import { sexOf, simText } from '../../../i18n/simtext'
 
 export const TAVERN_RADIUS = 18
 
@@ -61,7 +62,7 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
     const activity = hasSpirit
       ? t('map.tavern.serving')
       : drinkerThought
-        ? o.thought!
+        ? simText('thought', o.thought!, { sex: sexOf(o) })
         : knowsBrewing
           ? t('map.tavern.drinking')
           : t('map.tavern.lookingIn')

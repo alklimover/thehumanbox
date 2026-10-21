@@ -10,6 +10,7 @@ import { ageInYears } from '../../game/model/calendar'
 import { shownGeneration } from '../../game/model/generations'
 import { fmtNumber, t, tn } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
+import { sexOf, simText } from '../../i18n/simtext'
 
 function Bar({ label, value, color, tip }: { label: string; value: number; color: string; tip?: string }) {
   const labelEl = (
@@ -182,7 +183,7 @@ function OrgCardImpl({ orgId }: OrgCardProps) {
         </Tooltip>
       )}
 
-      <div className="org-thought">{org.thought}</div>
+      <div className="org-thought">{simText('thought', org.thought, { sex: sexOf(org) })}</div>
 
       {org.attributes && org.attributes.length > 0 && (
         <div className="org-attributes">

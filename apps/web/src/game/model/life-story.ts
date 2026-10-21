@@ -5,6 +5,7 @@
 
 import { t, tn, type PluralKey } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
+import { sexOf, simText } from '../../i18n/simtext'
 
 /** A day in ticks, the same as DAY_LENGTH in ui/panels/org-detail/format.ts. */
 const DAY_TICKS = 600
@@ -80,7 +81,8 @@ export function lifeStory(
   if (children > 0) lines.push(tn('model.story.children', children))
 
   for (const e of events.filter((e) => MAJOR.has(e.category)).slice(-MAX_EVENTS)) {
-    lines.push(`${e.text.charAt(0).toUpperCase()}${e.text.slice(1)}.`)
+    const text = simText('life', e.text, { sex: sexOf(org) })
+    lines.push(`${text.charAt(0).toUpperCase()}${text.slice(1)}.`)
   }
 
   if (org.alive) {

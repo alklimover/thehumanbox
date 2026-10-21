@@ -3,6 +3,7 @@ import type { StoryEntry, HeadlineInfo } from '../../shared/types'
 import { lineageColor } from '../../shared/constants'
 import { Modal } from './Modal'
 import { t } from '../../i18n'
+import { simText } from '../../i18n/simtext'
 
 const DAY_LENGTH = 600
 
@@ -68,7 +69,7 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
                     <span className="chronicle-day">
                       {t('life.day', { n: Math.floor(h.tick / DAY_LENGTH) })}
                     </span>
-                    <span className="chronicle-text">{h.text}</span>
+                    <span className="chronicle-text">{simText('headline', h.text)}</span>
                   </div>
                 ))}
               </div>

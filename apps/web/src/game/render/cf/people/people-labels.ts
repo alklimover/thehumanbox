@@ -14,6 +14,7 @@ import type { PlacedLabel } from '../../settlement-labels'
 import { isFocused } from './people-sprites'
 import { emitWorkPose, isFastPose, type PoseSink } from './work-poses'
 import type { NameStyle } from './people-names'
+import { sexOf, simText } from '../../../../i18n/simtext'
 
 /** Where names and thoughts go instead of the canvas (a `TextLayer`, see `PeopleNameLayer`). */
 export interface NameSink {
@@ -337,9 +338,10 @@ export function paintPeopleLabels(ctx: CanvasRenderingContext2D, input: PeopleLa
     const nameShown =
       (mask & NAME) !== 0 &&
       placer.place(labelX, labelY, labelWidth(org.name, isSelected ? 10 : 9), 10, isSelected)
+    const thoughtText = mask & THOUGHT ? simText('thought', org.thought, { sex: sexOf(org) }) : ''
     const thoughtShown =
       (mask & THOUGHT) !== 0 &&
-      placer.place(labelX, labelY - (nameShown ? 10 : 0), labelWidth(org.thought ?? '', 8), 9, isSelected)
+      placer.place(labelX, labelY - (nameShown ? 10 : 0), labelWidth(thoughtText, 8), 9, isSelected)
 
     if (nameShown) {
       if (names)
@@ -360,16 +362,16 @@ export function paintPeopleLabels(ctx: CanvasRenderingContext2D, input: PeopleLa
     if (thoughtShown) {
       const thoughtY = labelY - (nameShown ? 10 : 0)
       if (names)
-        names.text(org.thought ?? '', labelX, thoughtY, isSelected ? 'thoughtSelected' : 'thought', alpha, j)
+        names.text(thoughtText, labelX, thoughtY, isSelected ? 'thoughtSelected' : 'thought', alpha, j)
       else {
         ctx.font = '8px monospace'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'bottom'
         ctx.lineWidth = 2.5
         ctx.strokeStyle = 'rgba(0,0,0,0.85)'
-        ctx.strokeText(org.thought, labelX, thoughtY)
+        ctx.strokeText(thoughtText, labelX, thoughtY)
         ctx.fillStyle = isSelected ? 'rgba(180,220,255,1)' : 'rgba(180,220,255,0.9)'
-        ctx.fillText(org.thought, labelX, thoughtY)
+        ctx.fillText(thoughtText, labelX, thoughtY)
       }
     }
   }

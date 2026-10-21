@@ -21,6 +21,7 @@ import { Modal } from './Modal'
 import { shownGeneration } from '../../game/model/generations'
 import { fmtNumber, t, tn } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
+import { sexOf, simText } from '../../i18n/simtext'
 
 // Namespace shim so the rest of the file keeps using d3.X.* without
 // a sweep; tree-shaking still drops everything we don't list above.
@@ -587,7 +588,10 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
             )}
             {hovered.discoveries?.includes('fire') && <span> 🔥</span>}
             {hovered.discoveries?.includes('shelter') && <span> 🏠</span>}
-            <span className="tree-tooltip-thought"> {t('life.quote', { text: hovered.thought })}</span>
+            <span className="tree-tooltip-thought">
+              {' '}
+              {t('life.quote', { text: simText('thought', hovered.thought, { sex: sexOf(hovered) }) })}
+            </span>
           </>
         ) : (
           <span style={{ color: '#333' }}>

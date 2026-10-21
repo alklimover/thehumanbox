@@ -4,6 +4,7 @@ import { familySentence } from '../../../game/model/family-lines'
 import { Tooltip } from '../../toolbar/Tooltip'
 import type { OrganismState, OrgDetail } from '../../../shared/types'
 import { fmtNumber, t } from '../../../i18n'
+import { sexOf, simText } from '../../../i18n/simtext'
 
 export function MemoryCountsSection({ org }: { org: OrganismState }) {
   return (
@@ -88,7 +89,7 @@ export function RecentLifeSection({ detail }: { detail: OrgDetail | null }) {
             {history.map((e, i) => (
               <div key={i} className="thought-row">
                 <span className="thought-tick">{t('person.tick', { tick: fmtNumber(e.tick) })}</span>
-                <span className="thought-text">{e.text}</span>
+                <span className="thought-text">{simText('thought', e.text, { sex: sexOf(detail) })}</span>
               </div>
             ))}
           </div>
@@ -113,7 +114,7 @@ export function WitnessedSection({ detail }: { detail: OrgDetail | null }) {
               <div key={i} className="thought-row">
                 <span className="thought-tick">{t('person.tick', { tick: fmtNumber(e.tick) })}</span>
                 <span className="thought-text" style={{ color: '#bfa9d6' }}>
-                  {e.text}
+                  {simText('life', e.text, { sex: sexOf(detail) })}
                 </span>
               </div>
             ))}
@@ -150,7 +151,9 @@ export function InnerLifeSection({ detail }: { detail: OrgDetail | null }) {
                     <span style={{ color: '#666', minWidth: 90, display: 'inline-block' }}>
                       {t('person.inner.oldest')}
                     </span>
-                    <span style={{ color: '#a8c0e0' }}>{oldest.text}</span>
+                    <span style={{ color: '#a8c0e0' }}>
+                      {simText('memory', oldest.text, { sex: sexOf(detail) })}
+                    </span>
                   </div>
                 )}
                 {proudest && (
@@ -158,7 +161,9 @@ export function InnerLifeSection({ detail }: { detail: OrgDetail | null }) {
                     <span style={{ color: '#666', minWidth: 90, display: 'inline-block' }}>
                       {t('person.inner.proudest')}
                     </span>
-                    <span style={{ color: '#f6c46a' }}>{proudest.text}</span>
+                    <span style={{ color: '#f6c46a' }}>
+                      {simText('memory', proudest.text, { sex: sexOf(detail) })}
+                    </span>
                   </div>
                 )}
                 {heaviest && (
@@ -166,7 +171,9 @@ export function InnerLifeSection({ detail }: { detail: OrgDetail | null }) {
                     <span style={{ color: '#666', minWidth: 90, display: 'inline-block' }}>
                       {t('person.inner.heaviest')}
                     </span>
-                    <span style={{ color: '#6090c0' }}>{heaviest.text}</span>
+                    <span style={{ color: '#6090c0' }}>
+                      {simText('memory', heaviest.text, { sex: sexOf(detail) })}
+                    </span>
                   </div>
                 )}
               </div>

@@ -6,6 +6,7 @@ import { useSimulationData } from '../../simulation/simulationData'
 import { t, tn, type MessageKey } from '../../i18n'
 import { simLabel } from '../../i18n/sim'
 import { sexLabel } from './words'
+import { sexOf, simText, type Sex } from '../../i18n/simtext'
 
 const DAY_LENGTH = 600
 
@@ -110,7 +111,7 @@ const CATEGORY_COLOR: Record<string, string> = {
   event: '#888',
 }
 
-function EventRow({ ev }: { ev: LifeEvent }) {
+function EventRow({ ev, sex }: { ev: LifeEvent; sex: Sex | null }) {
   const icon = CATEGORY_ICON[ev.category] ?? '•'
   const color = CATEGORY_COLOR[ev.category] ?? '#888'
   const day = ev.tick > 0 ? t('life.day', { n: Math.floor(ev.tick / DAY_LENGTH) }) : ''
@@ -126,7 +127,9 @@ function EventRow({ ev }: { ev: LifeEvent }) {
         </span>
         {day && <span style={{ color: '#555', fontSize: 8, marginLeft: 'auto' }}>{day}</span>}
       </div>
-      <div style={{ color: '#ccc', fontSize: 10, marginTop: 2, lineHeight: 1.4 }}>{ev.text}</div>
+      <div style={{ color: '#ccc', fontSize: 10, marginTop: 2, lineHeight: 1.4 }}>
+        {simText('life', ev.text, { sex })}
+      </div>
       {ev.related_name && ev.category !== 'event' && (
         <div style={{ color: '#666', fontSize: 9, marginTop: 1 }}>↳ {ev.related_name}</div>
       )}
@@ -412,7 +415,9 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                         >
                           {MEMORY_KIND_LABEL[m.kind] ? t(MEMORY_KIND_LABEL[m.kind]) : m.kind}
                         </span>
-                        <span style={{ color: emoColor, lineHeight: 1.4 }}>{m.text}</span>
+                        <span style={{ color: emoColor, lineHeight: 1.4 }}>
+                          {simText('memory', m.text, { sex: sexOf(life) })}
+                        </span>
                       </div>
                     )
                   })}
@@ -441,7 +446,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
             ) : (
               <div className={life.events.length > 8 ? 'life-events-grid' : ''}>
                 {[...life.events].reverse().map((ev, i) => (
-                  <EventRow key={i} ev={ev} />
+                  <EventRow key={i} ev={ev} sex={sexOf(life)} />
                 ))}
               </div>
             )}

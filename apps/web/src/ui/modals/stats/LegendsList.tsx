@@ -3,6 +3,7 @@ import { calendarAt } from '../../../game/model/calendar'
 import { legendsOf } from '../../../game/model/legends'
 import { t, type MessageKey } from '../../../i18n'
 import type { SimEvent } from '../../../shared/types'
+import { simText } from '../../../i18n/simtext'
 
 // Legend titles by event type; legendsOf titles the same types in English.
 const TITLE_KEYS: Record<string, MessageKey> = {
@@ -54,7 +55,7 @@ export function LegendsList({ events }: { events: SimEvent[] }) {
         <li key={`${l.tick}-${l.title}-${l.text}`} style={{ fontSize: 11, padding: '3px 0' }}>
           <span style={{ color: '#e8c46a' }}>{l.title}</span>
           <span style={{ color: '#777' }}> · {l.when}</span>
-          <div style={{ color: '#bbb' }}>{l.text}</div>
+          <div style={{ color: '#bbb' }}>{simText('event', l.text)}</div>
         </li>
       ))}
     </ul>
