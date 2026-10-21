@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { t, type MessageKey } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
+import { simLabelAsSent } from '../../i18n/sim'
 import type { WorldState } from '../../shared/types'
 
 const WEATHER_WORD: Record<string, MessageKey> = {
@@ -29,7 +29,7 @@ export function WorldFooter({ world }: Props) {
     return { ally, rivals, neutral }
   }, [world.tribal_relations])
 
-  const era = world.current_era ? simLabel('era', world.current_era).toUpperCase() : '-'
+  const era = world.current_era ? simLabelAsSent('era', world.current_era).toUpperCase() : '-'
   const dayPct = Math.round((world.day_progress ?? 0) * 100)
   const phase = world.is_day ? t('footer.day') : t('footer.night')
   const weatherKind = world.weather?.kind ?? 'clear'

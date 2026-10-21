@@ -2,7 +2,7 @@ import type { WorldState } from '../../shared/types'
 import { wealthGapOf, wealthGapWord } from './inequality'
 import { leadershipOf } from './leadership'
 import { fmtNumber, t, tn, type MessageKey, type PluralKey } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
+import { cargoLabel, simLabel } from '../../i18n/sim'
 
 /** What the hover card says about a tribe whose land the pointer rests on. */
 export interface TerritoryCardFacts {
@@ -105,7 +105,7 @@ export function tradeOfTribe(
   if (inbound)
     parts.push(
       t('model.territory.buying', {
-        cargo: simLabel('good', inbound.cargo),
+        cargo: cargoLabel(inbound.cargo),
         price: money(inbound.unit_price, unit),
       }),
     )

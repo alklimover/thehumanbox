@@ -257,7 +257,7 @@ export const panels = defineMessages(
     'panel.tribe.steady': 'без перемен',
     'panel.tribe.ledBy': ' · во главе: ',
     'panel.tribe.followLeader': 'Следить за правителем',
-    'panel.tribe.festival': '♫ идёт праздник: {festival}',
+    'panel.tribe.festival': '♫ сейчас {festival}',
     'panel.tribe.people': {
       one: '{n} человек',
       few: '{n} человека',

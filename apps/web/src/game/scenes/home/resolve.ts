@@ -2,7 +2,7 @@ import type { SceneContext, SceneFixture, SceneId } from '../core/types'
 import type { OrganismState, WorldState } from '../../../shared/types'
 import { householdAround } from '../shared/occupants'
 import { t, tn, type MessageKey } from '../../../i18n'
-import { simLabel } from '../../../i18n/sim'
+import { simLabelAsSent } from '../../../i18n/sim'
 
 /** What a home looks like in each era (the room's subtitle); later eras keep the plain word. */
 const HOME_FLAVOR: Record<string, MessageKey> = {
@@ -205,7 +205,7 @@ export function resolveHomeScene(world: WorldState, scene: SceneId): SceneContex
     scene,
     world,
     title: t('map.home.title', { name: host.name }),
-    subtitle: t('map.home.subtitle', { flavor, tribe: lineageName, era: simLabel('era', era) }),
+    subtitle: t('map.home.subtitle', { flavor, tribe: lineageName, era: simLabelAsSent('era', era) }),
     isDay,
     occupants: inside,
     away,

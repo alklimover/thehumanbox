@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
 import { setLocaleForTests } from '../locale'
-import { simLabel } from '.'
+import { cargoLabel, simLabel, simLabelAsSent } from '.'
 import { SIM_TABLES, type SimDomain } from './tables'
 import { milestoneDescription } from './milestone'
 
@@ -38,6 +38,8 @@ const WORLD_TABLES: SimDomain[] = [
   'settlement',
   'strategy',
   'milestone',
+  'festival',
+  'practice',
 ]
 
 const missing = (domain: SimDomain, ids: string[]) => ids.filter((id) => !(id in SIM_TABLES[domain]))
@@ -89,6 +91,48 @@ describe('world and economy names', () => {
     expect(missing('discovery', techNames)).toEqual([])
   })
 
+  it('name every seasonal festival, and nothing else', () => {
+    const source = rust('civ/society/festivals.rs')
+    const seasons = source.slice(source.indexOf('fn festival_for_season('), source.indexOf('impl Simulation'))
+    const festivals = [...seasons.matchAll(/FestivalKind::\w+, "([^"]+)"/g)].map((m) => m[1])
+    expect(festivals).toHaveLength(4)
+    expect(missing('festival', festivals)).toEqual([])
+    expect(Object.keys(SIM_TABLES.festival).sort()).toEqual([...festivals].sort())
+    expect(simLabel('festival', 'Harvest Feast')).toBe('Harvest Feast')
+    setLocaleForTests('ru')
+    expect(simLabel('festival', 'Harvest Feast')).toBe('праздник урожая')
+    expect(simLabel('festival', 'First Feast')).toBe('First Feast')
+  })
+
+  it('name everything a person can hold and a caravan can carry', () => {
+    // The literal keys the simulation puts in a person's `tools`, outside its tests.
+    const dir = new URL(SIM + '../', import.meta.url)
+    const sources = readdirSync(dir, { recursive: true, encoding: 'utf8' })
+      .filter((file) => file.endsWith('.rs') && !/(^|\/)tests?(\.rs|\/)/.test(file))
+      .map((file) => readFileSync(new URL(file, dir), 'utf8'))
+    const keys = new Set<string>()
+    for (const source of sources) {
+      for (const m of source.matchAll(/tools\.(?:insert|entry)\("([^"]+)"|add_good\("([^"]+)"/g))
+        keys.add(m[1] ?? m[2])
+    }
+    const held = [...keys]
+    const practices = held.filter((key) => !(key in SIM_TABLES.good))
+    expect(held.length).toBeGreaterThan(400)
+    expect(practices.filter((key) => !(key in SIM_TABLES.practice))).toEqual([])
+    expect(Object.keys(SIM_TABLES.practice).filter((key) => !practices.includes(key))).toEqual([])
+    for (const [id, name] of Object.entries(SIM_TABLES.practice)) {
+      expect(name.ru, `practice.${id}`).not.toMatch(/[a-z]/i)
+    }
+
+    expect(cargoLabel('play cello')).toBe('play cello')
+    expect(cargoLabel('salt')).toBe('salt')
+    expect(cargoLabel('winter_provisions')).toBe('winter provisions')
+    setLocaleForTests('ru')
+    expect(cargoLabel('play cello')).toBe('игра на виолончели')
+    expect(cargoLabel('salt')).toBe('соль')
+    expect(cargoLabel('something new')).toBe('something new')
+  })
+
   it('keep each milestone line word for word', () => {
     const source = rust('civ/progress/world_milestones.rs')
     const descriptions = source.slice(source.indexOf('fn description('))
@@ -106,5 +150,17 @@ describe('world and economy names', () => {
     expect(simLabel('era', 'kardashev-2')).toBe('цивилизация II типа')
     expect(simLabel('building', 'forge')).toBe('кузница')
     expect(simLabel('discovery', 'granary')).toBe('амбар')
+  })
+
+  it('keep the era id as sent where English always printed it raw', () => {
+    // Header chip, footer, civilization and stats tables showed "pre-stone", not "pre stone".
+    expect(simLabelAsSent('era', 'pre-stone')).toBe('pre-stone')
+    expect(simLabelAsSent('era', 'kardashev-2')).toBe('kardashev-2')
+    expect(simLabelAsSent('era', 'bronze')).toBe('bronze')
+    expect(simLabelAsSent('era', 'not-an-era')).toBe('not-an-era')
+    expect(simLabelAsSent('era', null)).toBe('')
+    setLocaleForTests('ru')
+    expect(simLabelAsSent('era', 'pre-stone')).toBe('докаменный век')
+    expect(simLabelAsSent('era', 'kardashev-2')).toBe('цивилизация II типа')
   })
 })

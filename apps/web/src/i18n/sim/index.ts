@@ -22,6 +22,26 @@ export function simLabel(domain: SimDomain, id: string | null | undefined): stri
   return entry.en ?? prettifyId(id)
 }
 
+/**
+ * Like simLabel, for the places the game printed the id exactly as sent
+ * ("pre-stone", not "pre stone"): English keeps the id, Russian gets the name.
+ */
+export function simLabelAsSent(domain: SimDomain, id: string | null | undefined): string {
+  if (!id) return ''
+  if (getLocale() === 'ru') return simLabel(domain, id)
+  const entry = SIM_TABLES[domain][id] ?? SIM_TABLES[domain][id.toLowerCase()]
+  return entry?.en ?? id
+}
+
+/**
+ * Something a person holds or a caravan carries: a good, or one of the practice
+ * counters ("play cello") the simulation keeps among a person's tools and trades with them.
+ */
+export function cargoLabel(id: string | null | undefined): string {
+  const practice = !!id && !Object.hasOwn(SIM_TABLES.good, id) && Object.hasOwn(SIM_TABLES.practice, id)
+  return simLabel(practice ? 'practice' : 'good', id)
+}
+
 /** Whether a table knows this id (for coverage checks and dev warnings). */
 export function hasSimLabel(domain: SimDomain, id: string): boolean {
   return id in SIM_TABLES[domain]

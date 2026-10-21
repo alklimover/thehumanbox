@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TribeCard } from './TribeCard'
 import { useUIStore } from '../../state/store'
+import { setLocaleForTests } from '../../i18n/locale'
 import type { OrganismState, WorldState } from '../../shared/types'
 
 beforeAll(() => vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true))
@@ -12,6 +13,7 @@ const roots: Root[] = []
 afterEach(() => {
   act(() => roots.splice(0).forEach((root) => root.unmount()))
   document.body.innerHTML = ''
+  setLocaleForTests('en')
 })
 
 function person(id: string, lineage: string): OrganismState {
@@ -82,5 +84,24 @@ describe('TribeCard', () => {
 
     expect(host.querySelector('.tribe-card-name-input')).toBeNull()
     expect(host.querySelector('.tribe-card-rename')?.textContent).toContain('Bren')
+  })
+
+  it("names the festival under way in the player's language", () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    roots.push(root)
+    const festive = {
+      ...world(['a']),
+      festivals: [{ lineage_id: 'a', name: 'Harvest Feast', started: 0, ends: 600 }],
+    } as unknown as WorldState
+
+    act(() => useUIStore.setState({ focus: 'lineage:a' }))
+    act(() => root.render(card(festive)))
+    expect(host.querySelector('.tribe-card-festival')?.textContent).toBe('♫ Harvest Feast is under way')
+
+    setLocaleForTests('ru')
+    act(() => root.render(card({ ...festive })))
+    expect(host.querySelector('.tribe-card-festival')?.textContent).toBe('♫ сейчас праздник урожая')
   })
 })
