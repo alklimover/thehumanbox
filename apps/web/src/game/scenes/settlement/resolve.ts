@@ -1,5 +1,6 @@
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
+import { t, tn } from '../../../i18n'
 
 const RADIUS = 12
 
@@ -30,7 +31,7 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
     const entry: SceneOccupant = {
       org: o,
       role: o.is_leader ? 'host' : 'kin',
-      activity: o.thought || 'idling',
+      activity: o.thought || t('map.scene.idling'),
     }
     if (d <= 5) inside.push(entry)
     else away.push(entry)
@@ -49,8 +50,11 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
   return {
     scene,
     world,
-    title: `${lineageName} village`,
-    subtitle: `Town square · ${hutCount} hut${hutCount === 1 ? '' : 's'} · ${inside.length + away.length} residents`,
+    title: t('map.village.title', { tribe: lineageName }),
+    subtitle: t('map.village.subtitle', {
+      huts: tn('map.village.huts', hutCount),
+      n: inside.length + away.length,
+    }),
     isDay: !!world.is_day,
     occupants: inside.slice(0, 8),
     away: away.slice(0, 16),

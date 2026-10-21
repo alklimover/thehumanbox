@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { t } from '../../../i18n'
+import { simLabel } from '../../../i18n/sim'
 import type { WorldState } from '../../../shared/types'
 
 export function DiscoveryRollup({ organisms }: { organisms: WorldState['organisms'] }) {
@@ -12,25 +14,25 @@ export function DiscoveryRollup({ organisms }: { organisms: WorldState['organism
   }, [organisms])
 
   if (rows.length === 0) {
-    return <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>no discoveries yet</div>
+    return <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>{t('stats.noDiscoveries')}</div>
   }
   const visible = showAll ? rows : rows.slice(0, TOP_N)
   return (
     <div className="disc-rollup">
       <div className="disc-summary">
         <span>
-          {totalDistinct} distinct · top {Math.min(TOP_N, totalDistinct)} shown
+          {t('stats.discoveries.summary', { distinct: totalDistinct, top: Math.min(TOP_N, totalDistinct) })}
         </span>
         {totalDistinct > TOP_N && (
           <button className="disc-toggle" onClick={() => setShowAll((s) => !s)}>
-            {showAll ? 'collapse' : `show all (${totalDistinct})`}
+            {showAll ? t('stats.discoveries.collapse') : t('stats.discoveries.showAll', { n: totalDistinct })}
           </button>
         )}
       </div>
       <div className="disc-list">
         {visible.map(([name, count]) => (
           <div key={name} className="disc-row">
-            <span className="disc-name">{name}</span>
+            <span className="disc-name">{simLabel('discovery', name)}</span>
             <span className="disc-count">{count}</span>
             <span className="disc-pct">{Math.round((count / organisms.length) * 100)}%</span>
           </div>

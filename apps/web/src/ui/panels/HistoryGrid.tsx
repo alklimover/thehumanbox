@@ -2,27 +2,24 @@ import { memo } from 'react'
 import { useWorldStore } from '../../state/worldStore'
 import type { WorldHistory } from '../../shared/types'
 import { Tooltip } from '../toolbar/Tooltip'
+import { t, type MessageKey } from '../../i18n'
 
 /** Each row of the world's history: label, explanation, and its count. */
-const ROWS: Array<[string, string, (h: WorldHistory) => number | undefined]> = [
-  ['births', 'Total people ever born into this world', (h) => h.births],
-  ['old age', 'Deaths from old age: people who lived a full life', (h) => h.deaths_old_age],
-  ['starvation', 'Deaths from hunger or thirst: not enough food or water', (h) => h.deaths_starvation],
-  ['sickness', 'Deaths from disease', (h) => h.deaths_sickness],
-  ['combat', 'Deaths in fights between neighbours and in wars between tribes', (h) => h.deaths_combat],
-  ['beasts', 'Killed by wolves, bears and monsters', (h) => h.deaths_beasts],
-  ['drowned', 'Drowned in deep or rising water', (h) => h.deaths_drowning],
-  ['fire', 'Killed by wildfire', (h) => h.deaths_fire],
-  [
-    'disaster',
-    "Killed by earthquakes, meteors, floods, storms, volcanoes and the gods' lightning",
-    (h) => h.deaths_disaster,
-  ],
-  ['alliances', 'Alliances formed between tribes', (h) => h.alliances_formed],
-  ['challenges', 'Territorial challenges: one person confronting another', (h) => h.challenges_total],
-  ['gifts', 'Food given between people: kinship and friendship', (h) => h.gifts_total],
-  ['droughts', 'Droughts: seasons of water scarcity', (h) => h.droughts],
-  ['outbreaks', 'Disease outbreaks that swept through the population', (h) => h.outbreaks],
+const ROWS: Array<[MessageKey, MessageKey, (h: WorldHistory) => number | undefined]> = [
+  ['panel.history.births', 'panel.history.birthsTip', (h) => h.births],
+  ['panel.history.oldAge', 'panel.history.oldAgeTip', (h) => h.deaths_old_age],
+  ['panel.history.starvation', 'panel.history.starvationTip', (h) => h.deaths_starvation],
+  ['panel.history.sickness', 'panel.history.sicknessTip', (h) => h.deaths_sickness],
+  ['panel.history.combat', 'panel.history.combatTip', (h) => h.deaths_combat],
+  ['panel.history.beasts', 'panel.history.beastsTip', (h) => h.deaths_beasts],
+  ['panel.history.drowned', 'panel.history.drownedTip', (h) => h.deaths_drowning],
+  ['panel.history.fire', 'panel.history.fireTip', (h) => h.deaths_fire],
+  ['panel.history.disaster', 'panel.history.disasterTip', (h) => h.deaths_disaster],
+  ['panel.history.alliances', 'panel.history.alliancesTip', (h) => h.alliances_formed],
+  ['panel.history.challenges', 'panel.history.challengesTip', (h) => h.challenges_total],
+  ['panel.history.gifts', 'panel.history.giftsTip', (h) => h.gifts_total],
+  ['panel.history.droughts', 'panel.history.droughtsTip', (h) => h.droughts],
+  ['panel.history.outbreaks', 'panel.history.outbreaksTip', (h) => h.outbreaks],
 ]
 
 function HistoryGridImpl() {
@@ -30,7 +27,7 @@ function HistoryGridImpl() {
   if (!h) return null
   return (
     <>
-      <div className="section-title">WORLD HISTORY</div>
+      <div className="section-title">{t('panel.history.title')}</div>
       <div className="history-grid">
         {ROWS.map(([label, tip, value]) => {
           const n = value(h)
@@ -38,9 +35,9 @@ function HistoryGridImpl() {
           if (n === undefined) return null
           return (
             <span key={label} style={{ display: 'contents' }}>
-              <Tooltip tip={tip}>
+              <Tooltip tip={t(tip)}>
                 <span className="hist-label" style={{ cursor: 'default' }}>
-                  {label}
+                  {t(label)}
                 </span>
               </Tooltip>
               <span className="hist-val">{n}</span>

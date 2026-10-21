@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { fmtNumber, t } from '../../../i18n'
 import { DAY_LENGTH } from './constants'
 
 const W = 1000
@@ -24,7 +25,7 @@ export function PopChart({ history }: { history: [number, number][] }) {
   if (!points || points.length < 2) {
     return (
       <div style={{ color: '#444', fontSize: 11, textAlign: 'center', padding: '20px 0' }}>
-        accumulating data…
+        {t('stats.accumulating')}
       </div>
     )
   }
@@ -47,7 +48,7 @@ export function PopChart({ history }: { history: [number, number][] }) {
           <g key={v}>
             <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="#222" strokeWidth={1} />
             <text x={PAD.l - 6} y={y + 4} textAnchor="end" fill="#666" fontSize={11} fontFamily="monospace">
-              {v}
+              {fmtNumber(v)}
             </text>
           </g>
         )
@@ -69,7 +70,7 @@ export function PopChart({ history }: { history: [number, number][] }) {
             fontSize={11}
             fontFamily="monospace"
           >
-            d{Math.floor(p.tick / DAY_LENGTH)}
+            {t('stats.day', { n: Math.floor(p.tick / DAY_LENGTH) })}
           </text>
         ))}
       <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r={5} fill="#6abf45" />

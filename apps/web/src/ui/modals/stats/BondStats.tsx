@@ -1,3 +1,4 @@
+import { t } from '../../../i18n'
 import type { WorldState } from '../../../shared/types'
 
 export function BondStats({ organisms }: { organisms: WorldState['organisms'] }) {
@@ -19,15 +20,18 @@ export function BondStats({ organisms }: { organisms: WorldState['organisms'] })
   const pct = (x: number) => `${Math.round((x / n) * 100)}%`
   return (
     <div className="stats-death-grid">
-      <span className="hist-label">partnered</span>{' '}
+      <span className="hist-label">{t('stats.bond.partnered')}</span>{' '}
       <span className="hist-val">
         {partnered} ({pct(partnered)})
       </span>
-      <span className="hist-label">pregnant</span> <span className="hist-val">{pregnant}</span>
-      <span className="hist-label">with kids</span> <span className="hist-val">{withKids}</span>
-      <span className="hist-label">sick</span> <span className="hist-val">{sick}</span>
-      <span className="hist-label">hungry</span> <span className="hist-val">{hungry}</span>
-      <span className="hist-label">thirsty</span> <span className="hist-val">{thirsty}</span>
+      <span className="hist-label">{t('stats.bond.pregnant')}</span>{' '}
+      <span className="hist-val">{pregnant}</span>
+      <span className="hist-label">{t('stats.bond.withKids')}</span>{' '}
+      <span className="hist-val">{withKids}</span>
+      <span className="hist-label">{t('stats.bond.sick')}</span> <span className="hist-val">{sick}</span>
+      <span className="hist-label">{t('stats.bond.hungry')}</span> <span className="hist-val">{hungry}</span>
+      <span className="hist-label">{t('stats.bond.thirsty')}</span>{' '}
+      <span className="hist-val">{thirsty}</span>
     </div>
   )
 }

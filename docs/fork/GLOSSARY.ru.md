@@ -172,3 +172,129 @@
 | guidance (tribe strategy) | курс | «курс задан: разведка»; hunt → добыча пищи, explore → разведка, settle → обустройство, trade → торговля, defend → оборона |
 | seed (people, a tribe) | поселить | «поселить новых людей» (не путать с seed — номером мира) |
 | update (app) | обновление | «Доступно обновление», «Обновить» |
+
+### Люди и язык племён (`i18n/sim`: attribute, mood, personality, ageStage, zodiac, aspiration, deathCause, religion, animal, concept)
+
+Правила для имён, которые показываются у человека без учёта пола:
+
+- **Черты и приметы человека** (attributes, personality) пишем существительным или именной группой, а не прилагательным: карточка не знает, мужчина это или женщина. curious → «любопытство», tall → «высокий рост», freckled → «веснушки». Звание — существительное в мужском роде как общее («охотник», «кузнец»); где есть слово общего рода, берём его («старейшина», «левша», «одиночка»). Звания, которые получает только один пол (mother, matriarch, handsome / beautiful), — словом этого пола.
+- **Настроение** (mood) — существительное: «страх», «голод», «радость». Фраза в интерфейсе — «настроение: страх», а не «чувствует себя …».
+- **Возрастные ступени** (age stage) — названия поры жизни: младенчество, детство, юность, зрелость, старость.
+- **Причина смерти** — именная группа в именительном падеже после «Причина смерти:».
+- **Понятия языка племён** (concept) — одно-два слова в словарной форме: существительное в именительном падеже, глагол в инфинитиве, прилагательное в мужском роде. Слова-ярлыки чувств и состояний — существительные («усталость», «печаль»).
+
+| English | Русский | Заметки |
+|---|---|---|
+| attribute (of a person) | черта, примета | метка на карточке человека |
+| earned title | звание | hunter → охотник, smith → кузнец, chief → вождь, elder → старейшина |
+| rare gift (talent) | дар | gifted-memory → дар памяти, gifted-kindness → дар доброты |
+| milestone (in a person's life) | веха | «веха: первая охота»; не путать с рубежом численности |
+| campaign:… (completed guidance) | курс: … | «курс: разведка» |
+| mood | настроение | grieving → скорбь, afraid → страх, hungry → голод, thirsty → жажда, angry → гнев, joyful → радость, content → довольство, calm → спокойствие |
+| age stage | возраст, пора жизни | infant → младенчество, child → детство, teen → юность, adult → зрелость, elder → старость |
+| zodiac (born under) | знак рождения | ember → жар, wave → волна, stone → камень, root → корень, bough → ветвь, crane → журавль, wolf → волк, dawn → заря, hearth → очаг, veil → покров, spear → копьё, seed → зерно |
+| aspiration roles | мечта | seeker → искатель, wanderer → странник, warrior → воин, connector → сердце семьи, builder → строитель, devout → праведник, sage → мудрец, provider → кормилец, artist → творец, healer → целитель |
+| cause of death | причина смерти | old age → старость, starvation → голод, dehydration → жажда, sickness → болезнь, beasts → нападение зверей, drowning → утопление, fire → огонь, disaster → стихийное бедствие, war → война, combat → схватка, murder → убийство, executed → казнь |
+| religion kind | вид веры | animism → анимизм, polytheism → многобожие, monotheism → единобожие, philosophical → философское учение, secular → светское учение |
+| religion names | переводим по смыслу | имя собственное: прописная у первого слова и у имени божества («Путь Солнца», «Небесная Мать», «Каменный завет», «Орден ветра») |
+| traits | черты характера | memory_strength → память, social / social_tendency → общительность (см. trait выше) |
+| world / peace (concepts) | белый свет / мир | чтобы два понятия не совпадали в таблице языков |
+| group / band (concepts) | свои / ватага | «община» оставляем для племени без правителя |
+| wood / tree (concepts) | дрова / дерево | |
+| reason / cause (concepts) | повод / причина | |
+| duty / debt (concepts) | обязанность / долг | |
+| animal names | как в доке | те же слова, что у инструментов (`catalog/tools.ts`) |
+
+### Окна: цивилизация, статистика, люди, летописи
+
+| English | Русский | Заметки |
+|---|---|---|
+| campaign (lineage guidance) | курс | «Курсы племён», «сменить курс…», «курс задан: разведка»; «Player guidance» — «Ваша воля» |
+| aligned actions | действия по курсу | «действий по курсу: 3/10» |
+| outcome (campaign) | выполнен / время вышло / сменён / провален | completed / expired / redirected / failed |
+| lineage (column, list) | племя | «Все племена», колонка «Племя»; узкие колонки: Эпоха, Люди, Следующая, Власть, Валюта |
+| government (section) | власть | «Власть и правители»; leader → правитель, treasury → казна |
+| battle scale | стычка / набег / осада / битва / война | Skirmish / Raid / Siege / Battle / War |
+| stalemate / won | ничья / победа: … | «победа: Lupif» — имя в именительном |
+| adherents | последователи | |
+| fallow / harvest ready | под паром / созрело | |
+| goods in circulation | товары в обороте | |
+| book topic | тема книги | fiction → проза, biography → жизнеописание, economics → хозяйство, law → право |
+| route / delivery / caravan en route | торговый путь / доставка / в пути | |
+| legend (stats) | легенда | заголовки: «Падает звезда», «Гора пробуждается», «Гнев бога» … |
+| wealth gap | разрыв в богатстве | even / uneven / stark → небольшой / заметный / резкий |
+| relation status | союз / нейтралитет / соперники | ally / neutral / rivals |
+| emotional state (life story) | настроение | devastated → опустошённость, desperately lonely → отчаянное одиночество, terrified → ужас, lonely → одиночество, restless → беспокойство, starving → голод, stable → спокойствие |
+| life event category | — | love → любовь, loss → утрата, trauma → потрясение, witnessed → увиденное, partnership → союз, graduated → выучка, religion → вера, betrayal → предательство |
+| memory kind | — | core → главное, episode → случай, fact → знание, bond → связь, place → место, dream → сон |
+| conversation kinds | первая встреча / разговор пары / прощание / болтовня / сплетни / радостная весть / ссора | courtship / bonded / farewell / chat / gossip / excited / argue |
+| notable (lens) | выдающиеся | «выберите, кого показать» |
+| ancestors (family tree) | предки | «живых: 12 · предков: 30 · поколений: 4» |
+| infidelity | измена | |
+| abbreviations in tight places | дн. (дней), пок. / п. (поколение) | «12 дн. · п.3»; в просторных местах пишем полностью |
+| quotes around speech / thought | «…» | |
+| difficulty | сложность | calm / normal / harsh → спокойная / обычная / суровая |
+| scenarios (window) | сцены | как в меню «✦ сцены»; кнопка — «начать» |
+
+### Мир и экономика: имена из симуляции
+
+Эти имена живут в таблицах `apps/web/src/i18n/sim/<домен>.ts` и выводятся через `simLabel(домен, id)`. Пишем их со строчной буквы, как они стоят в тексте («эпоха: бронзовый век»); с прописной — только то, что требует русская орфография (Возрождение, Просвещение, сфера Дайсона).
+
+| English | Русский | Заметки |
+|---|---|---|
+| eras (исторические) | докаменный век, каменный век, бронзовый век, железный век, античность, средневековье, Возрождение, индустриальная эпоха, современность, информационная эпоха, атомный век | pre-stone, stone, bronze, iron, classical, medieval, renaissance, industrial, modern, information, atomic |
+| eras (ближнее будущее) | космическая эра, цифровая, квантовая, солнечная, термоядерная, генетическая, орбитальная, лунная, марсианская эпоха; киберэпоха, нейроэпоха; постчеловеческая, межзвёздная эпоха; сингулярность | space … singularity. Названия-существительные читаются и после «эпоха:», и сами по себе |
+| eras (космические) | галактическая эпоха, сфера Дайсона, цивилизация II типа, цивилизация III типа, звёздная эпоха, эпоха туманностей, вселенская эпоха, мультивселенная, трансцендентность | galactic, dyson, kardashev-2, kardashev-3, stellar, nebular, universal, multiverse, transcendent. «Кардашёв-2» в интерфейсе не пишем |
+| eras (мифические) | потусторонняя эпоха, эпоха пустоты, хрональная эпоха, эпоха хроник Акаши, энтропийная эпоха, эпоха сновидений, мифическая эпоха, эпоха демиурга, эпоха пантеона, эпоха Омеги, перерождение | eldritch, voidborn, chronal, akashic, entropic, oneiric, mythic, demiurge, pantheon, omega, rebirth. rebirth — не «возрождение», чтобы не спутать с Renaissance |
+| genesis (era before any tribe) | сотворение мира | |
+| era plate on the map | «Lupif · бронзовый век» | английское «… AGE» не переводим словом «век»: его даёт само название эпохи |
+| building (kind) | постройка | названия построек — существительные: хижина, дом, усадьба, кузница (forge), кузня (smithy), амбар (granary), сарай (barn), мельница, пекарня, храм, собор, святилище (shrine), казармы, постоялый двор (inn), таверна, писарня (scribe), ратуша (city hall), суд (courthouse), каменоломня (quarry), рудник (mine), дубильня, верфь, причал (dock), пристань (quay) |
+| building function | жильё, образование, богослужение, торговля, промышленность, здравоохранение, военное дело, управление, инфраструктура, досуг | |
+| discovery (name) | краткое существительное или оборот | обработка железа, письменность, колесо; «идея библиотеки» для *_concept. Имя постройки, достроенной племенем, тоже становится открытием и пишется так же, как постройка |
+| specialty (person) | ремесло | farmer → земледелец, healer → лекарь, soldier → воин, merchant → торговец, priest → жрец, miner → горняк, scribe → писец, athlete → спортсмен |
+| government | строй / правление | tribal → родоплеменной строй, chiefdom → вождество, corporate → корпоратократия |
+| law | закон | no_murder → запрет убийства, military_service → воинская повинность, safety_net → социальная защита |
+| treaty kinds | пакт о ненападении, союз, торговый договор, оборонительный союз, вассалитет | |
+| disease | болезнь | plague → мор, flu → грипп, influenza → инфлюэнца, fever → лихорадка, pox → оспа, scurvy → цинга |
+| settlement tier | дикие земли, стоянка, хутор, деревня, город, большой город | wilderness, camp, hamlet, village, town, city: town и city различаем словом «большой» |
+| specialty town | город горняков, город солеваров, город гончаров, город пряностей, город охры, город пушнины | mining / salt / pottery / spice / ochre / fur town |
+| goods | товары | wood → древесина, fur → пушнина, spice → пряности, ore → руда, stock → товар, cuts → мясные отрубы, ground → фарш, pattern → выкройка, piece → отрез ткани, garment → одежда |
+| distilling chain | затор, брага, спирт, выдержанный спирт, купаж, спирт в бутылках, бутылка | mash, wash, spirit, aged_spirit, blended_spirit, bottled_spirit, bottle |
+| journalism chain | наводка, происшествие, цитата, черновик, статья | lead, incident, quote, draft, article |
+| vehicle | лодка, корабль, телега, фургон, карета, поезд, метро, самолёт, ракета | TransportKind |
+| milestone | первый огонь, первая книга, золотой век, великий мор, высадка на Луну… | названия вех мира; их строки летописи — `milestoneDescription` |
+| fallen (battle plaque) | павшие | «набег · 7 павших»; skirmish → стычка, raid → набег, siege → осада |
+| room roles | хозяин, супруг, ребёнок, родич, гость, чужак, посетитель, молящийся, пивовар, жрец | host, partner, child, kin, guest, stranger, patron, worshipper, brewer, priest |
+| «{tribe} forge / village / tavern» | «Кузница племени Lupif», «Деревня племени Lupif» | имя племени остаётся в именительном падеже |
+
+### Боковые панели, карточки человека и племени
+
+| English | Русский | Заметки |
+|---|---|---|
+| alive / dead / gone (people panel) | живые / умершие / исчезли | заголовки разделов прописными, как в оригинале |
+| starred / star / unstar | отмеченные / отметить / снять отметку | |
+| "{era} age" | «{era}» | `simLabel('era')` даёт полное имя («каменный век»), слово «век» не добавляем |
+| died of … at … | «Умер / Умерла в возрасте N дней. Причина: …» | без пола — «Причина смерти: …»; возраст в родительном: «1 дня», «5 дней», «412 тактов» |
+| partner (in a life story) | супруг / супруга | по полу партнёра; без пола — «супруг(а)» |
+| sick (badge) | болен / больна | по полу человека |
+| newborn | новорождённый / новорождённая | |
+| mental state | душевное состояние | comfort → комфорт, loneliness → одиночество, boredom → скука, fatigue → усталость, hope → надежда, awe → благоговение, gratitude → благодарность, jealousy → зависть, anger → гнев, regret → сожаление, spiritual → духовность |
+| learning (person) | обучение | confidence → уверенность, experience → опыт, choices tried → испробовано, useful lessons → уроки впрок |
+| inventory (person) | пожитки | |
+| degree (university) | — | philosophy → философия, arts → искусства, law → право, theology → богословие, engineering → инженерное дело, science → естественные науки |
+| kin & friends | родные и друзья | mother → мать, father → отец, child → ребёнок, friend → друг, rival → соперник |
+| personal bonds | личные связи | trusts → доверяет, fears → боится |
+| eldest (tribe) | старейший | «старейший: Anna, 22 дня» |
+| families (tribe) | семьи | «Mira ×5, старшему 41 день (долгожители)» |
+| relations line (tribe) | союзники / вассальные узы / добрые соседи | allied with / bound to / at peace with |
+| lost lately | недавние потери | «война — 3 · старость — 1» |
+| granary / bakery / pen | амбар / пекарня / загон | «амбар: 12 мер зерна», «пекарня: 3 каравая», «загон: 5 голов скота» |
+| wealth gap (tribe card, hover card) | «богатство: резкий разрыв» | even / uneven / stark → небольшой / заметный / резкий разрыв |
+| coin of an age | ракушки, бусины, монеты, денарии, флорины, фунты, доллары, кредиты, токены, эрги, креды, синты, звёзды, эссенция | shells … essence; считаем через `tn`: «4 ракушки», «25 ракушек» |
+| trade line (territory) | торговый путь / товар / караван в пути / закупка / доход от торговли / обмен натурой | |
+| skill rank | мастер / умелец / подмастерье / ученик | master / skilled / journeyman / apprentice |
+| title badge (person) | Вождь, Старейшина, Лекарь/Лекарка, Охотник/Охотница, Воин/Воительница, Жрец/Жрица … | женская форма — по полу человека |
+| wildlife (panel) | животные | группы во множественном числе: кролики, стада, белые медведи; «+2 в отлёте» |
+| world history (panel) | история мира | births → рождения, combat → бои, gifts → дары, outbreaks → вспышки |
+| important / all (event filter) | важное / всё | |
+| tick label | т1 234 | в узкой колонке; в подсказке — «с такта 1 234» |

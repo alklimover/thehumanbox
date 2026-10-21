@@ -3,6 +3,8 @@
 // ui/panels/org-detail/format.ts). Ages are rounded to whole days so the card
 // only changes once a day, not on every tick.
 
+import { tn } from '../../i18n'
+
 const DAY_TICKS = 600
 
 export interface Eldest {
@@ -38,7 +40,7 @@ export function eldestByLineage(
 
 /** The card line for an eldest member: "Anna, 41 days old". */
 export function eldestLine(e: Eldest): string {
-  return `${e.name}, ${e.days} day${e.days === 1 ? '' : 's'} old`
+  return tn('model.eldest.line', e.days, { name: e.name })
 }
 
 /**

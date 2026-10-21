@@ -1,4 +1,6 @@
 import { personName } from '../../../shared/personName'
+import { t } from '../../../i18n'
+import { roleLabel } from '../shared/role-label'
 import { useCallback, useMemo } from 'react'
 import type { SceneContext } from '../core/types'
 import { useUIStore } from '../../../state/store'
@@ -78,21 +80,17 @@ export function ShopInterior({ ctx, onExit, onFocusOrg }: Props) {
   return (
     <div className="scene-shell">
       <div className="scene-head">
-        <button className="scene-back" onClick={onExit} aria-label="Back to map">
-          ← back to map
+        <button className="scene-back" onClick={onExit} aria-label={t('map.scene.backAria')}>
+          {t('map.scene.back')}
         </button>
         <div className="scene-title-wrap">
           <div className="scene-title">{title}</div>
           <div className="scene-subtitle">{subtitle}</div>
         </div>
         <div className="scene-meta">
-          {occupants.length === 0
-            ? 'shop closed'
-            : occupants.length === 1
-              ? '1 at work'
-              : `${occupants.length} at work`}
+          {occupants.length === 0 ? t('map.shop.closed') : t('map.shop.atWork', { n: occupants.length })}
           {' · '}
-          {isDay ? '☀ day' : '☾ night'}
+          {isDay ? t('map.scene.day') : t('map.scene.night')}
         </div>
       </div>
 
@@ -115,7 +113,7 @@ export function ShopInterior({ ctx, onExit, onFocusOrg }: Props) {
               className={'scene-occupant-chip' + (o.org.id === selectedOrgId ? ' active' : '')}
               onClick={() => onFocusOrg(o.org.id)}
             >
-              <span className="scene-occupant-role">{o.role}</span>
+              <span className="scene-occupant-role">{roleLabel(o.role)}</span>
               <span className="scene-occupant-name">{personName(o.org)}</span>
               <span className="scene-occupant-act">{o.activity}</span>
             </button>
@@ -128,9 +126,11 @@ export function ShopInterior({ ctx, onExit, onFocusOrg }: Props) {
                 (o.org.id === selectedOrgId ? ' active' : '')
               }
               onClick={() => onFocusOrg(o.org.id)}
-              title="Nearby"
+              title={t('map.shop.nearbyTip')}
             >
-              <span className="scene-occupant-role">{o.role} · nearby</span>
+              <span className="scene-occupant-role">
+                {t('map.scene.nearby', { role: roleLabel(o.role) })}
+              </span>
               <span className="scene-occupant-name">{personName(o.org)}</span>
               <span className="scene-occupant-act">{o.activity}</span>
             </button>

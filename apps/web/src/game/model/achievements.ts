@@ -8,6 +8,12 @@ export interface Achievement {
   unlocked: boolean
   /** How far along the goal is, shown while it is still locked, e.g. "37 of 100". */
   progress?: string
+  /** The number the goal asks for (100 souls, 3 tribes, 60 road cells), for wording it in any language. */
+  goal?: number
+  /** How many of `goal` there are now, while it is still locked. */
+  done?: number
+  /** How much of the first year has passed, in percent, while "A full year" is locked. */
+  yearPercent?: number
 }
 
 type AchievementWorld = Pick<WorldState, 'tick' | 'organisms' | 'settlements'> & {
@@ -50,6 +56,7 @@ export function achievementsFor(world: AchievementWorld): Achievement[] {
   const tribes = new Set(alive.map((o) => o.lineage_id)).size
   const oldestGeneration = alive.reduce((max, o) => Math.max(max, o.generation), 0)
   const { roads, bridges } = roadCountsOf(world.grid)
+  const yearPercent = Math.floor((world.tick / YEAR_TICKS) * 100)
 
   return [
     {
@@ -57,10 +64,8 @@ export function achievementsFor(world: AchievementWorld): Achievement[] {
       title: 'A full year',
       detail: 'The world has turned through a whole year of seasons.',
       unlocked: world.tick >= YEAR_TICKS,
-      progress:
-        world.tick >= YEAR_TICKS
-          ? undefined
-          : `${Math.floor((world.tick / YEAR_TICKS) * 100)}% of the first year`,
+      progress: world.tick >= YEAR_TICKS ? undefined : `${yearPercent}% of the first year`,
+      ...(world.tick >= YEAR_TICKS ? {} : { yearPercent }),
     },
     {
       id: 'hundred-souls',
@@ -68,6 +73,8 @@ export function achievementsFor(world: AchievementWorld): Achievement[] {
       detail: `Your people number ${POPULATION_GOAL} or more at once.`,
       unlocked: population >= POPULATION_GOAL,
       progress: population >= POPULATION_GOAL ? undefined : `${population} of ${POPULATION_GOAL}`,
+      goal: POPULATION_GOAL,
+      ...(population >= POPULATION_GOAL ? {} : { done: population }),
     },
     {
       id: 'village',
@@ -81,6 +88,8 @@ export function achievementsFor(world: AchievementWorld): Achievement[] {
       detail: `Three separate tribes are alive at the same time.`,
       unlocked: tribes >= TRIBE_GOAL,
       progress: tribes >= TRIBE_GOAL ? undefined : `${tribes} of ${TRIBE_GOAL}`,
+      goal: TRIBE_GOAL,
+      ...(tribes >= TRIBE_GOAL ? {} : { done: tribes }),
     },
     {
       id: 'grandchildren',
@@ -118,6 +127,8 @@ export function achievementsFor(world: AchievementWorld): Achievement[] {
       detail: `${ROAD_GOAL} cells of road laid across the land.`,
       unlocked: roads >= ROAD_GOAL,
       progress: roads >= ROAD_GOAL ? undefined : `${roads} of ${ROAD_GOAL}`,
+      goal: ROAD_GOAL,
+      ...(roads >= ROAD_GOAL ? {} : { done: roads }),
     },
     {
       id: 'over-the-water',

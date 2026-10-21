@@ -3,10 +3,12 @@ import type { OrganismState } from '../../shared/types'
 import { lineageColor } from '../../shared/constants'
 import { useFrozenSnapshot } from '../../shared/hooks/useFrozenSnapshot'
 import { Modal } from './Modal'
+import { t, tn } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
 
 const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
   {
-    label: 'core survival',
+    label: t('lang.section.coreSurvival'),
     concepts: [
       'food',
       'water',
@@ -25,11 +27,11 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'sky & weather',
+    label: t('lang.section.skyWeather'),
     concepts: ['sun', 'moon', 'star', 'sky', 'rain', 'storm', 'wind', 'snow', 'ice', 'cloud'],
   },
   {
-    label: 'land & water',
+    label: t('lang.section.landWater'),
     concepts: [
       'river',
       'lake',
@@ -47,7 +49,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'body & vital states',
+    label: t('lang.section.bodyStates'),
     concepts: [
       'hunger',
       'thirst',
@@ -69,7 +71,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'emotions',
+    label: t('lang.section.emotions'),
     concepts: [
       'fear',
       'joy',
@@ -89,11 +91,11 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'kin & roles',
+    label: t('lang.section.kinRoles'),
     concepts: ['kin', 'child', 'mother', 'father', 'elder', 'mate', 'stranger', 'leader', 'tribe', 'ally'],
   },
   {
-    label: 'social acts',
+    label: t('lang.section.socialActs'),
     concepts: [
       'gift',
       'share',
@@ -114,7 +116,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'motion & action',
+    label: t('lang.section.motion'),
     concepts: [
       'go',
       'come',
@@ -140,7 +142,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'qualities & relations',
+    label: t('lang.section.qualities'),
     concepts: [
       'cold',
       'warm',
@@ -159,7 +161,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'tools & resources',
+    label: t('lang.section.tools'),
     concepts: [
       'meat',
       'berry',
@@ -178,11 +180,11 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'body & senses',
+    label: t('lang.section.bodySenses'),
     concepts: ['eye', 'ear', 'hand', 'foot', 'mouth', 'skin', 'heart', 'voice', 'scent', 'bone'],
   },
   {
-    label: 'family & life events',
+    label: t('lang.section.family'),
     concepts: [
       'birth',
       'wedding',
@@ -197,7 +199,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'animals',
+    label: t('lang.section.animals'),
     concepts: [
       'wolf',
       'bird',
@@ -214,7 +216,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'terrain',
+    label: t('lang.section.terrain'),
     concepts: [
       'cliff',
       'ridge',
@@ -238,7 +240,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'weather & sky events',
+    label: t('lang.section.skyEvents'),
     concepts: [
       'dawn',
       'dusk',
@@ -256,7 +258,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'materials',
+    label: t('lang.section.materials'),
     concepts: [
       'clay',
       'mud',
@@ -274,7 +276,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'abstract',
+    label: t('lang.section.abstract'),
     concepts: [
       'truth',
       'lie',
@@ -311,7 +313,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'more acts',
+    label: t('lang.section.moreActs'),
     concepts: [
       'bless',
       'curse',
@@ -336,7 +338,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'quantity',
+    label: t('lang.section.quantity'),
     concepts: [
       'one',
       'two',
@@ -352,9 +354,12 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
       'full',
     ],
   },
-  { label: 'colours', concepts: ['red', 'blue', 'green', 'yellow', 'white', 'black', 'brown', 'grey'] },
   {
-    label: 'plants',
+    label: t('lang.section.colours'),
+    concepts: ['red', 'blue', 'green', 'yellow', 'white', 'black', 'brown', 'grey'],
+  },
+  {
+    label: t('lang.section.plants'),
     concepts: [
       'flower',
       'leaf',
@@ -374,7 +379,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'finer time',
+    label: t('lang.section.finerTime'),
     concepts: [
       'morning',
       'noon',
@@ -389,7 +394,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'directions',
+    label: t('lang.section.directions'),
     concepts: [
       'north',
       'south',
@@ -408,7 +413,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'sounds',
+    label: t('lang.section.sounds'),
     concepts: [
       'cry',
       'shout',
@@ -425,7 +430,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'finer feelings',
+    label: t('lang.section.finerFeelings'),
     concepts: [
       'worry',
       'relief',
@@ -444,7 +449,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'social structures',
+    label: t('lang.section.socialStructures'),
     concepts: [
       'council',
       'clan',
@@ -459,7 +464,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'body actions',
+    label: t('lang.section.bodyActions'),
     concepts: [
       'jump',
       'crawl',
@@ -480,7 +485,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'language & meaning',
+    label: t('lang.section.meaning'),
     concepts: [
       'question',
       'answer',
@@ -499,7 +504,7 @@ const CONCEPT_SECTIONS: { label: string; concepts: string[] }[] = [
     ],
   },
   {
-    label: 'physical qualities',
+    label: t('lang.section.physical'),
     concepts: [
       'heavy',
       'hard',
@@ -578,7 +583,7 @@ function buildLineageVocabs(
 export function LanguageModal({ organisms, lineageWords, sexWords, onClose, lineageNames }: Props) {
   const { frozen, reload } = useFrozenSnapshot(() => ({ organisms, lineageWords }))
   const lineages = buildLineageVocabs(frozen.organisms, frozen.lineageWords)
-  const tn = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
+  const tribeName = (lid: string) => lineageNames?.[lid] ?? (lid ?? '').slice(0, 6)
 
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
@@ -588,7 +593,8 @@ export function LanguageModal({ organisms, lineageWords, sexWords, onClose, line
     return CONCEPT_SECTIONS.map((s) => ({
       label: s.label,
       concepts: s.concepts.filter((c) => {
-        if (c.toLowerCase().includes(q)) return true
+        // The concept matches by its id (English) or by its name in the player's language.
+        if (c.toLowerCase().includes(q) || simLabel('concept', c).toLowerCase().includes(q)) return true
         return lineages.some((l) => l.words[c]?.toLowerCase().includes(q))
       }),
     })).filter((s) => s.concepts.length > 0)
@@ -597,30 +603,28 @@ export function LanguageModal({ organisms, lineageWords, sexWords, onClose, line
   const totalMatches = filteredSections.reduce((n, s) => n + s.concepts.length, 0)
 
   return (
-    <Modal open onClose={onClose} className="lang-modal" title="Languages of the world" hideTitle>
+    <Modal open onClose={onClose} className="lang-modal" title={t('lang.title')} hideTitle>
       <div className="lang-modal-header">
-        <span className="lang-modal-title">LANGUAGES OF THE WORLD</span>
+        <span className="lang-modal-title">{t('lang.heading')}</span>
         <div className="modal-header-actions">
-          <button className="reload-btn" onClick={reload} title="Reload from current world">
+          <button className="reload-btn" onClick={reload} title={t('modals.reload')}>
             ⟳
           </button>
-          <button aria-label="Close" className="close-btn" onClick={onClose}>
+          <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
             ✕
           </button>
         </div>
       </div>
       <div className="lang-modal-body">
-        <p className="lang-modal-sub">
-          Each lineage develops its own words. Words mutate across generations and spread through contact.
-        </p>
+        <p className="lang-modal-sub">{t('lang.sub')}</p>
 
         {sexWords && (
           <div className="lang-sex-words">
-            <span className="lang-sex-label">their words for the two kinds:</span>
+            <span className="lang-sex-label">{t('lang.sexWords')}</span>
             <span className="lang-sex-word lang-sex-word-0">{sexWords[0]}</span>
             <span className="lang-sex-divider">·</span>
             <span className="lang-sex-word lang-sex-word-1">{sexWords[1]}</span>
-            <span className="lang-sex-note">(coined by the founding generation)</span>
+            <span className="lang-sex-note">{t('lang.sexNote')}</span>
           </div>
         )}
 
@@ -628,14 +632,14 @@ export function LanguageModal({ organisms, lineageWords, sexWords, onClose, line
           <input
             className="lang-search"
             type="text"
-            placeholder={`search ${ALL_CONCEPTS.length} concepts or coined words…`}
+            placeholder={t('lang.search', { n: ALL_CONCEPTS.length })}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
           {q && (
             <span className="lang-search-count">
-              {totalMatches} match{totalMatches === 1 ? '' : 'es'}
+              {tn('lang.matches', totalMatches)}
               <button className="lang-search-clear" onClick={() => setQuery('')}>
                 ✕
               </button>
@@ -651,18 +655,20 @@ export function LanguageModal({ organisms, lineageWords, sexWords, onClose, line
                 className="lang-table"
                 style={{ gridTemplateColumns: `120px repeat(${lineages.length}, 1fr)` }}
               >
-                <div className="lang-th lang-concept-col">concept</div>
+                <div className="lang-th lang-concept-col">{t('lang.concept')}</div>
                 {lineages.map((l) => (
                   <div key={l.lineageId} className="lang-th lang-lineage-col">
                     <span className="lang-lineage-dot" style={{ background: lineageColor(l.lineageId) }} />
-                    {tn(l.lineageId)}
+                    {tribeName(l.lineageId)}
                     <span className="lang-lineage-count">×{l.count}</span>
                   </div>
                 ))}
 
                 {section.concepts.map((concept) => (
                   <div key={concept} className="lang-row-wrapper" style={{ display: 'contents' }}>
-                    <div className="lang-td lang-concept-col lang-english">{concept}</div>
+                    <div className="lang-td lang-concept-col lang-english">
+                      {simLabel('concept', concept)}
+                    </div>
                     {lineages.map((l) => {
                       const word = l.words[concept]
                       const isMatch = q && word?.toLowerCase().includes(q)
@@ -680,7 +686,7 @@ export function LanguageModal({ organisms, lineageWords, sexWords, onClose, line
               </div>
             </div>
           ))}
-          {filteredSections.length === 0 && <div className="lang-empty">no concepts match "{query}"</div>}
+          {filteredSections.length === 0 && <div className="lang-empty">{t('lang.noMatch', { query })}</div>}
         </div>
       </div>
     </Modal>

@@ -6,6 +6,10 @@ import { lineageColor } from '../../shared/constants'
 import { useOrgConversations } from '../../shared/hooks/useOrgConversations'
 import { WithQueryClient } from '../../shared/query'
 import { Modal } from './Modal'
+import { getLocale, t, type MessageKey } from '../../i18n'
+import { simLabel } from '../../i18n/sim'
+import { CONVERSATION_GLOSS } from '../../i18n/sim/concept'
+import { sexLabel as sexWord } from './words'
 
 const DAY_LENGTH = 600
 
@@ -17,13 +21,28 @@ interface Props {
 }
 
 const KIND_META: Record<string, { icon: string; label: string; color: string }> = {
-  courtship: { icon: '💛', label: 'First meeting', color: '#d4a843' },
-  bonded: { icon: '♥', label: 'Partners talking', color: '#c07090' },
-  farewell: { icon: '✦', label: 'Farewell', color: '#778' },
-  chat: { icon: '💬', label: 'Casual chat', color: '#5b9' },
-  gossip: { icon: '🗣', label: 'Gossip', color: '#b98ad0' },
-  excited: { icon: '✨', label: 'Sharing excitement', color: '#7bbbff' },
-  argue: { icon: '⚡', label: 'Argument', color: '#e06030' },
+  courtship: { icon: '💛', label: t('convo.kind.courtship'), color: '#d4a843' },
+  bonded: { icon: '♥', label: t('convo.kind.bonded'), color: '#c07090' },
+  farewell: { icon: '✦', label: t('convo.kind.farewell'), color: '#778' },
+  chat: { icon: '💬', label: t('convo.kind.chat'), color: '#5b9' },
+  gossip: { icon: '🗣', label: t('convo.kind.gossip'), color: '#b98ad0' },
+  excited: { icon: '✨', label: t('convo.kind.excited'), color: '#7bbbff' },
+  argue: { icon: '⚡', label: t('convo.kind.argue'), color: '#e06030' },
+}
+
+/**
+ * The simulation glosses a line in English, part by part ("Lupif · the hunt"). A part that is a
+ * concept is shown in the player's language; any other part is a name and stays as it is.
+ */
+function glossMeaning(meaning: string): string {
+  if (getLocale() === 'en') return meaning
+  return meaning
+    .split(' · ')
+    .map((part) => {
+      const concept = CONVERSATION_GLOSS[part]
+      return concept ? simLabel('concept', concept) : part
+    })
+    .join(' · ')
 }
 
 function kindMeta(kind: string) {
@@ -47,13 +66,13 @@ const ConvoBlock = memo(function ConvoBlock({
   const trust = selfOrg.org_trust?.[entry.with_id] ?? 0
   const rel =
     selfOrg.partner_id === entry.with_id
-      ? { text: '♥ partner', color: '#c07090' }
+      ? { text: t('convo.rel.partner'), color: '#c07090' }
       : selfOrg.friends?.[entry.with_id]
-        ? { text: 'friend', color: '#5b9' }
+        ? { text: t('convo.rel.friend'), color: '#5b9' }
         : trust > 0.25
-          ? { text: 'trusts', color: '#7bbbff' }
+          ? { text: t('convo.rel.trusts'), color: '#7bbbff' }
           : trust < -0.25
-            ? { text: 'wary', color: '#e06030' }
+            ? { text: t('convo.rel.wary'), color: '#e06030' }
             : null
 
   return (
@@ -83,7 +102,7 @@ const ConvoBlock = memo(function ConvoBlock({
             {rel.text}
           </span>
         )}
-        <span className="cv-day">day {day}</span>
+        <span className="cv-day">{t('life.day', { n: day })}</span>
       </div>
 
       {}
@@ -99,8 +118,8 @@ const ConvoBlock = memo(function ConvoBlock({
                   {speaker}
                 </span>
                 <div className="cv-bubble" style={{ borderColor: spColor + '55' }}>
-                  <span className="cv-text">"{text}"</span>
-                  {meaning && <span className="cv-meaning">{meaning}</span>}
+                  <span className="cv-text">{t('life.quote', { text })}</span>
+                  {meaning && <span className="cv-meaning">{glossMeaning(meaning)}</span>}
                 </div>
               </div>
             </div>
@@ -113,6 +132,16 @@ const ConvoBlock = memo(function ConvoBlock({
 
 type KindFilter = 'all' | 'courtship' | 'bonded' | 'chat' | 'gossip' | 'excited' | 'argue' | 'farewell'
 
+const NONE_OF_KIND: Record<Exclude<KindFilter, 'all'>, MessageKey> = {
+  courtship: 'convo.none.courtship',
+  bonded: 'convo.none.bonded',
+  chat: 'convo.none.chat',
+  gossip: 'convo.none.gossip',
+  excited: 'convo.none.excited',
+  argue: 'convo.none.argue',
+  farewell: 'convo.none.farewell',
+}
+
 function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
   const { data: convosData, isLoading } = useOrgConversations(org.id)
   const allConvos = useMemo(() => convosData?.conversations ?? [], [convosData?.conversations])
@@ -122,7 +151,7 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
     return allConvos.filter((c) => c.kind === kindFilter)
   }, [allConvos, kindFilter])
   const partnerOrg = org.partner_id ? allOrgs.find((o) => o.id === org.partner_id) : null
-  const sexLabel = sexWords ? (org.sex === 'female' ? sexWords[1] : sexWords[0]) : org.sex
+  const sexLabel = sexWords ? (org.sex === 'female' ? sexWords[1] : sexWords[0]) : org.sex && sexWord(org.sex)
   const kindCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const c of allConvos) counts[c.kind] = (counts[c.kind] ?? 0) + 1
@@ -134,12 +163,12 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
       open
       onClose={onClose}
       className="cv-modal"
-      title={`Conversations of ${personName(org)}`}
+      title={t('convo.title', { name: personName(org) })}
       hideTitle
     >
       {}
       <div className="cv-modal-head">
-        <span className="cv-modal-title">CONVERSATIONS</span>
+        <span className="cv-modal-title">{t('convo.heading')}</span>
         <div className="cv-modal-who">
           <span style={{ color: lineageColor(org.lineage_id), fontWeight: 700 }}>{personName(org)}</span>
           {sexLabel && (
@@ -153,7 +182,7 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
             </span>
           )}
         </div>
-        <button aria-label="Close" className="close-btn" onClick={onClose}>
+        <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
@@ -169,7 +198,7 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
             const count = k === 'all' ? allConvos.length : (kindCounts[k] ?? 0)
             if (k !== 'all' && count === 0) return null
             const isActive = kindFilter === k
-            const meta = k === 'all' ? { icon: '∗', label: 'all', color: '#999' } : kindMeta(k)
+            const meta = k === 'all' ? { icon: '∗', label: t('convo.all'), color: '#999' } : kindMeta(k)
             return (
               <button
                 key={k}
@@ -200,7 +229,7 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
               •••
             </div>
             <div style={{ fontSize: 11, fontStyle: 'italic', color: '#555', textAlign: 'center' }}>
-              loading {personName(org)}'s conversations…
+              {t('convo.loading', { name: personName(org) })}
             </div>
           </div>
         ) : filteredConvos.length === 0 ? (
@@ -209,9 +238,11 @@ function ConversationsModalBody({ org, allOrgs, sexWords, onClose }: Props) {
             <div style={{ fontSize: 11, fontStyle: 'italic', color: '#555', textAlign: 'center' }}>
               {allConvos.length === 0
                 ? org.attracted_to
-                  ? `${personName(org)} is drawn to someone - a first conversation is coming`
-                  : `${personName(org)} hasn't spoken with anyone yet`
-                : `no ${kindFilter} conversations`}
+                  ? t('convo.drawn', { name: personName(org) })
+                  : t('convo.silent', { name: personName(org) })
+                : kindFilter === 'all'
+                  ? ''
+                  : t(NONE_OF_KIND[kindFilter])}
             </div>
           </div>
         ) : (

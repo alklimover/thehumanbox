@@ -7,6 +7,7 @@ import { useWorldStore } from '../../state/worldStore'
 import { EventRow } from './EventRow'
 import { isNewsEvent } from '../../game/model/news'
 import type { SimEvent } from '../../shared/types'
+import { t } from '../../i18n'
 
 const FILTER_KEY = 'thb-event-filter-v1'
 
@@ -90,14 +91,11 @@ function EventLogImpl() {
   return (
     <>
       <div className="section-title" id="event-log-heading">
-        EVENTS{scopeKey ? ` · ${scopeKey[0]}` : ''}
+        {t('panel.events.title')}
+        {scopeKey ? ` · ${scopeKey[0]}` : ''}
         <button
           onClick={() => setDramaOnly((v) => !v)}
-          title={
-            dramaOnly
-              ? 'Showing what matters. Click to show everything.'
-              : 'Showing everything. Click to show only what matters.'
-          }
+          title={dramaOnly ? t('panel.events.importantTip') : t('panel.events.allTip')}
           style={{
             marginLeft: 8,
             fontSize: 9,
@@ -111,7 +109,7 @@ function EventLogImpl() {
             textTransform: 'uppercase',
           }}
         >
-          {dramaOnly ? '★ important' : '≡ all'}
+          {dramaOnly ? t('panel.events.important') : t('panel.events.all')}
         </button>
       </div>
       <div className="event-log" role="log" aria-live="polite" aria-labelledby="event-log-heading">

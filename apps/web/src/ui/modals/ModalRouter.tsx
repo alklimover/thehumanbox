@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
-import { lineageFacts } from '../../game/model/lineage-facts'
+import type { LineageFacts } from '../../game/model/lineage-facts'
+import { normalizeLineageEras } from '../../shared/lineageEras'
 import { lazyWithRetry as lazy } from '../../shared/lazyWithRetry'
 import type { WorldState, OrganismState } from '../../shared/types'
 import type { LineageStrategy } from '../../simulation/sandbox'
@@ -28,6 +29,19 @@ const NotableOrgsModal = lazy(() =>
 const DesktopSettingsModal = lazy(() =>
   import('./DesktopSettingsModal').then((m) => ({ default: m.DesktopSettingsModal })),
 )
+
+/**
+ * Each tribe's era, faith and form of government, as the simulation's ids (the list words them).
+ * lineageFacts in game/model gives the same facts already turned into English words.
+ */
+function lineageFactIds(world: WorldState): Record<string, LineageFacts> {
+  const out: Record<string, LineageFacts> = {}
+  const at = (id: string) => (out[id] ??= {})
+  for (const [id, era] of Object.entries(normalizeLineageEras(world.lineage_eras))) at(id).era = era
+  for (const [id, n] of Object.entries(world.faith?.by_lineage ?? {})) at(id).faith = n
+  for (const g of world.governments ?? []) at(g.lineage_id).government = g.kind
+  return out
+}
 
 interface LineageInfo {
   count: number
@@ -140,7 +154,7 @@ export function ModalRouter({ world, lineages, onGuide }: Props) {
             lineageWords={world.lineage_words}
             lineageNames={world.lineage_names}
             peril={world.tribes_in_peril}
-            facts={lineageFacts(world)}
+            facts={lineageFactIds(world)}
             onClose={closeAllLineages}
           />
         </Suspense>

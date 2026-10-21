@@ -1,5 +1,6 @@
 import type { WorldState } from '../../shared/types'
 import { eraTier } from './era-tier'
+import { simLabel } from '../../i18n/sim'
 
 export interface WorldEpitaph {
   years: number
@@ -37,7 +38,7 @@ export function worldEpitaph(world: WorldState): WorldEpitaph {
     years: (world.cosmos?.year ?? 0) + 1,
     peak: Math.max(0, ...(world.pop_history ?? []).map(([, pop]) => pop)),
     tribes: Object.keys(world.lineage_names ?? {}).length,
-    era: highestEra(world)?.replace(/[-_]/g, ' ') ?? null,
+    era: simLabel('era', highestEra(world)) || null,
     answered: world.faith?.answered ?? 0,
     forsaken: world.faith?.forsaken ?? 0,
   }

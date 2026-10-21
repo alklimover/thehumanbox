@@ -1,4 +1,5 @@
 import type { OrganismState, PrayerInfo, WorldState } from '../../shared/types'
+import { simLabel } from '../../i18n/sim'
 
 /** At or below this faith a tribe has given up on its gods (matches the sim). */
 export const LOST_FAITH = -6
@@ -42,16 +43,14 @@ function eraOf(world: WorldState, id: string): string | null {
   return eras[id] ?? null
 }
 
-const pretty = (s: string) => s.replace(/[-_]/g, ' ')
-
 function nextAgeOf(world: WorldState, id: string): TribeStatus['nextAge'] {
   const p = world.lineage_era_progress?.find((e) => e.lineage_id === id)
   if (!p?.next_era) return null
   return {
-    era: pretty(p.next_era),
+    era: simLabel('era', p.next_era),
     known: p.known.length,
     required: p.required.length,
-    missing: p.missing.map(pretty),
+    missing: p.missing.map((d) => simLabel('discovery', d)),
     peopleNeeded: p.pop_ready ? 0 : Math.max(0, p.pop_required - p.pop),
   }
 }
@@ -68,7 +67,7 @@ export function tribeStatus(world: WorldState, id: string): TribeStatus | null {
     bread: Math.max(0, world.lineage_bread_stores?.find((r) => r.lineage_id === id)?.loaves ?? 0),
     livestock: Math.max(0, world.lineage_livestock?.find((r) => r.lineage_id === id)?.head ?? 0),
     name: world.lineage_names?.[id] ?? id.slice(0, 6),
-    era: eraOf(world, id)?.replace(/[-_]/g, ' ') ?? null,
+    era: simLabel('era', eraOf(world, id)) || null,
     people: members.length,
     food: Math.max(
       0,

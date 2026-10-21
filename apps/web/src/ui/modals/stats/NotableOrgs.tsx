@@ -1,3 +1,4 @@
+import { t, tn } from '../../../i18n'
 import { personName } from '../../../shared/personName'
 import type { WorldState } from '../../../shared/types'
 import { lineageColor } from '../../../shared/constants'
@@ -26,9 +27,9 @@ export function NotableOrgs({ organisms }: { organisms: WorldState['organisms'] 
   )
   return (
     <div className="notable-grid">
-      {row('oldest', byAge, (o) => `· ${Math.floor(o.age / DAY_LENGTH)}d`)}
-      {row('parents', byKids, (o) => `· ${o.children_count ?? 0} kids`)}
-      {row('deepest gen', byGen, (o) => `· g${o.generation}`)}
+      {row(t('stats.notable.oldest'), byAge, (o) => tn('stats.notable.days', Math.floor(o.age / DAY_LENGTH)))}
+      {row(t('stats.notable.parents'), byKids, (o) => tn('stats.notable.kids', o.children_count ?? 0))}
+      {row(t('stats.notable.deepest'), byGen, (o) => t('stats.notable.gen', { n: o.generation }))}
     </div>
   )
 }

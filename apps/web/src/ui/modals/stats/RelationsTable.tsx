@@ -1,6 +1,13 @@
 import { useMemo } from 'react'
 import type { TribalRelation } from '../../../shared/types'
 import { lineageColor } from '../../../shared/constants'
+import { t, type MessageKey } from '../../../i18n'
+
+const STATUS_KEYS: Record<TribalRelation['status'], MessageKey> = {
+  ally: 'stats.relation.ally',
+  neutral: 'stats.relation.neutral',
+  rivals: 'stats.relation.rivals',
+}
 
 export function RelationsTable({
   relations,
@@ -20,7 +27,7 @@ export function RelationsTable({
   const sorted = [...relations].sort((a, b) => Math.abs(b.attitude) - Math.abs(a.attitude))
 
   if (sorted.length === 0) {
-    return <div className="stats-rel-empty">no inter-tribe contacts yet</div>
+    return <div className="stats-rel-empty">{t('stats.noRelations')}</div>
   }
 
   return (
@@ -40,9 +47,11 @@ export function RelationsTable({
             <div className="stats-rel-bar-wrap">
               <div className="stats-rel-bar" style={{ width: barW, background: barColor }} />
             </div>
-            <span className={`stats-rel-status status-${r.status}`}>{r.status}</span>
+            <span className={`stats-rel-status status-${r.status}`}>
+              {STATUS_KEYS[r.status] ? t(STATUS_KEYS[r.status]) : r.status}
+            </span>
             <span className="stats-rel-muted">
-              {sizeMap[r.a] ?? '?'} vs {sizeMap[r.b] ?? '?'}
+              {t('stats.relation.sizes', { a: sizeMap[r.a] ?? '?', b: sizeMap[r.b] ?? '?' })}
             </span>
           </div>
         )

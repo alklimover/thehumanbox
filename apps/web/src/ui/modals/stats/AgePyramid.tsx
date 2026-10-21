@@ -1,3 +1,4 @@
+import { t } from '../../../i18n'
 import type { WorldState } from '../../../shared/types'
 
 export function AgePyramid({ organisms }: { organisms: WorldState['organisms'] }) {
@@ -37,9 +38,9 @@ export function AgePyramid({ organisms }: { organisms: WorldState['organisms'] }
   )
   return (
     <div className="age-pyramid">
-      {row('elder', em, ef)}
-      {row('adult', am, af)}
-      {row('child', cm, cf)}
+      {row(t('stats.age.elder'), em, ef)}
+      {row(t('stats.age.adult'), am, af)}
+      {row(t('stats.age.child'), cm, cf)}
     </div>
   )
 }
