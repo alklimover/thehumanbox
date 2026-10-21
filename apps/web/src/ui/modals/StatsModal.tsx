@@ -14,7 +14,7 @@ import { OldestList } from './stats/OldestList'
 import { longevityOf, type Longevity } from '../../game/model/longevity'
 import { ageInYears } from '../../game/model/calendar'
 import { fmtNumber, t, tn } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
+import { simLabel, simLabelAsSent } from '../../i18n/sim'
 import { TraitAverages } from './stats/TraitAverages'
 import { DiscoveryRollup } from './stats/DiscoveryRollup'
 import { BondStats } from './stats/BondStats'
@@ -255,7 +255,7 @@ export function StatsModal({ world: liveWorld, onClose }: Props) {
                         {t('stats.day', { n: Math.floor(e.tick / DAY_LENGTH) })}
                       </span>
                       <span className={`era-badge era-${e.era}`} style={{ fontSize: 9 }}>
-                        {simLabel('era', e.era)}
+                        {simLabelAsSent('era', e.era)}
                       </span>
                     </div>
                   ))}

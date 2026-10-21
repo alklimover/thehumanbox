@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
 import { setLocaleForTests } from '../locale'
-import { simLabel } from '.'
+import { simLabel, simLabelAsSent } from '.'
 import { SIM_TABLES, type SimDomain } from './tables'
 import { milestoneDescription } from './milestone'
 
@@ -106,5 +106,17 @@ describe('world and economy names', () => {
     expect(simLabel('era', 'kardashev-2')).toBe('цивилизация II типа')
     expect(simLabel('building', 'forge')).toBe('кузница')
     expect(simLabel('discovery', 'granary')).toBe('амбар')
+  })
+
+  it('keep the era id as sent where English always printed it raw', () => {
+    // Header chip, footer, civilization and stats tables showed "pre-stone", not "pre stone".
+    expect(simLabelAsSent('era', 'pre-stone')).toBe('pre-stone')
+    expect(simLabelAsSent('era', 'kardashev-2')).toBe('kardashev-2')
+    expect(simLabelAsSent('era', 'bronze')).toBe('bronze')
+    expect(simLabelAsSent('era', 'not-an-era')).toBe('not-an-era')
+    expect(simLabelAsSent('era', null)).toBe('')
+    setLocaleForTests('ru')
+    expect(simLabelAsSent('era', 'pre-stone')).toBe('докаменный век')
+    expect(simLabelAsSent('era', 'kardashev-2')).toBe('цивилизация II типа')
   })
 })

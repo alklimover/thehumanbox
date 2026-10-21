@@ -12,7 +12,7 @@ import { REPO_URL } from '../../shared/links'
 import { trackEvent } from '../../shared/observability'
 import { moonPhaseName } from '../../game/model/calendar'
 import { t, tn } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
+import { simLabelAsSent } from '../../i18n/sim'
 import { PrayerChip } from '../panels/PrayerChip'
 import { PerilChip } from '../panels/PerilChip'
 import { CalendarTag } from '../panels/CalendarTag'
@@ -159,10 +159,10 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
           })()}
         {world?.current_era && world.current_era !== 'genesis' && world.current_era !== 'equilibrium' && (
           <Tooltip
-            tip={tip(t('header.era', { era: simLabel('era', world.current_era) }), t('header.era.body'))}
+            tip={tip(t('header.era', { era: simLabelAsSent('era', world.current_era) }), t('header.era.body'))}
           >
             <span className={clsx('hdr-chip', 'era-badge', `era-${world.current_era}`)}>
-              {simLabel('era', world.current_era)}
+              {simLabelAsSent('era', world.current_era)}
             </span>
           </Tooltip>
         )}
