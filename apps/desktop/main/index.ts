@@ -708,6 +708,9 @@ function notifyMilestone(title: string, body: string): void {
   // A click brings the game forward. It must not hide a window that is
   // already visible, which is what the tray and hotkey toggle does.
   n.on("click", () => showExistingWindow());
+  // Electron 42+ shows macOS notifications through UNNotification, which needs
+  // a code-signed app; on this unsigned build a failure would be invisible.
+  n.on("failed", (_e, error) => console.warn("[main] notification failed:", error));
   n.show();
 }
 
