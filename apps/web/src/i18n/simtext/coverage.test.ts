@@ -11,7 +11,7 @@ import { hasSimText, type SimTextChannel } from '.'
 import { artworkTitle, bookTitle, faithName } from './names'
 
 /** The share (%) of seen simulation text below which the check fails. */
-const FLOOR = 95
+const FLOOR = 98
 
 const REPO = join(__dirname, '../../../../..')
 const rows = readFileSync(join(REPO, 'docs/fork/simtext/frequency-ranked.tsv'), 'utf8')
