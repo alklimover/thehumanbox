@@ -18,6 +18,13 @@ pub(super) fn init_tracing() {
 }
 
 pub(super) fn fresh_seed() -> u64 {
+    // Fork: the desktop app passes the seed a player chose for a new world.
+    if let Some(seed) = std::env::var("THB_WORLD_SEED")
+        .ok()
+        .and_then(|s| s.trim().parse::<u64>().ok())
+    {
+        return seed;
+    }
     use std::time::{SystemTime, UNIX_EPOCH};
     let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
     t.as_nanos() as u64 ^ (t.subsec_nanos() as u64).wrapping_mul(0x9e3779b97f4a7c15)

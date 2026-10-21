@@ -23,6 +23,7 @@ import { DESKTOP_PAUSE_WHEN_HIDDEN_EVENT } from '../../shared/desktopVisibility'
 import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
 import { localeTag } from '../../i18n/locale'
 import { LanguageSwitch } from './LanguageSwitch'
+import { WorldsSection } from '../../fork/WorldsSection'
 
 interface Props {
   onClose: () => void
@@ -508,16 +509,19 @@ export function DesktopSettingsModal({ onClose }: Props) {
                     {t('settings.world.exportButton')}
                   </button>
                 </SettingRow>
-                <SettingRow title={t('settings.world.newTitle')} desc={t('settings.world.newDesc')}>
-                  <button
-                    className="lang-btn danger"
-                    onClick={() => void resetDesktopWorld()}
-                    disabled={busy}
-                  >
-                    {t('settings.world.newButton')}
-                  </button>
-                </SettingRow>
+                {!desktop.forkWorlds && (
+                  <SettingRow title={t('settings.world.newTitle')} desc={t('settings.world.newDesc')}>
+                    <button
+                      className="lang-btn danger"
+                      onClick={() => void resetDesktopWorld()}
+                      disabled={busy}
+                    >
+                      {t('settings.world.newButton')}
+                    </button>
+                  </SettingRow>
+                )}
                 {safetyMessage && <div className="settings-note">{safetyMessage}</div>}
+                {desktop.forkWorlds && <WorldsSection desktop={desktop} />}
               </Section>
             ) : (
               <WorldSourceSection />

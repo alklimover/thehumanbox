@@ -49,6 +49,19 @@ export interface DesktopBridge {
     }>;
   };
 
+  /** Fork: the worlds on disk as save slots (main/fork-worlds.ts). */
+  forkWorlds: {
+    list(): Promise<unknown>;
+    open(hash: string): Promise<{ opened: boolean }>;
+    create(options: {
+      seed?: string | null;
+      populationCap?: number | null;
+      name?: string | null;
+    }): Promise<{ created: boolean; hash: string; seed: string }>;
+    rename(hash: string, name: string): Promise<unknown>;
+    trash(hash: string): Promise<unknown>;
+  };
+
   on(
     channel:
       | "updater:available"
@@ -103,6 +116,14 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke("world:migrateDataRoot", payload),
     exportActive: () => ipcRenderer.invoke("world:exportActive"),
     resetLocal: () => ipcRenderer.invoke("world:resetLocal"),
+  },
+
+  forkWorlds: {
+    list: () => ipcRenderer.invoke("fork:worlds:list"),
+    open: (hash) => ipcRenderer.invoke("fork:worlds:open", hash),
+    create: (options) => ipcRenderer.invoke("fork:worlds:create", options),
+    rename: (hash, name) => ipcRenderer.invoke("fork:worlds:rename", hash, name),
+    trash: (hash) => ipcRenderer.invoke("fork:worlds:trash", hash),
   },
 
   on(channel, cb) {

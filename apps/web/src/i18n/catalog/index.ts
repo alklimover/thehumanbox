@@ -22,6 +22,7 @@ import { status } from './status'
 import { toasts } from './toasts'
 import { tools } from './tools'
 import { toolTips } from './tools-tips'
+import { worlds } from './worlds'
 
 /** Every area of the interface. Add a new area here; its keys join MessageKey. */
 const AREAS = {
@@ -48,6 +49,7 @@ const AREAS = {
   toasts,
   toolTips,
   tools,
+  worlds,
 }
 
 type Areas = typeof AREAS
