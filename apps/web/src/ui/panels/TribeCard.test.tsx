@@ -102,6 +102,6 @@ describe('TribeCard', () => {
 
     setLocaleForTests('ru')
     act(() => root.render(card({ ...festive })))
-    expect(host.querySelector('.tribe-card-festival')?.textContent).toBe('♫ идёт праздник: праздник урожая')
+    expect(host.querySelector('.tribe-card-festival')?.textContent).toBe('♫ сейчас праздник урожая')
   })
 })
