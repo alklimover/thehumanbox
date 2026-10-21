@@ -42,6 +42,11 @@ publish:
     releaseType: release
 
 mac:
+  # Names without spaces. electron-builder (26.x) names the zip's blockmap after
+  # the raw artifact name, and GitHub turns its spaces into dots, so the
+  # updater (which looks for "<zip>.blockmap") never found it and downloaded
+  # the whole zip on every update.
+  artifactName: The-Human-Box-RU-${version}-${arch}-mac.${ext}
   target:
     - target: dmg
       arch:
@@ -55,6 +60,9 @@ mac:
   identity: null
   notarize: false
   icon: build/icon.icns
+
+dmg:
+  artifactName: The-Human-Box-RU-${version}-${arch}.${ext}
 
 win:
   target:
