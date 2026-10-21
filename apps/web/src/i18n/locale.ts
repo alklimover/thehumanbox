@@ -42,6 +42,14 @@ export function localeTag(locale: Locale = current): string {
   return locale === 'ru' ? 'ru-RU' : 'en-US'
 }
 
+/**
+ * The simulation worker only: a Web Worker has no localStorage, so the page
+ * passes its language in the worker's start message and the worker sets it here.
+ */
+export function setWorkerLocale(locale: Locale) {
+  current = locale
+}
+
 /** Tests only: switch the language without a reload. */
 export function setLocaleForTests(locale: Locale) {
   current = locale
