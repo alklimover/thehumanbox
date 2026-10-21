@@ -34,6 +34,7 @@ import {
   type RuntimeControlResult,
   type RuntimeState,
 } from './runtimeControls'
+import { bootStage } from '../fork/boot-stages'
 
 const RELOAD_CHECKPOINT_DEADLINE_MS = 6_000
 const RELOAD_CHECKPOINT_TIMEOUT_MS = 7_000
@@ -373,6 +374,7 @@ export function useSimulation(source: WorldSource = 'native'): {
           }
           enqueueMessage(m.frame)
         } else if (m.type === 'ready' || m.type === 'storage_ready') {
+          if (m.type === 'ready') bootStage('drawing')
           if (!announced) {
             announced = true
             setConnected(true)
@@ -384,6 +386,8 @@ export function useSimulation(source: WorldSource = 'native'): {
               tick: m.tick ?? 0,
             })
           }
+        } else if (m.type === 'boot') {
+          bootStage((m as { stage?: string }).stage ?? '', m.tick)
         } else if (m.type === 'reset_done') {
           clearOwnWorldResetRequest()
         } else if (m.type === 'recovery_done') {
