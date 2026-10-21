@@ -1,0 +1,151 @@
+name: fork-upstream-sync
+
+# Weekly merge of upstream 1homsi/thehumanbox into a sync/upstream-YYYY-MM-DD
+# branch and a PR to main with a report of new untranslated strings
+# (scripts/fork/upstream-sync.sh, docs/fork/SYNC.ru.md). Never use GitHub's
+# "Sync fork" -> "Discard commits": it drops the fork's work.
+#
+# Pushes made with GITHUB_TOKEN do not start other workflows, so this one
+# dispatches fork-ci on the sync branch itself. Creating the PR needs
+# Settings -> Actions -> General -> "Allow GitHub Actions to create and approve
+# pull requests"; without it the job opens an issue with a ready link instead.
+# Conflicts outside the known rules, or upstream changes to workflow files
+# (GITHUB_TOKEN may not push those), also end in an issue labelled `sync`.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: fork-upstream-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+jobs:
+  sync:
+    name: Merge upstream and open a PR
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Git identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Merge upstream
+        id: sync
+        run: |
+          set +e
+          scripts/fork/upstream-sync.sh --refuse-workflow-changes --out "$RUNNER_TEMP/sync"
+          code=$?
+          set -e
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          case "$code" in 0 | 3 | 4) ;; *) exit "$code" ;; esac
+
+      - name: Label for sync issues
+        if: steps.sync.outputs.status != 'up-to-date'
+        run: |
+          gh label create sync --repo "$REPO" --color 0e8a16 \
+            --description 'Синхронизация с оригиналом' 2>/dev/null || true
+
+      # The same report goes to an issue when the sync needs a human. One open
+      # issue at a time: a later run comments on it instead of opening another.
+      - name: Issue for conflicts or workflow changes
+        if: steps.sync.outputs.status == 'conflict' || steps.sync.outputs.status == 'workflow-files'
+        env:
+          OUT: ${{ steps.sync.outputs.out }}
+        run: |
+          issue=$(gh issue list --repo "$REPO" --label sync --state open --json number -q '.[0].number')
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --repo "$REPO" --body-file "$OUT/report.md"
+            echo "Updated issue #$issue" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh issue create --repo "$REPO" --label sync --title "$(cat "$OUT/title.txt")" --body-file "$OUT/report.md" \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Run fork-ci on the sync branch
+        id: ci
+        if: steps.sync.outputs.status == 'merged' && steps.sync.outputs.pushed == 'yes'
+        env:
+          BRANCH: ${{ steps.sync.outputs.branch }}
+          HEAD: ${{ steps.sync.outputs.head }}
+        run: |
+          gh workflow run fork-ci.yml --repo "$REPO" --ref "$BRANCH"
+          # The run shows up a few seconds after the dispatch.
+          url=
+          for _ in $(seq 1 12); do
+            sleep 5
+            url=$(gh run list --repo "$REPO" --workflow fork-ci.yml --branch "$BRANCH" --event workflow_dispatch \
+              --json headSha,url -q "map(select(.headSha == \"$HEAD\")) | .[0].url // empty")
+            [ -n "$url" ] && break
+          done
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the PR
+        if: steps.sync.outputs.status == 'merged'
+        env:
+          OUT: ${{ steps.sync.outputs.out }}
+          BRANCH: ${{ steps.sync.outputs.branch }}
+          CI_URL: ${{ steps.ci.outputs.url }}
+        run: |
+          body="$OUT/report.md"
+          if [ -n "$CI_URL" ]; then
+            sed -i "s|<!-- ci-run -->|Прогон fork-ci на этой ветке: $CI_URL|" "$body"
+          fi
+          title=$(cat "$OUT/title.txt")
+          pr=$(gh pr list --repo "$REPO" --head "$BRANCH" --base main --state open --json number -q '.[0].number')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --repo "$REPO" --title "$title" --body-file "$body"
+            echo "Updated PR #$pr" >> "$GITHUB_STEP_SUMMARY"
+          elif gh pr create --repo "$REPO" --base main --head "$BRANCH" --title "$title" --body-file "$body" \
+            > "$RUNNER_TEMP/pr.txt" 2> "$RUNNER_TEMP/pr.err"; then
+            tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/pr.txt"
+          else
+            # Most likely the repo does not let GITHUB_TOKEN create PRs.
+            cat "$RUNNER_TEMP/pr.err" >&2
+            link="https://github.com/$REPO/compare/main...$BRANCH?expand=1"
+            {
+              echo "Ветка \`$BRANCH\` с изменениями оригинала готова, но открыть PR автоматически не удалось:"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/pr.err"
+              echo '```'
+              echo
+              echo "**[Создать PR]($link)** (текст ниже можно вставить в описание)."
+              echo
+              echo 'Чтобы бот открывал PR сам: Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests».'
+              echo
+              echo '---'
+              echo
+              cat "$body"
+            } > "$RUNNER_TEMP/issue.md"
+            gh issue create --repo "$REPO" --label sync --title "$title: создайте PR" --body-file "$RUNNER_TEMP/issue.md" \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
