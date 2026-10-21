@@ -468,7 +468,6 @@ export const events: SimTextTable = {
   '→ {target_name} ({arg1})': '→ {target_name}: урок ({arg1})',
   mentoring: 'наставничество',
   '{mover_name} moved in with me': '{mover_name} [поселился|поселилась] у меня',
-  'moved in with {host_name}': '[поселился|поселилась] у {host_name}',
   '{who} took in {kid}, who had lost both parents': '{who} [взял|взяла] к себе {kid}, сироту',
   '{actor_name} dispatched a caravan carrying {amount} {cargo} toward {receiver_name}':
     '{actor_name} [отправил|отправила] караван к {receiver_name}: {cargo|good} × {amount}',
