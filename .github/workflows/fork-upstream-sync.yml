@@ -8,9 +8,12 @@ name: fork-upstream-sync
 # Pushes made with GITHUB_TOKEN do not start other workflows, so this one
 # dispatches fork-ci on the sync branch itself. Creating the PR needs
 # Settings -> Actions -> General -> "Allow GitHub Actions to create and approve
-# pull requests"; without it the job opens an issue with a ready link instead.
+# pull requests"; without it the job opens an issue with a ready link instead
+# (or, with issues off, fails with the link in the run summary).
 # Conflicts outside the known rules, or upstream changes to workflow files
 # (GITHUB_TOKEN may not push those), also end in an issue labelled `sync`.
+# Whatever the bot cannot hand over (no PR, issues turned off) goes to the run
+# summary and fails the run, so it is never lost silently.
 
 on:
   schedule:
@@ -78,16 +81,22 @@ jobs:
       # issue at a time: a later run comments on it instead of opening another.
       - name: Issue for conflicts or workflow changes
         if: steps.sync.outputs.status == 'conflict' || steps.sync.outputs.status == 'workflow-files'
+        shell: bash
         env:
           OUT: ${{ steps.sync.outputs.out }}
         run: |
+          # The report always lands in the run summary. Issues may be off in a
+          # fork: then the run fails, so GitHub e-mails the owner.
+          cat "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$(gh api "repos/$REPO" -q .has_issues)" != true ]; then
+            echo "::error::Синхронизация требует внимания, а issues в репозитории выключены: отчёт в сводке запуска"
+            exit 1
+          fi
           issue=$(gh issue list --repo "$REPO" --label sync --state open --json number -q '.[0].number')
           if [ -n "$issue" ]; then
             gh issue comment "$issue" --repo "$REPO" --body-file "$OUT/report.md"
-            echo "Updated issue #$issue" >> "$GITHUB_STEP_SUMMARY"
           else
-            gh issue create --repo "$REPO" --label sync --title "$(cat "$OUT/title.txt")" --body-file "$OUT/report.md" \
-              | tee -a "$GITHUB_STEP_SUMMARY"
+            gh issue create --repo "$REPO" --label sync --title "$(cat "$OUT/title.txt")" --body-file "$OUT/report.md"
           fi
 
       - name: Run fork-ci on the sync branch
@@ -110,6 +119,7 @@ jobs:
 
       - name: Open or update the PR
         if: steps.sync.outputs.status == 'merged'
+        shell: bash
         env:
           OUT: ${{ steps.sync.outputs.out }}
           BRANCH: ${{ steps.sync.outputs.branch }}
@@ -145,7 +155,12 @@ jobs:
               echo '---'
               echo
               cat "$body"
-            } > "$RUNNER_TEMP/issue.md"
-            gh issue create --repo "$REPO" --label sync --title "$title: создайте PR" --body-file "$RUNNER_TEMP/issue.md" \
-              | tee -a "$GITHUB_STEP_SUMMARY"
+            } > "$RUNNER_TEMP/notice.md"
+            cat "$RUNNER_TEMP/notice.md" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$(gh api "repos/$REPO" -q .has_issues)" = true ]; then
+              gh issue create --repo "$REPO" --label sync --title "$title: создайте PR" --body-file "$RUNNER_TEMP/notice.md"
+            fi
+            # Fail the run so the owner gets GitHub's e-mail about it.
+            echo "::error::PR не открыт: ветка $BRANCH готова, ссылка «Создать PR» в сводке запуска"
+            exit 1
           fi
