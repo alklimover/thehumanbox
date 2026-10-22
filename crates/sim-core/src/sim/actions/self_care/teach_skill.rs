@@ -11,10 +11,14 @@ pub fn apply(ctx: &mut ActionCtx) -> f32 {
         ctx.think("looking for a pupil");
         return 0.0;
     };
-    let mine: Vec<String> = ctx.sim.organisms[ctx.idx].discoveries.iter().cloned().collect();
+    let mine: Vec<String> = ctx.sim.organisms[ctx.idx]
+        .discoveries
+        .iter()
+        .map(|name| name.to_string())
+        .collect();
     let mut taught = false;
     for d in mine {
-        if !ctx.sim.organisms[ki].discoveries.contains(&d) {
+        if !ctx.sim.organisms[ki].discoveries.contains(d.as_str()) {
             ctx.sim.organisms[ki].discoveries.insert(d);
             taught = true;
             break;

@@ -265,7 +265,7 @@ pub(super) fn org_to_save(o: &Organism) -> OrgSave {
         last_story_tick: o.last_story_tick,
         life_log_legacy: Vec::new(),
         life_log: o.life_log.iter().cloned().collect(),
-        discoveries: o.discoveries.iter().cloned().collect(),
+        discoveries: o.discoveries.iter().map(|name| name.to_string()).collect(),
         home_x: o.home_x,
         home_y: o.home_y,
         home_furniture: o.home_furniture.clone(),

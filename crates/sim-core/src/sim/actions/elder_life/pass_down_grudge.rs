@@ -1,7 +1,12 @@
 use super::super::ctx::ActionCtx;
 
 pub fn apply(ctx: &mut ActionCtx) -> f32 {
-    let owned: Vec<String> = ctx.org().discoveries.iter().cloned().collect();
+    let owned: Vec<String> = ctx
+        .org()
+        .discoveries
+        .iter()
+        .map(|name| name.to_string())
+        .collect();
     if owned.is_empty() || ctx.kin.is_empty() {
         ctx.think("nobody to tell");
         return 0.02;
@@ -14,7 +19,7 @@ pub fn apply(ctx: &mut ActionCtx) -> f32 {
         if !o.alive {
             continue;
         }
-        if !o.discoveries.contains(&pick) {
+        if !o.discoveries.contains(pick.as_str()) {
             o.discoveries.insert(pick.clone());
             passed += 1;
             if passed >= 2 {

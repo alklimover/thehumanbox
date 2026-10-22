@@ -46,7 +46,7 @@ pub fn tick_tech_progress(
             members: Vec::new(),
         });
         for d in org.discoveries.iter() {
-            tribe.discoveries.insert(d.as_str());
+            tribe.discoveries.insert(&**d);
         }
         tribe.members.push(i);
     }
@@ -487,7 +487,7 @@ fn tick_tech_progress_reference(
         }
         let entry = lineage_discoveries.entry(org.lineage_id.clone()).or_default();
         for d in org.discoveries.iter() {
-            entry.insert(d.clone());
+            entry.insert(d.to_string());
         }
         *lineage_pop.entry(org.lineage_id.clone()).or_insert(0) += 1;
         lineage_members.entry(org.lineage_id.clone()).or_default().push(i);
@@ -780,7 +780,7 @@ mod tests {
             let known: HashSet<String> = sim
                 .organisms
                 .iter()
-                .flat_map(|o| o.discoveries.iter().cloned())
+                .flat_map(|o| o.discoveries.iter().map(|name| name.to_string()))
                 .collect();
             let era = determine_era_for_lineage(&known, 10_000, 10_000);
             if era > best {

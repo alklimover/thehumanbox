@@ -469,9 +469,9 @@ pub fn try_reproduce(
     let mut parent_knowledge: Vec<(&str, u8)> = Vec::new();
     for parent in [org_idx, partner_idx] {
         for d in &organisms[parent].discoveries {
-            match parent_knowledge.iter_mut().find(|(name, _)| *name == d.as_str()) {
+            match parent_knowledge.iter_mut().find(|(name, _)| *name == &**d) {
                 Some((_, knowers)) => *knowers += 1,
-                None => parent_knowledge.push((d.as_str(), 1)),
+                None => parent_knowledge.push((&**d, 1)),
             }
         }
     }
