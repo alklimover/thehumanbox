@@ -7,6 +7,7 @@ mod broadcaster;
 mod config;
 mod desktop_lock;
 mod fork_bench;
+mod fork_speed;
 mod rollover;
 mod router;
 mod runtime;

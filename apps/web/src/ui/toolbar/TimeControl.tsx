@@ -1,5 +1,13 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
+import {
+  formatActualSpeed,
+  speedLags,
+  useActualSpeed,
+  useSimPower,
+  withPowerNote,
+} from '../../fork/actual-speed'
+import { SpeedReadout } from '../../fork/SpeedReadout'
 import { typingTarget } from '../../game/model/shortcuts'
 import { t } from '../../i18n'
 import type { SandboxTool } from '../../simulation/sandbox'
@@ -78,9 +86,11 @@ interface Props {
 export function TimeControl({ paused, speed, onPick }: Props) {
   const [listOpen, setListOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
-  const achieved = useAchievedSpeed(paused)
+  // Fork: the desktop sim's own measurement, and which cores it runs on.
+  const achieved = useActualSpeed(paused, speed, useAchievedSpeed(paused))
+  const power = useSimPower()
   // Past what the machine can sustain, say what it is really doing.
-  const lagging = !paused && achieved !== null && speed > 10 && achieved < speed * 0.8
+  const lagging = !paused && speedLags(speed, achieved)
   const slower = nextSpeedStep(speed, -1)
   const faster = nextSpeedStep(speed, 1)
 
@@ -129,7 +139,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
   }, [listOpen])
 
   const lagNote = lagging
-    ? t('tools.time.lagging', { asked: formatSpeed(speed), actual: formatSpeed(Math.round(achieved ?? 0)) })
+    ? t('tools.time.lagging', { asked: formatSpeed(speed), actual: formatActualSpeed(achieved ?? 0) })
     : undefined
 
   return (
@@ -184,7 +194,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
                 ? t('tools.time.pausedAt', { speed: formatSpeed(speed) })
                 : t('tools.time.speed', { speed: formatSpeed(speed) })
             }
-            body={lagNote ?? t('tools.time.chooseAny')}
+            body={withPowerNote(lagNote, power) ?? t('tools.time.chooseAny')}
           />
         }
       >
@@ -196,7 +206,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
           aria-expanded={listOpen}
           onClick={() => setListOpen((open) => !open)}
         >
-          {formatSpeed(speed)}
+          <SpeedReadout speed={speed} lagging={lagging ? achieved : null} power={power} />
           {lagging && <span className="time-lag" aria-hidden="true" />}
         </button>
       </Tooltip>

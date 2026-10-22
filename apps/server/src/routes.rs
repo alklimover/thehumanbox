@@ -112,6 +112,7 @@ pub async fn runtime_status_handler(State(s): State<AppState>) -> impl IntoRespo
             "paused": s.runtime_control.paused(),
             "tick_ms": s.runtime_control.tick_ms(),
             "speed": s.runtime_control.speed(),
+            "actual_speed": crate::fork_speed::actual_speed(&s.runtime_control),
         })),
     )
 }

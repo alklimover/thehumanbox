@@ -17,6 +17,7 @@ import { person } from './person'
 import { scenarios } from './scenarios'
 import { settings } from './settings'
 import { shortcuts } from './shortcuts'
+import { speed } from './speed'
 import { splash } from './splash'
 import { stats } from './stats'
 import { status } from './status'
@@ -45,6 +46,7 @@ const AREAS = {
   scenarios,
   settings,
   shortcuts,
+  speed,
   splash,
   stats,
   status,

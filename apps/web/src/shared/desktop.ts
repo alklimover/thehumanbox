@@ -1,4 +1,5 @@
 import type { DeviceProfile } from '../fork/population-load'
+import type { SimPowerState } from '../fork/actual-speed'
 import type { DesktopVisibility } from './desktopVisibility'
 
 export type SimMode = 'local'
@@ -86,6 +87,11 @@ export interface DesktopBridge {
   /** Fork: this computer and how fast it steps a world. Missing in an older desktop shell. */
   forkDevice?: {
     profile(remeasure?: boolean): Promise<DeviceProfile>
+  }
+  /** Fork: which cores the simulation runs on. Missing in an older desktop shell. */
+  forkPower?: {
+    state(): Promise<SimPowerState>
+    onChange(cb: (state: SimPowerState) => void): () => void
   }
   /** Fork: the worlds on disk as save slots. Missing in an older desktop shell. */
   forkWorlds?: {
