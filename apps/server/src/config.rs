@@ -193,3 +193,18 @@ pub(super) static DAILY_EGRESS_BYTES: std::sync::LazyLock<u64> =
 pub(super) const FULL_FRAME_EVERY_TICKS: u64 = 30;
 
 pub(super) const SAVE_EVERY_TICKS: u64 = 600;
+
+/// Least wall-clock time between two periodic checkpoints. At 1x a checkpoint
+/// every `SAVE_EVERY_TICKS` already comes about once a minute; at high speed it
+/// would come every second or two, each a full rewrite of a world file of
+/// 100+ MB, so the ticks only make a checkpoint owed and this paces it.
+pub(super) fn autosave_min_ms() -> u64 {
+    bounded_interval_ms(
+        std::env::var("AUTOSAVE_MIN_MS").ok().as_deref(),
+        60_000,
+        1_000,
+        3_600_000,
+    )
+}
+
+pub(super) static AUTOSAVE_MIN_MS: std::sync::LazyLock<u64> = std::sync::LazyLock::new(autosave_min_ms);
