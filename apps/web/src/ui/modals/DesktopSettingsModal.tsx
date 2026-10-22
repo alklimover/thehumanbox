@@ -9,6 +9,7 @@ import { useIsMobile } from '../../shared/hooks/useIsMobile'
 import { useSimulationData } from '../../simulation/simulationData'
 import { LOW_PERF } from '../../shared/perf'
 import { readLowPerf, toggleLowPerf } from '../../shared/perf-mode'
+import { PopulationLoadSlider } from '../../fork/PopulationLoad'
 import { getDesktop } from '../../shared/desktop'
 import type { DesktopBridge, DesktopSettings, SimStatus, UpdateCheckResult } from '../../shared/desktop'
 import {
@@ -590,14 +591,14 @@ export function DesktopSettingsModal({ onClose }: Props) {
                     <div className="settings-note">{t('settings.sim.tickNote')}</div>
                   </Field>
                   <Field label={tn('settings.sim.capacity', settings.populationCap)}>
-                    <input
-                      type="range"
+                    <PopulationLoadSlider
+                      desktop={desktop}
                       min={120}
                       max={5000}
                       step={20}
                       value={settings.populationCap}
-                      onChange={(e) => update({ populationCap: parseInt(e.target.value, 10) })}
-                      style={{ width: '100%' }}
+                      onChange={(populationCap) => update({ populationCap })}
+                      tickMs={settings.tickMs}
                     />
                     <div
                       className="desktop-cap-presets"

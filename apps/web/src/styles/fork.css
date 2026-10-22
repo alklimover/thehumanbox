@@ -85,3 +85,49 @@
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+/* ── World-capacity slider coloured by load (fork/PopulationLoad.tsx) ───── */
+.fork-load-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  margin: 9px 0 7px;
+  border-radius: 3px;
+  background: var(--fork-load-track);
+  outline: none;
+  cursor: pointer;
+}
+.fork-load-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--fork-load-thumb);
+  border: 2px solid #1c1612;
+  box-shadow: 0 0 0 1px #927047;
+}
+.fork-load-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px #f0d088;
+}
+.fork-load-estimate {
+  font-size: 11px;
+  color: #c9b9a6;
+  margin-bottom: 3px;
+}
+.fork-load-level {
+  font-weight: 600;
+}
+.fork-load-remeasure {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #927047;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.fork-load-remeasure:disabled {
+  cursor: default;
+  text-decoration: none;
+}

@@ -6,6 +6,7 @@ pub use sim_core::{organism, physics, sim, world};
 mod broadcaster;
 mod config;
 mod desktop_lock;
+mod fork_bench;
 mod rollover;
 mod router;
 mod runtime;
@@ -48,6 +49,11 @@ use transport::{
 
 #[tokio::main]
 async fn main() {
+    // Fork: a CPU measurement for the desktop app; touches no world and no data folder.
+    if fork_bench::requested(&std::env::args().collect::<Vec<_>>()) {
+        fork_bench::run();
+        return;
+    }
     if let Err(error) = claim_desktop_data_lock_from_env() {
         eprintln!("simulation-rs refused desktop data ownership: {error}");
         std::process::exit(1);

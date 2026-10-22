@@ -130,7 +130,7 @@ export const settings = defineMessages(
     'settings.sim.preset.ambitious': 'ambitious',
     'settings.sim.preset.experimental': 'experimental',
     'settings.sim.capacityNote':
-      'Natural births stop at this size; you can still add people yourself. 500 suits the default speed, 1,000+ needs a fast machine. Applies after restart.',
+      'Natural births stop at this size; you can still add people yourself. The colour shows the load on this computer. Applies after restart.',
 
     // App tab (desktop)
     'settings.updates.title': 'Updates',
@@ -308,7 +308,7 @@ export const settings = defineMessages(
     'settings.sim.preset.ambitious': 'смелый',
     'settings.sim.preset.experimental': 'на свой риск',
     'settings.sim.capacityNote':
-      'На этой численности естественные рождения прекращаются, но добавлять людей вручную можно и дальше. 500 — для скорости по умолчанию, от 1000 нужен мощный компьютер. Вступает в силу после перезапуска.',
+      'На этой численности естественные рождения прекращаются, но добавлять людей вручную можно и дальше. Цвет показывает нагрузку на этот компьютер. Вступает в силу после перезапуска.',
 
     'settings.updates.title': 'Обновления',
     'settings.updates.autoTitle': 'Автообновление',
