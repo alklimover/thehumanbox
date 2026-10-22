@@ -6,6 +6,7 @@ impl Simulation {
         let animal_spatial = f.animal_spatial;
         let idx = f.idx;
         let lineage_members = &mut *f.lineage_members;
+        let residents = &mut *f.residents;
         let night = f.night;
         let perception_buf = &mut *f.perception_buf;
         let spatial = f.spatial;
@@ -65,6 +66,9 @@ impl Simulation {
                 .or_default();
             let position = members.binary_search(&idx).unwrap_or_else(|position| position);
             members.insert(position, idx);
+            // A founder takes a band along to the new tribe (`fork_new_tribe`),
+            // and only the founder is moved in `lineage_members` above.
+            residents.lineages_changed(&self.organisms);
         }
         if let Some((_, wx, wy)) = wolf_threat {
             let wx_i = wx as i32;

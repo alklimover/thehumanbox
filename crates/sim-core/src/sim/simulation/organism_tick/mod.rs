@@ -23,6 +23,7 @@ pub(super) struct OrgFrame<'a> {
     pub(super) animal_spatial: &'a SpatialIndex,
     pub(super) org_idx_by_id: &'a FxHashMap<String, usize>,
     pub(super) lineage_members: &'a mut FxHashMap<String, Vec<usize>>,
+    pub(super) residents: &'a mut Residents,
     pub(super) spatial_buf: &'a mut Vec<usize>,
     pub(super) available_buf: &'a mut Vec<usize>,
     pub(super) perception_buf: &'a mut Vec<usize>,
@@ -66,6 +67,7 @@ impl Simulation {
     /// One organism's turn. Runs the phases in order, each in its own module:
     /// setup, threats, decide, act, vitals, ageing, bonds, learning, routines,
     /// pairing and mortality. Values that outlive a phase travel in [`OrgFrame`].
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn tick_organism(
         &mut self,
         idx: usize,
@@ -76,6 +78,7 @@ impl Simulation {
         buffers: &mut TickBuffers,
         org_idx_by_id: &FxHashMap<String, usize>,
         lineage_members: &mut FxHashMap<String, Vec<usize>>,
+        residents: &mut Residents,
     ) {
         let TickBuffers {
             spatial: spatial_buf,
@@ -90,6 +93,7 @@ impl Simulation {
             animal_spatial,
             org_idx_by_id,
             lineage_members,
+            residents,
             spatial_buf,
             available_buf,
             perception_buf,

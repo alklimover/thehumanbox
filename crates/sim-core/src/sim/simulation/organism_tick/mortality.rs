@@ -15,6 +15,7 @@ impl Simulation {
     /// Death: starvation, thirst, injury and old age, graves, grief for the dead, and the effects on the living.
     pub(super) fn org_mortality(&mut self, f: &mut OrgFrame<'_>) {
         let idx = f.idx;
+        let residents = &*f.residents;
 
         let death_grief: Option<(i32, i32, String)> = {
             let org = &self.organisms[idx];
@@ -208,7 +209,7 @@ impl Simulation {
                 let heir_idx: Option<usize> = {
                     let mut found: Option<usize> = None;
                     if let Some(pid) = partner_id.as_ref() {
-                        found = self.organisms.iter().position(|o| o.alive && &o.id == pid);
+                        found = residents.find_living(&self.organisms, pid);
                     }
                     if found.is_none() {
                         let mut best: Option<(usize, u32)> = None;
@@ -230,10 +231,7 @@ impl Simulation {
                     }
                     if found.is_none() {
                         let mut best: Option<(usize, i32)> = None;
-                        for (i, o) in self.organisms.iter().enumerate() {
-                            if !o.alive || o.lineage_id != dead_lid {
-                                continue;
-                            }
+                        for (i, o) in residents.kin(&self.organisms, &dead_lid) {
                             let d = (o.x - self.organisms[idx].x).abs() as i32
                                 + (o.y - self.organisms[idx].y).abs() as i32;
                             if let Some((_, bd)) = best {

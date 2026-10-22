@@ -50,6 +50,9 @@ fn main() {
         growth_every,
         profile_out,
         profile_every,
+        load,
+        save_at_end,
+        population_limit,
     } = args::parse();
 
     if world_report {
@@ -84,7 +87,18 @@ fn main() {
     );
     println!("{}", "-".repeat(80));
 
-    let mut sim = Simulation::new(seed);
+    let mut sim = match load.as_deref() {
+        Some(path) => Simulation::load_save_file(seed, path).unwrap_or_else(|err| {
+            eprintln!("failed to load {}: {}", path, err);
+            std::process::exit(1);
+        }),
+        None => Simulation::new(seed),
+    };
+    if let Some(limit) = population_limit {
+        let applied = sim.set_population_limit(limit);
+        println!("population limit: {} (requested {})", applied, limit);
+    }
+    let end_tick = sim.tick_count + max_ticks;
     let mut peak_pop = 0usize;
     let mut thought_freq: HashMap<String, u64> = HashMap::new();
     let mut trace_writer = trace_out.as_ref().map(|path| {
@@ -105,7 +119,7 @@ fn main() {
         w
     });
 
-    while sim.tick_count < max_ticks {
+    while sim.tick_count < end_tick {
         let t0 = std::time::Instant::now();
         sim.tick();
         let tick_us = t0.elapsed().as_micros() as u64;
@@ -238,5 +252,12 @@ fn main() {
     print_performance(tick_times_us, json_sizes_bytes);
     if let Some(writer) = trace_writer.as_mut() {
         writer.flush().ok();
+    }
+    if let Some(path) = save_at_end.as_deref() {
+        if let Err(err) = sim.save_result(path) {
+            eprintln!("failed to save {}: {}", path, err);
+            std::process::exit(1);
+        }
+        println!("saved:       {} (tick {})", path, sim.tick_count);
     }
 }
