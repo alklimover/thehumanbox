@@ -14,7 +14,8 @@ import { residentOf, resolveMapClick, type MapClickInput, type MapClickOutcome }
  * is the old handler, with each side effect turned into the outcome it
  * produced, kept as the reference the refactor must agree with. The one deliberate
  * difference: people are drawn at the middle of their tile, so the reach is measured
- * from (x + 0.5, y + 0.5), not from (x, y).
+ * from (x + 0.5, y + 0.5), not from (x, y). Fork: a prayer bubble wins over an armed tool
+ * (the reference checks it first too).
  */
 function legacy(input: MapClickInput): MapClickOutcome {
   const { world, ox, oy, viewFlags, focus, zoom } = input
@@ -31,17 +32,6 @@ function legacy(input: MapClickInput): MapClickOutcome {
   )
     return { kind: 'ignore' }
 
-  if (input.sandboxArmed) {
-    if (
-      Math.round(worldX) < ox ||
-      Math.round(worldX) >= ox + world.grid.width ||
-      Math.round(worldY) < oy ||
-      Math.round(worldY) >= oy + world.grid.height
-    )
-      return { kind: 'ignore' }
-    return { kind: 'sandbox', worldX, worldY }
-  }
-
   if (input.prayerClicksEnabled && world.prayers?.length && !viewFlags.hideUI) {
     const prayer = prayerAtPoint(
       world.prayers,
@@ -52,6 +42,17 @@ function legacy(input: MapClickInput): MapClickOutcome {
       zoom,
     )
     if (prayer) return { kind: 'prayer', prayer }
+  }
+
+  if (input.sandboxArmed) {
+    if (
+      Math.round(worldX) < ox ||
+      Math.round(worldX) >= ox + world.grid.width ||
+      Math.round(worldY) < oy ||
+      Math.round(worldY) >= oy + world.grid.height
+    )
+      return { kind: 'ignore' }
+    return { kind: 'sandbox', worldX, worldY }
   }
 
   const tx = Math.floor(worldX)
@@ -176,6 +177,35 @@ function randomInput(seed: number): MapClickInput {
 }
 
 describe('resolveMapClick', () => {
+  it('answers a click on a prayer bubble even with a power in hand', () => {
+    const world = {
+      grid: { width: 10, height: 10, tiles: Array.from({ length: 10 }, () => Array(10).fill(TILE_ID.GRASS)) },
+      organisms: [],
+      buildings: [],
+      prayers: [{ id: 1, kind: 'hunger', x: 5, y: 5 }],
+    } as unknown as WorldState
+    const at = (mapY: number, sandboxArmed: boolean) =>
+      resolveMapClick({
+        mapX: 5.5 * TILE,
+        mapY,
+        zoom: 1,
+        world,
+        ox: 0,
+        oy: 0,
+        sandboxArmed,
+        prayerClicksEnabled: true,
+        viewFlags: { territory: false, hideUI: false } as MapClickInput['viewFlags'],
+        focus: 'all',
+        territoryIndex: { ownersByTile: new Map(), contested: new Set() },
+        coarsePointer: false,
+      }).kind
+    // The bubble floats above the tribe: its middle is 8 + 11 map pixels over the tile's top.
+    expect(at(5 * TILE - 19, true)).toBe('prayer')
+    expect(at(5 * TILE - 19, false)).toBe('prayer')
+    // Away from the bubble the armed power is used as before.
+    expect(at(8 * TILE, true)).toBe('sandbox')
+  })
+
   it('decides 40,000 random clicks exactly as the old click handler did', () => {
     const seen = new Map<string, number>()
     for (let seed = 1; seed <= 40_000; seed++) {

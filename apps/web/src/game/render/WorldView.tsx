@@ -193,7 +193,7 @@ export function WorldView({
         flex: 1,
         minWidth: 0,
         overflow: 'hidden',
-        cursor: sandboxArmed ? 'crosshair' : overPrayer ? 'pointer' : 'grab',
+        cursor: overPrayer ? 'pointer' : sandboxArmed ? 'crosshair' : 'grab',
         position: 'relative',
         // touch-action: none stops the browser from claiming
         // two-finger pinch as page-zoom; the gesture handler
