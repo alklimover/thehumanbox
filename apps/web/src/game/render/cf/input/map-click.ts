@@ -55,6 +55,14 @@ export function resolveMapClick(input: MapClickInput): MapClickOutcome {
   )
     return { kind: 'ignore' }
 
+  // A prayer bubble is a button: clicking it goes to help that tribe. Fork: it stays a button
+  // with a power in hand too; the tool stays armed after use, so the next bubble's click used
+  // to drop that power on the bubble's spot instead.
+  if (input.prayerClicksEnabled && world.prayers?.length && !viewFlags.hideUI) {
+    const prayer = prayerAtPoint(world.prayers, input.mapX, input.mapY, { x: ox, y: oy }, TILE, zoom)
+    if (prayer) return { kind: 'prayer', prayer }
+  }
+
   if (input.sandboxArmed) {
     if (
       Math.round(worldX) < ox ||
@@ -64,12 +72,6 @@ export function resolveMapClick(input: MapClickInput): MapClickOutcome {
     )
       return { kind: 'ignore' }
     return { kind: 'sandbox', worldX, worldY }
-  }
-
-  // A prayer bubble is a button: clicking it goes to help that tribe.
-  if (input.prayerClicksEnabled && world.prayers?.length && !viewFlags.hideUI) {
-    const prayer = prayerAtPoint(world.prayers, input.mapX, input.mapY, { x: ox, y: oy }, TILE, zoom)
-    if (prayer) return { kind: 'prayer', prayer }
   }
 
   const tx = Math.floor(worldX)

@@ -9,6 +9,7 @@ import { burstForTool, type useSandboxBursts } from '../sandbox-bursts'
 import { isMapControl } from '../camera-controls'
 import { resolveMapClick, type MapClickOutcome } from '../cf/input/map-click'
 import { pickBuildingAt, pickPersonAt } from '../cf/picking'
+import { answerPrayerOnSpot } from '../../../fork/prayer-click'
 
 /** Taps, drags and hovers on the map: selection, sandbox tools, prayer bubbles, territory focus. */
 export function useMapPointer({
@@ -74,9 +75,17 @@ export function useMapPointer({
         onSandboxApply(outcome.worldX, outcome.worldY)
         return
       }
-      case 'prayer':
-        onPrayerClick?.(outcome.prayer)
+      case 'prayer': {
+        // Fork: with the prayer's own power already in hand, the click answers it on the spot
+        // (the simulation counts a power landing near the tribe); otherwise it picks that power up.
+        const spot =
+          sandboxArmed && onSandboxApply
+            ? answerPrayerOnSpot(outcome.prayer, sandboxToolId, world.organisms)
+            : null
+        if (spot) act({ kind: 'sandbox', ...spot }, screen, zoom)
+        else onPrayerClick?.(outcome.prayer)
         return
+      }
       case 'territory':
         onOrgSelect(null)
         useUIStore.setState({ panelOpen: false })
@@ -143,7 +152,7 @@ export function useMapPointer({
       down.moved = true
     // Show a hand over prayer bubbles so they read as buttons.
     let hovering = false
-    if (!sandboxArmed && !down && world.prayers?.length && containerRef.current) {
+    if (!down && world.prayers?.length && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
       const { x: camX, y: camY, zoom } = cameraStateRef.current
       const mx = camX + (e.clientX - rect.left - dims.w / 2) / zoom
