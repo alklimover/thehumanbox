@@ -63,6 +63,54 @@ fn tier_for(population: usize, building_count: usize, score: u32) -> u8 {
     tier
 }
 
+/// The census entry of one lineage: its tier and centre, exactly as
+/// `snapshots` would report them, without building the whole census. `None`
+/// when the lineage has no living resident (and so no settlement).
+pub fn tier_and_center(sim: &Simulation, lineage_id: &str) -> Option<(u8, [i32; 2])> {
+    let mut entry = SettlementAccumulator::default();
+    for resident in sim
+        .organisms
+        .iter()
+        .filter(|org| org.alive && org.lineage_id == lineage_id)
+    {
+        entry.population += 1;
+        entry.x_sum += f64::from(resident.x) * 2.0;
+        entry.y_sum += f64::from(resident.y) * 2.0;
+        entry.center_weight += 2;
+    }
+    if entry.population == 0 {
+        return None;
+    }
+    for building in sim.buildings.iter().filter(|building| building.is_operational()) {
+        if building.owner_lineage.as_deref() != Some(lineage_id) {
+            continue;
+        }
+        let capacity = u32::from(building.kind.capacity());
+        entry.building_count += 1;
+        entry.capacity = entry.capacity.saturating_add(capacity);
+        entry.weighted_capacity = entry
+            .weighted_capacity
+            .saturating_add(capacity.saturating_mul(capacity_weight(building.function())));
+        let (width, height) = building.footprint();
+        let center_x = building.x as f64 + (f64::from(width) - 1.0) * 0.5;
+        let center_y = building.y as f64 + (f64::from(height) - 1.0) * 0.5;
+        let building_weight = 1 + capacity.div_ceil(4).min(8);
+        entry.x_sum += center_x * f64::from(building_weight);
+        entry.y_sum += center_y * f64::from(building_weight);
+        entry.center_weight += building_weight;
+    }
+    let score = (entry.population as u32)
+        .saturating_mul(2)
+        .saturating_add(entry.weighted_capacity)
+        .saturating_add((entry.building_count as u32).saturating_mul(2));
+    let tier = tier_for(entry.population, entry.building_count, score);
+    let center = [
+        (entry.x_sum / f64::from(entry.center_weight)).round() as i32,
+        (entry.y_sum / f64::from(entry.center_weight)).round() as i32,
+    ];
+    Some((tier, center))
+}
+
 /// Build one deterministic, authoritative census from current residents and
 /// operational lineage-owned buildings. Decorative props, unfinished sites,
 /// unowned buildings, and structures belonging to extinct lineages contribute

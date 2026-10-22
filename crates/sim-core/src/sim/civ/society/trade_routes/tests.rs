@@ -794,3 +794,173 @@ fn a_caravan_for_a_town_with_a_market_unloads_at_the_market() {
         "the caravan is bound for the market, not the town centre"
     );
 }
+
+/// The census-per-call answers `settlement_endpoints` and the route check gave
+/// before they counted one lineage at a time; the fast versions must agree.
+fn reference_endpoints(sim: &Simulation, first: &str, second: &str) -> Option<([i32; 2], [i32; 2])> {
+    if first.is_empty() || second.is_empty() || first == second {
+        return None;
+    }
+    let snapshots = settlements::snapshots(sim);
+    let a = snapshots.iter().find(|s| s.lineage_id == first && s.tier >= 1)?;
+    let b = snapshots.iter().find(|s| s.lineage_id == second && s.tier >= 1)?;
+    if !valid_world_point(a.center) || !valid_world_point(b.center) {
+        return None;
+    }
+    Some((a.center, b.center))
+}
+
+fn reference_route_possible(sim: &Simulation, actor_idx: usize, nearby: &[usize]) -> bool {
+    let Some(actor) = sim.organisms.get(actor_idx).filter(|o| o.alive) else {
+        return false;
+    };
+    if sim.trade_routes.len() >= MAX_TRADE_ROUTES {
+        return false;
+    }
+    nearby.iter().copied().any(|partner_idx| {
+        let Some(partner) = sim.organisms.get(partner_idx).filter(|o| o.alive) else {
+            return false;
+        };
+        if partner.lineage_id == actor.lineage_id {
+            return false;
+        }
+        let Some((ac, pc)) = reference_endpoints(sim, &actor.lineage_id, &partner.lineage_id) else {
+            return false;
+        };
+        let (a, _, b, _) = canonical_endpoints(actor.lineage_id.clone(), ac, partner.lineage_id.clone(), pc);
+        !sim.trade_routes
+            .iter()
+            .any(|r| r.lineage_a == a && r.lineage_b == b)
+    })
+}
+
+/// Many tribes of every size, with unfinished, ruined, ownerless and orphaned
+/// buildings, the dead among the living and some routes already open.
+fn crowded_trade_world() -> Simulation {
+    let mut sim = Simulation::new(0x5E77);
+    let mut state = 0x2545_f491_4f6c_dd1du64;
+    let mut next = move |bound: u64| {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        state % bound
+    };
+    let lineages: Vec<String> = (0..12).map(|i| format!("tribe{i}")).collect();
+    assert!(sim.organisms.len() >= 100);
+    for org in sim.organisms.iter_mut() {
+        // tribe0 to tribe9 have people; tribe10 and tribe11 only buildings.
+        // Skewed so the later tribes are small: every tier occurs.
+        org.lineage_id = lineages[(next(10) * next(10) / 9) as usize].clone();
+        if next(7) == 0 {
+            org.lineage_id.clear();
+        }
+        org.alive = next(9) != 0;
+        org.x = 40.0 + next(300) as f32 + 0.5;
+        org.y = 40.0 + next(200) as f32 + 0.25;
+    }
+    sim.buildings.clear();
+    let kinds = [
+        BuildingKind::Hut,
+        BuildingKind::House,
+        BuildingKind::Market,
+        BuildingKind::Temple,
+    ];
+    for id in 0..160u32 {
+        let owner = match next(13) {
+            0 => None,
+            n => Some(lineages[((n - 1) * next(12) / 12) as usize].clone()),
+        };
+        let kind = kinds[next(kinds.len() as u64) as usize];
+        let mut building = Building::new(
+            id + 1,
+            kind,
+            40 + next(300) as i32,
+            40 + next(200) as i32,
+            owner,
+            1,
+        );
+        building.condition = if next(6) == 0 { 0.5 } else { 1.0 };
+        if next(11) == 0 {
+            building.ruined_at_tick = Some(1);
+        }
+        sim.buildings.push(building);
+    }
+    for (i, (a, b)) in [(0, 1), (2, 5), (3, 4), (6, 9)].into_iter().enumerate() {
+        sim.trade_routes.push(TradeRoute {
+            id: i as u32 + 1,
+            lineage_a: lineages[a].clone(),
+            lineage_b: lineages[b].clone(),
+            ..Default::default()
+        });
+    }
+    sim
+}
+
+#[test]
+fn one_lineage_census_matches_the_full_census() {
+    let sim = crowded_trade_world();
+    let snapshots = settlements::snapshots(&sim);
+    let mut lineages: Vec<String> = (0..12).map(|i| format!("tribe{i}")).collect();
+    lineages.push(String::new());
+    lineages.push("nobody".into());
+    for lineage in &lineages {
+        let expected = snapshots
+            .iter()
+            .find(|s| &s.lineage_id == lineage)
+            .map(|s| (s.tier, s.center));
+        assert_eq!(settlements::tier_and_center(&sim, lineage), expected, "{lineage}");
+    }
+    for tier in [0, 1, 2] {
+        assert!(
+            snapshots.iter().any(|s| s.tier == tier),
+            "no settlement of tier {tier}"
+        );
+    }
+    for first in &lineages {
+        for second in &lineages {
+            assert_eq!(
+                settlement_endpoints(&sim, first, second),
+                reference_endpoints(&sim, first, second),
+                "{first} / {second}"
+            );
+        }
+    }
+}
+
+#[test]
+fn route_check_matches_the_census_per_partner() {
+    let mut sim = crowded_trade_world();
+    let everyone: Vec<usize> = (0..sim.organisms.len()).collect();
+    let mut possible = 0;
+    for round in 0..2 {
+        for actor in 0..sim.organisms.len() {
+            // Neighbourhoods of different sizes, in the order a spatial query might give.
+            let nearby: Vec<usize> = everyone
+                .iter()
+                .copied()
+                .filter(|&i| (i * 7 + actor) % (3 + actor % 5) == 0)
+                .collect();
+            let expected = reference_route_possible(&sim, actor, &nearby);
+            assert_eq!(
+                action_is_possible(&sim, actor, 287, &nearby),
+                expected,
+                "actor {actor}"
+            );
+            possible += usize::from(expected);
+            for partner in 0..sim.organisms.len() {
+                assert_eq!(
+                    action_is_possible(&sim, actor, 287, &[partner]),
+                    reference_route_possible(&sim, actor, &[partner]),
+                    "actor {actor}, partner {partner}"
+                );
+            }
+        }
+        // The second round runs with the route table full.
+        if round == 0 {
+            while sim.trade_routes.len() < MAX_TRADE_ROUTES {
+                sim.trade_routes.push(TradeRoute::default());
+            }
+        }
+    }
+    assert!(possible > 0, "some actors must be able to open a route");
+}
