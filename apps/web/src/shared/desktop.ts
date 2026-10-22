@@ -1,3 +1,4 @@
+import type { DeviceProfile } from '../fork/population-load'
 import type { DesktopVisibility } from './desktopVisibility'
 
 export type SimMode = 'local'
@@ -81,6 +82,10 @@ export interface DesktopBridge {
     }>
     exportActive(): Promise<{ exported: boolean; filePath?: string; hash?: string }>
     resetLocal(): Promise<{ reset: boolean; exported?: boolean; filePath?: string; port?: number }>
+  }
+  /** Fork: this computer and how fast it steps a world. Missing in an older desktop shell. */
+  forkDevice?: {
+    profile(remeasure?: boolean): Promise<DeviceProfile>
   }
   /** Fork: the worlds on disk as save slots. Missing in an older desktop shell. */
   forkWorlds?: {

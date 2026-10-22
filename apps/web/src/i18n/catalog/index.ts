@@ -6,6 +6,7 @@ import { errors } from './errors'
 import { header } from './header'
 import { hud } from './hud'
 import { life } from './life'
+import { load } from './load'
 import { map } from './map'
 import { modals } from './modals'
 import { model } from './model'
@@ -33,6 +34,7 @@ const AREAS = {
   header,
   hud,
   life,
+  load,
   map,
   modals,
   model,

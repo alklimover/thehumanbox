@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { t, tn } from '../i18n'
 import type { DesktopBridge, WorldSlot } from '../shared/desktop'
+import { PopulationLoadSlider } from './PopulationLoad'
 import { worldFacts, worldTitle } from './worlds-text'
 
 type Worlds = NonNullable<DesktopBridge['forkWorlds']>
@@ -26,6 +27,7 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
   const [name, setName] = useState('')
   const [seed, setSeed] = useState('')
   const [cap, setCap] = useState<number | null>(null)
+  const [tickMs, setTickMs] = useState(100)
 
   const run = useCallback(async (label: string | null, action: () => Promise<unknown>) => {
     setBusy(label ?? '')
@@ -44,7 +46,10 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
     void run(null, async () => setList(await api.list()))
     desktop.settings
       .get()
-      .then((s) => setCap(s.populationCap))
+      .then((s) => {
+        setCap(s.populationCap)
+        setTickMs(s.tickMs)
+      })
       .catch(() => setCap(500))
   }, [api, desktop, run])
 
@@ -176,14 +181,14 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
       {cap !== null && (
         <div className="settings-field">
           <div className="settings-field-label">{tn('settings.sim.capacity', cap)}</div>
-          <input
-            type="range"
+          <PopulationLoadSlider
+            desktop={desktop}
             min={CAP_MIN}
             max={CAP_MAX}
             step={20}
             value={cap}
-            onChange={(e) => setCap(parseInt(e.target.value, 10))}
-            style={{ width: '100%' }}
+            onChange={setCap}
+            tickMs={tickMs}
           />
         </div>
       )}

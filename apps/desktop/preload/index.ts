@@ -49,6 +49,11 @@ export interface DesktopBridge {
     }>;
   };
 
+  /** Fork: this computer and how fast it steps a world (main/fork-device.ts). */
+  forkDevice: {
+    profile(remeasure?: boolean): Promise<unknown>;
+  };
+
   /** Fork: the worlds on disk as save slots (main/fork-worlds.ts). */
   forkWorlds: {
     list(): Promise<unknown>;
@@ -116,6 +121,11 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke("world:migrateDataRoot", payload),
     exportActive: () => ipcRenderer.invoke("world:exportActive"),
     resetLocal: () => ipcRenderer.invoke("world:resetLocal"),
+  },
+
+  forkDevice: {
+    profile: (remeasure) =>
+      ipcRenderer.invoke("fork:device:profile", remeasure === true),
   },
 
   forkWorlds: {
