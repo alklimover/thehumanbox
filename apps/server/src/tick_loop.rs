@@ -36,6 +36,7 @@ impl TickLoop {
         let last_tick_at_w = last_tick_at.clone();
         let world_store = world_store.clone();
         let save_in_progress = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let mut autosave = AutosaveClock::new(std::time::Duration::from_millis(*AUTOSAVE_MIN_MS));
         let pending_save_task = pending_save_task.clone();
         let runtime_control = runtime_control.clone();
         let save_gate = save_gate.clone();
@@ -57,6 +58,7 @@ impl TickLoop {
                     &sim_clone,
                     &memory_watch_cl,
                     &save_in_progress,
+                    &mut autosave,
                     &world_store,
                     runtime_control.steps_per_period(),
                 )
@@ -155,6 +157,7 @@ async fn step_period(
     sim: &SharedSim,
     memory_watch: &crate::memory_watch::SharedMemoryWatch,
     save_in_progress: &std::sync::atomic::AtomicBool,
+    autosave: &mut AutosaveClock,
     world_store: &SharedWorldStore,
     steps: u32,
 ) -> (
@@ -190,7 +193,11 @@ async fn step_period(
         // Reserve one periodic checkpoint. The snapshot itself is taken after
         // acquiring the shared save gate below, so an older queued save can
         // never overwrite a newer manual one.
-        if s.tick_count / SAVE_EVERY_TICKS > tick_count_before / SAVE_EVERY_TICKS
+        if s.tick_count / SAVE_EVERY_TICKS > tick_count_before / SAVE_EVERY_TICKS {
+            autosave.owe();
+        }
+        if !pending_save
+            && autosave.due(std::time::Instant::now())
             && save_in_progress
                 .compare_exchange(
                     false,
@@ -200,6 +207,7 @@ async fn step_period(
                 )
                 .is_ok()
         {
+            autosave.reserved(std::time::Instant::now());
             pending_save = true;
         }
 
@@ -214,6 +222,42 @@ async fn step_period(
         }
     }
     (pending_save, flush_groups)
+}
+
+/// When a periodic checkpoint is due: crossing a `SAVE_EVERY_TICKS` boundary
+/// makes one owed, and it is taken once `min_interval` of wall time has passed
+/// since the last one. At 1x the ticks set the pace as before; at high speed
+/// the clock does, instead of a full rewrite of the world every second or two.
+pub(super) struct AutosaveClock {
+    owed: bool,
+    last: Option<std::time::Instant>,
+    min_interval: std::time::Duration,
+}
+
+impl AutosaveClock {
+    pub(super) fn new(min_interval: std::time::Duration) -> Self {
+        AutosaveClock {
+            owed: false,
+            last: None,
+            min_interval,
+        }
+    }
+
+    pub(super) fn owe(&mut self) {
+        self.owed = true;
+    }
+
+    pub(super) fn due(&self, now: std::time::Instant) -> bool {
+        self.owed
+            && self
+                .last
+                .is_none_or(|last| now.saturating_duration_since(last) >= self.min_interval)
+    }
+
+    pub(super) fn reserved(&mut self, now: std::time::Instant) {
+        self.owed = false;
+        self.last = Some(now);
+    }
 }
 
 #[cfg(test)]
@@ -235,6 +279,7 @@ mod tests {
         // rss thresholds far above any real process: the pressure path is idle.
         let memory_watch = crate::memory_watch::MemoryWatch::new(0, 0, u64::MAX, u64::MAX);
         let save_in_progress = std::sync::atomic::AtomicBool::new(false);
+        let mut autosave = AutosaveClock::new(std::time::Duration::ZERO);
         let world_store = SharedWorldStore::default();
 
         let prober_sim = sim.clone();
@@ -254,8 +299,15 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
 
         let before = acquisitions.load(std::sync::atomic::Ordering::Relaxed);
-        let (pending_save, flush_groups) =
-            step_period(&sim, &memory_watch, &save_in_progress, &world_store, 200).await;
+        let (pending_save, flush_groups) = step_period(
+            &sim,
+            &memory_watch,
+            &save_in_progress,
+            &mut autosave,
+            &world_store,
+            200,
+        )
+        .await;
         let during = acquisitions.load(std::sync::atomic::Ordering::Relaxed) - before;
 
         stop.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -266,6 +318,42 @@ mod tests {
         assert!(
             during > 0,
             "the sim lock was held for the whole batch (the prober never got it)"
+        );
+    }
+
+    #[test]
+    fn a_checkpoint_is_owed_by_the_ticks_and_paced_by_the_clock() {
+        let start = std::time::Instant::now();
+        let minute = std::time::Duration::from_secs(60);
+        let mut clock = AutosaveClock::new(minute);
+        assert!(!clock.due(start), "nothing is owed before a boundary");
+        clock.owe();
+        assert!(clock.due(start), "the first owed checkpoint is not held back");
+        clock.reserved(start);
+        assert!(!clock.due(start + minute), "taken: nothing owed");
+
+        // Fast forward: boundaries every couple of seconds share one checkpoint a minute.
+        clock.owe();
+        assert!(!clock.due(start + std::time::Duration::from_secs(2)));
+        clock.owe();
+        assert!(!clock.due(start + std::time::Duration::from_secs(59)));
+        assert!(clock.due(start + minute));
+        clock.reserved(start + minute);
+
+        // At 1x a boundary comes after the interval anyway: no delay.
+        clock.owe();
+        assert!(clock.due(start + minute * 2));
+    }
+
+    #[test]
+    fn the_default_autosave_interval_is_a_minute_and_bounded() {
+        assert_eq!(
+            crate::config::bounded_interval_ms(None, 60_000, 1_000, 3_600_000),
+            60_000
+        );
+        assert_eq!(
+            crate::config::bounded_interval_ms(Some("5"), 60_000, 1_000, 3_600_000),
+            1_000
         );
     }
 }
