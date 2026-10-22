@@ -166,7 +166,7 @@ pub(super) fn print_coverage(sim: &Simulation) {
             *lineage_pop.entry(org.lineage_id.clone()).or_insert(0) += 1;
             let entry = lineage_discoveries.entry(org.lineage_id.clone()).or_default();
             for d in &org.discoveries {
-                entry.insert(d.clone());
+                entry.insert(d.to_string());
             }
         }
         let mut blockers: Vec<(String, String, usize, usize, Vec<&str>)> = sim

@@ -176,7 +176,7 @@ impl Simulation {
                 .or_insert_with(|| (HashSet::default(), 0));
             entry.1 += 1;
             for d in org.discoveries.iter() {
-                entry.0.insert(d.clone());
+                entry.0.insert(d.to_string());
             }
         }
         let world_population: usize = agg.values().map(|(_, population)| *population).sum();

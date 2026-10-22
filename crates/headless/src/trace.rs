@@ -66,7 +66,7 @@ pub(super) fn write_trace_rows(sim: &Simulation, writer: &mut BufWriter<File>, t
                 "weather": weather,
                 "era": sim.current_era,
             },
-            "discoveries": org.discoveries.iter().cloned().collect::<Vec<_>>(),
+            "discoveries": org.discoveries.iter().map(|name| &**name).collect::<Vec<&str>>(),
         });
         serde_json::to_writer(&mut *writer, &row).expect("failed to write trace row");
         writer.write_all(b"\n").expect("failed to write trace newline");

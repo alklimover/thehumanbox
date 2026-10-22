@@ -619,7 +619,7 @@ pub(in crate::sim::civ) fn tick_teaching(sim: &mut Simulation) {
             // allocating the full set difference.
             let elder_d = &sim.organisms[i].discoveries;
             let child_d = &sim.organisms[j].discoveries;
-            let mut chosen: Option<&String> = None;
+            let mut chosen: Option<&crate::intern::Name> = None;
             let mut seen = 0u32;
             for d in elder_d.iter() {
                 if child_d.contains(d) {
@@ -631,7 +631,7 @@ pub(in crate::sim::civ) fn tick_teaching(sim: &mut Simulation) {
                 }
             }
             if let Some(name) = chosen {
-                transfers.push((j, name.clone()));
+                transfers.push((j, name.to_string()));
             }
         }
     }

@@ -58,7 +58,7 @@ pub(super) fn tick_cross_lineage_knowledge(sim: &mut Simulation, spatial: &Spati
         }
 
         // Reservoir sample a discovery without materialising a set-difference.
-        let mut selected: Option<&String> = None;
+        let mut selected: Option<&crate::intern::Name> = None;
         let mut choices = 0u32;
         for discovery in &teacher.discoveries {
             if learner.discoveries.contains(discovery) {
@@ -70,7 +70,7 @@ pub(super) fn tick_cross_lineage_knowledge(sim: &mut Simulation, spatial: &Spati
             }
         }
         if let Some(discovery) = selected {
-            to_grant.push((learner_idx, teacher_idx, discovery.clone()));
+            to_grant.push((learner_idx, teacher_idx, discovery.to_string()));
         }
     }
 

@@ -1,6 +1,8 @@
 use std::collections::BTreeSet;
 use std::ops::Deref;
 
+use crate::intern::{intern, Name};
+
 /// 256 distinct band discovery names; `actions::resolved` asserts this holds.
 pub const DISCOVERY_MASK_WORDS: usize = 4;
 pub type DiscoveryMask = [u64; DISCOVERY_MASK_WORDS];
@@ -59,7 +61,8 @@ hot_discoveries! {
 /// A second, smaller mask covers the names in [`Hot`].
 #[derive(Clone, Debug, Default)]
 pub struct Discoveries {
-    set: BTreeSet<String>,
+    /// Shared names (`crate::intern`): ordered and serialised like `String`s.
+    set: BTreeSet<Name>,
     mask: DiscoveryMask,
     hot: u64,
 }
@@ -90,7 +93,7 @@ impl Discoveries {
     pub fn insert(&mut self, name: String) -> bool {
         let bit = crate::sim::actions::discovery_bit(&name);
         let hot = Self::hot_bit(&name);
-        let inserted = self.set.insert(name);
+        let inserted = self.set.insert(intern(&name));
         if let Some(bit) = bit {
             self.mask[bit / 64] |= 1 << (bit % 64);
         }
@@ -121,16 +124,16 @@ impl Discoveries {
 }
 
 impl Deref for Discoveries {
-    type Target = BTreeSet<String>;
+    type Target = BTreeSet<Name>;
 
-    fn deref(&self) -> &BTreeSet<String> {
+    fn deref(&self) -> &BTreeSet<Name> {
         &self.set
     }
 }
 
 impl serde::Serialize for Discoveries {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.set.serialize(serializer)
+        serializer.collect_seq(self.set.iter().map(|name| &**name))
     }
 }
 
@@ -145,8 +148,8 @@ impl FromIterator<String> for Discoveries {
 }
 
 impl<'a> IntoIterator for &'a Discoveries {
-    type Item = &'a String;
-    type IntoIter = std::collections::btree_set::Iter<'a, String>;
+    type Item = &'a Name;
+    type IntoIter = std::collections::btree_set::Iter<'a, Name>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.set.iter()
@@ -215,7 +218,7 @@ mod tests {
             }
             agrees(&discoveries);
         }
-        let rebuilt: Discoveries = discoveries.iter().cloned().collect();
+        let rebuilt: Discoveries = discoveries.iter().map(|name| name.to_string()).collect();
         agrees(&rebuilt);
         agrees(&discoveries.clone());
     }
@@ -235,11 +238,28 @@ mod tests {
         assert!(!discoveries.remove("pottery"));
         assert_eq!(*discoveries.mask(), recomputed(&discoveries));
 
-        let rebuilt: Discoveries = discoveries.iter().cloned().collect();
+        let rebuilt: Discoveries = discoveries.iter().map(|name| name.to_string()).collect();
         assert_eq!(rebuilt.mask(), discoveries.mask());
 
         discoveries.clear();
         assert_eq!(*discoveries.mask(), DiscoveryMask::default());
         assert!(discoveries.is_empty());
+    }
+
+    /// Saves and frames must not change: the shared names serialise exactly
+    /// like the ordered set of `String`s they replace.
+    #[test]
+    fn serialises_like_an_ordered_set_of_strings() {
+        let names = ["weaving", "fire", "Pottery", "ёж", "fire_making", ""];
+        let discoveries: Discoveries = names.iter().map(|n| n.to_string()).collect();
+        let reference: BTreeSet<String> = names.iter().map(|n| n.to_string()).collect();
+        assert_eq!(
+            serde_json::to_string(&discoveries).unwrap(),
+            serde_json::to_string(&reference).unwrap()
+        );
+        assert!(discoveries
+            .iter()
+            .map(|n| &**n)
+            .eq(reference.iter().map(String::as_str)));
     }
 }

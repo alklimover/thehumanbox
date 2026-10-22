@@ -254,7 +254,7 @@ impl Organism {
                 None
             },
             discoveries: if include_cold {
-                Some(self.discoveries.iter().cloned().collect())
+                Some(self.discoveries.iter().map(|name| name.to_string()).collect())
             } else {
                 None
             },
@@ -605,7 +605,7 @@ impl Organism {
 
         let friend_names: Vec<String> = self.friends.values().cloned().collect();
         let partner_id = self.partner_id.clone();
-        let discoveries: Vec<String> = self.discoveries.iter().cloned().collect();
+        let discoveries: Vec<String> = self.discoveries.iter().map(|name| name.to_string()).collect();
 
         let emotional_state = if self.grief_ticks > 50 {
             "devastated"

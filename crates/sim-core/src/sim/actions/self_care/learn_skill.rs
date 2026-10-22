@@ -6,10 +6,14 @@ pub fn apply(ctx: &mut ActionCtx) -> f32 {
         ctx.think("seeking a teacher");
         return 0.0;
     };
-    let theirs: Vec<String> = ctx.sim.organisms[ki].discoveries.iter().cloned().collect();
+    let theirs: Vec<String> = ctx.sim.organisms[ki]
+        .discoveries
+        .iter()
+        .map(|name| name.to_string())
+        .collect();
     let mut gained = false;
     for d in theirs {
-        if !ctx.sim.organisms[ctx.idx].discoveries.contains(&d) {
+        if !ctx.sim.organisms[ctx.idx].discoveries.contains(d.as_str()) {
             ctx.sim.organisms[ctx.idx].discoveries.insert(d);
             gained = true;
             break;

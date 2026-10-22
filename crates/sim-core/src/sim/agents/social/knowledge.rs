@@ -234,7 +234,11 @@ pub fn teach(
 
     // Transfer discoveries - elders have higher transmission rate
     let transfer_chance = if is_elder { 0.06 } else { 0.025 };
-    let teacher_disc: Vec<String> = organisms[org_idx].discoveries.iter().cloned().collect();
+    let teacher_disc: Vec<String> = organisms[org_idx]
+        .discoveries
+        .iter()
+        .map(|name| name.to_string())
+        .collect();
     let mut learned = Vec::new();
     for disc in &teacher_disc {
         if !organisms[ti].discoveries.contains(disc.as_str()) && rng.random::<f32>() < transfer_chance {

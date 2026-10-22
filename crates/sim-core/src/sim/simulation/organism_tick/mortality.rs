@@ -307,7 +307,11 @@ impl Simulation {
                 .take(5)
                 .map(|(&k, &v)| (k, v))
                 .collect();
-            let inherited_disc: Vec<String> = self.organisms[idx].discoveries.iter().cloned().collect();
+            let inherited_disc: Vec<String> = self.organisms[idx]
+                .discoveries
+                .iter()
+                .map(|name| name.to_string())
+                .collect();
 
             let dead_id = self.organisms[idx].id.clone();
             for gi in &grievers {
