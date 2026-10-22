@@ -52,17 +52,15 @@ pub(super) fn settlement_endpoints(
     if first_lineage.is_empty() || second_lineage.is_empty() || first_lineage == second_lineage {
         return None;
     }
-    let snapshots = settlements::snapshots(sim);
-    let first = snapshots
-        .iter()
-        .find(|settlement| settlement.lineage_id == first_lineage && settlement.tier >= 1)?;
-    let second = snapshots
-        .iter()
-        .find(|settlement| settlement.lineage_id == second_lineage && settlement.tier >= 1)?;
-    if !valid_world_point(first.center) || !valid_world_point(second.center) {
+    let (first_tier, first_center) = settlements::tier_and_center(sim, first_lineage)?;
+    if first_tier < 1 {
         return None;
     }
-    Some((first.center, second.center))
+    let (second_tier, second_center) = settlements::tier_and_center(sim, second_lineage)?;
+    if second_tier < 1 || !valid_world_point(first_center) || !valid_world_point(second_center) {
+        return None;
+    }
+    Some((first_center, second_center))
 }
 
 pub fn establish_route(sim: &mut Simulation, actor_idx: usize, partner_idx: usize) -> bool {

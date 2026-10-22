@@ -286,27 +286,42 @@ pub fn action_is_possible(sim: &Simulation, actor_idx: usize, action: usize, nea
             if sim.trade_routes.len() >= MAX_TRADE_ROUTES {
                 return false;
             }
+            // The same answer as asking `settlement_endpoints` for every
+            // foreign neighbour, but the actor's own settlement is counted once
+            // and each neighbouring lineage at most once, and a pair that
+            // already has a route is turned down before any census.
+            let settled = |lineage: &str| {
+                settlements::tier_and_center(sim, lineage)
+                    .is_some_and(|(tier, center)| tier >= 1 && valid_world_point(center))
+            };
+            let mut actor_settled: Option<bool> = None;
+            let mut judged: Vec<&str> = Vec::new();
             nearby.iter().copied().any(|partner_idx| {
                 let Some(partner) = sim.organisms.get(partner_idx).filter(|organism| organism.alive) else {
                     return false;
                 };
-                if partner.lineage_id == actor.lineage_id {
+                let partner_lineage = partner.lineage_id.as_str();
+                if partner_lineage == actor.lineage_id
+                    || actor.lineage_id.is_empty()
+                    || partner_lineage.is_empty()
+                    || judged.contains(&partner_lineage)
+                {
                     return false;
                 }
-                let Some((actor_center, partner_center)) =
-                    settlement_endpoints(sim, &actor.lineage_id, &partner.lineage_id)
-                else {
-                    return false;
+                judged.push(partner_lineage);
+                let (lineage_a, lineage_b) = if actor.lineage_id.as_str() <= partner_lineage {
+                    (actor.lineage_id.as_str(), partner_lineage)
+                } else {
+                    (partner_lineage, actor.lineage_id.as_str())
                 };
-                let (lineage_a, _, lineage_b, _) = canonical_endpoints(
-                    actor.lineage_id.clone(),
-                    actor_center,
-                    partner.lineage_id.clone(),
-                    partner_center,
-                );
-                !sim.trade_routes
+                if sim
+                    .trade_routes
                     .iter()
                     .any(|route| route.lineage_a == lineage_a && route.lineage_b == lineage_b)
+                {
+                    return false;
+                }
+                *actor_settled.get_or_insert_with(|| settled(&actor.lineage_id)) && settled(partner_lineage)
             })
         }
         288 | 2704 => can_dispatch_caravan(sim, actor_idx),
