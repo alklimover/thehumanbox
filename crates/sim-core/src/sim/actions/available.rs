@@ -274,13 +274,14 @@ fn action_passes_judges(
 ) -> bool {
     let org = &sim.organisms[idx];
     let context_check = CONTEXT_CHECKED[action];
-    !(context_check && action_output_at_capacity(org, action))
-        && (!context_check
-            || (agriculture::action_is_possible(sim, idx, action, ix, iy, near_water)
-                && religion_expanded::action_is_possible(sim, idx, action, nearby, sim.tick_count)
-                && relationships_deep::action_is_possible(sim, idx, action, nearby)
-                && crate::sim::civ::trade_routes::action_is_possible(sim, idx, action, nearby)
-                && (action != 2704 || crate::sim::civ::trade_routes::can_dispatch_caravan(sim, idx))))
+    // The trade-route check already answers 2704 with `can_dispatch_caravan`,
+    // so the reference's second call for it always passes and is left out.
+    (!context_check
+        || (!action_output_at_capacity(org, action)
+            && agriculture::action_is_possible(sim, idx, action, ix, iy, near_water)
+            && religion_expanded::action_is_possible(sim, idx, action, nearby, sim.tick_count)
+            && relationships_deep::action_is_possible(sim, idx, action, nearby)
+            && crate::sim::civ::trade_routes::action_is_possible(sim, idx, action, nearby)))
         && registry::is_possible(sim, idx, action, ix, iy)
 }
 
@@ -339,7 +340,7 @@ fn plan_rotating_family_masks(plan: &mut Plan, families: &[u64; ACTION_FAMILY_CO
 /// The candidate list built id by id and filtered with `retain`, kept to check
 /// the range-based construction against.
 #[cfg(test)]
-pub(super) fn available_actions_into_reference(
+pub(crate) fn available_actions_into_reference(
     sim: &Simulation,
     idx: usize,
     ix: i32,
