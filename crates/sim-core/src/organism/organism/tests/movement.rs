@@ -1,6 +1,7 @@
 //! Moving and acting on the local map: steps, journeys, shelter, tools.
 
 use super::*;
+use crate::sim::simulation::Residents;
 
 #[test]
 fn hydrated_organisms_leave_water_instead_of_lingering() {
@@ -444,6 +445,7 @@ fn indexed_local_decisions_match_population_scan() {
                 "",
                 &[0, 1, 2, 3, 4, 5, 6, 7, 17, 20, 21],
                 Some(&near),
+                &Residents::new(&people),
             );
             assert_eq!(full, indexed, "person {i}, seed {seed}");
             assert_eq!(full_rng.random::<u64>(), indexed_rng.random::<u64>());

@@ -1,6 +1,7 @@
 use rand::{Rng, RngExt};
 
 use crate::sim::buildings::BuildingList;
+use crate::sim::simulation::Residents;
 use crate::world::{
     grid::{TrailKind, WorldGrid},
     tiles::Tile,
@@ -126,6 +127,7 @@ impl Organism {
             cached_perception,
             available,
             None,
+            &Residents::new(organisms),
         )
     }
 
@@ -144,9 +146,11 @@ impl Organism {
         cached_perception: &str,
         available: &[usize],
         nearby: Option<&[usize]>,
+        residents: &Residents,
     ) -> (usize, Option<String>) {
         // Use the tick's spatial index for bounded local checks, retaining the
-        // full population for long-distance partners, friends, and kin.
+        // full population for long-distance friends and company; partners,
+        // sweethearts and kin are looked up in the tick's index of the living.
         let nearby_people = || {
             nearby.into_iter().flatten().map(|&i| &organisms[i]).chain(
                 organisms
@@ -667,11 +671,10 @@ impl Organism {
         }
 
         if self.age < 350 {
-            let elder_pos: Option<(i32, i32)> = organisms
-                .iter()
-                .filter(|o| {
-                    !std::ptr::eq(*o, self) && o.alive && o.lineage_id == self.lineage_id && o.is_elder
-                })
+            let elder_pos: Option<(i32, i32)> = residents
+                .kin(organisms, &self.lineage_id)
+                .map(|(_, o)| o)
+                .filter(|o| !std::ptr::eq(*o, self) && o.is_elder)
                 .min_by(|a, b| {
                     let da = (a.x - self.x).abs() + (a.y - self.y).abs();
                     let db = (b.x - self.x).abs() + (b.y - self.y).abs();
@@ -691,8 +694,8 @@ impl Organism {
             let mut sum_y = 0.0f32;
             let mut n = 0usize;
             let mut nearest = f32::INFINITY;
-            for o in organisms.iter() {
-                if std::ptr::eq(o, self) || !o.alive || o.lineage_id != self.lineage_id {
+            for (_, o) in residents.kin(organisms, &self.lineage_id) {
+                if std::ptr::eq(o, self) {
                     continue;
                 }
                 let d = (o.x - self.x).abs() + (o.y - self.y).abs();
@@ -713,10 +716,9 @@ impl Organism {
 
         if let Some(ref aid) = self.attracted_to {
             // Someone across water or walls: no way there, so no pull toward them.
-            let target = organisms
-                .iter()
-                .find(|o| o.alive && &o.id == aid)
-                .map(|o| (o.x as i32, o.y as i32))
+            let target = residents
+                .find_living(organisms, aid)
+                .map(|i| (organisms[i].x as i32, organisms[i].y as i32))
                 .filter(|&tp| !self.route.borrow().recently_blocked(tp));
             if let Some(tp) = target {
                 let dist = (tp.0 - ix).abs() + (tp.1 - iy).abs();
@@ -733,10 +735,9 @@ impl Organism {
 
         if let Some(ref pid) = self.partner_id {
             if needs_ok && self.fear_level < 0.5 {
-                let partner = organisms
-                    .iter()
-                    .find(|o| o.alive && &o.id == pid)
-                    .map(|o| (o.x as i32, o.y as i32));
+                let partner = residents
+                    .find_living(organisms, pid)
+                    .map(|i| (organisms[i].x as i32, organisms[i].y as i32));
                 if let Some(pp) = partner.filter(|&pp| !self.route.borrow().recently_blocked(pp)) {
                     let dist = (pp.0 - ix).abs() + (pp.1 - iy).abs();
                     let walking = self.thought == "walking with partner";
@@ -779,10 +780,10 @@ impl Organism {
             && self.wander_target.is_none()
             && rng.random::<f32>() < 0.35
         {
-            let kin_pos: Option<(i32, i32)> = organisms
-                .iter()
-                .filter(|o| !std::ptr::eq(*o, self) && o.alive && o.lineage_id == self.lineage_id)
-                .map(|o| {
+            let kin_pos: Option<(i32, i32)> = residents
+                .kin(organisms, &self.lineage_id)
+                .filter(|(_, o)| !std::ptr::eq(*o, self))
+                .map(|(_, o)| {
                     let d = ((o.x - self.x).abs() + (o.y - self.y).abs()) as i32;
                     (o.x as i32, o.y as i32, d)
                 })

@@ -376,6 +376,7 @@ impl Simulation {
             }
         }
         self.separate_crowds();
+        let mut residents = Residents::new(&self.organisms);
         for i in 0..self.organisms.len() {
             if self.organisms[i].alive {
                 let prev_len = self.organisms.len();
@@ -388,6 +389,7 @@ impl Simulation {
                     &mut buffers,
                     &org_idx_by_id,
                     &mut lineage_members,
+                    &mut residents,
                 );
 
                 if self.organisms.len() > prev_len {

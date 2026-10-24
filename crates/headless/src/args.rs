@@ -15,6 +15,9 @@ pub(super) struct Args {
     pub(super) growth_every: u64,
     pub(super) profile_out: Option<String>,
     pub(super) profile_every: u64,
+    pub(super) load: Option<String>,
+    pub(super) save_at_end: Option<String>,
+    pub(super) population_limit: Option<usize>,
 }
 
 pub(super) fn parse() -> Args {
@@ -89,6 +92,26 @@ pub(super) fn parse() -> Args {
         .and_then(|i| args.get(i + 1))
         .and_then(|s| s.parse().ok())
         .unwrap_or(100);
+    // --load <save>: start from a saved world instead of `--seed`; `--ticks`
+    // then counts the ticks run after loading. --save-at-end <path> writes
+    // the world when the run ends, so two builds can be compared byte for
+    // byte. --population-limit N applies the server's MAX_POPULATION cap,
+    // which a save does not carry.
+    let load = args
+        .iter()
+        .position(|a| a == "--load")
+        .and_then(|i| args.get(i + 1))
+        .cloned();
+    let save_at_end = args
+        .iter()
+        .position(|a| a == "--save-at-end")
+        .and_then(|i| args.get(i + 1))
+        .cloned();
+    let population_limit: Option<usize> = args
+        .iter()
+        .position(|a| a == "--population-limit")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|s| s.parse().ok());
     Args {
         seed,
         max_ticks,
@@ -104,5 +127,8 @@ pub(super) fn parse() -> Args {
         growth_every,
         profile_out,
         profile_every,
+        load,
+        save_at_end,
+        population_limit,
     }
 }

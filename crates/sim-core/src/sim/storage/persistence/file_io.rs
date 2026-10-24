@@ -89,6 +89,31 @@ pub fn write_save_to_disk(state: &SaveState, path: &str) -> io::Result<()> {
 }
 
 impl Simulation {
+    /// Loads a saved world without touching the file: an unreadable, corrupt
+    /// or too-new save is an error, not a fresh world with the original moved
+    /// aside as in [`Simulation::load_or_new`]. For tools that measure a copy
+    /// of a world. `seed` grows the terrain of saves too old to carry their own.
+    pub fn load_save_file(seed: u64, path: &str) -> io::Result<Self> {
+        let data = read_save(path)?;
+        let state: SaveState =
+            serde_json::from_slice(&data).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        if state.version > SAVE_SCHEMA_VERSION {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "save schema v{} is newer than this build (v{})",
+                    state.version, SAVE_SCHEMA_VERSION
+                ),
+            ));
+        }
+        let terrain_seed = if state.world_seed > 0 {
+            state.world_seed
+        } else {
+            seed
+        };
+        Ok(Self::from_save(terrain_seed, state))
+    }
+
     pub fn load_or_new(seed: u64, path: &str) -> Self {
         match read_save(path) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {

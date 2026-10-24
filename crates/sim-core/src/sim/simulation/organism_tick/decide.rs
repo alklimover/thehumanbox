@@ -13,6 +13,7 @@ impl Simulation {
         let ox = f.ox;
         let oy = f.oy;
         let perception = std::mem::take(&mut f.perception);
+        let residents = &*f.residents;
         let spatial = f.spatial;
         let spatial_buf = &mut *f.spatial_buf;
         let storm_build = std::mem::take(&mut f.storm_build);
@@ -94,6 +95,7 @@ impl Simulation {
                     &perception,
                     available_buf,
                     Some(spatial_buf),
+                    residents,
                 );
                 let decision_origin = if active_wander_action == Some(chosen.0) {
                     "soft_wander"

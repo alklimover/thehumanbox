@@ -34,6 +34,7 @@ mod herds;
 mod lineage;
 mod memory;
 mod organism_tick;
+mod residents;
 mod schools;
 mod separation;
 mod strategy;
@@ -42,6 +43,7 @@ mod tick;
 mod types;
 mod world;
 
+pub use residents::Residents;
 pub use types::*;
 
 pub(crate) use carcasses::Carcass;
@@ -368,5 +370,7 @@ impl Simulation {
 
 #[cfg(test)]
 mod aggregate_tests;
+#[cfg(test)]
+mod residents_tests;
 #[cfg(test)]
 mod tests;

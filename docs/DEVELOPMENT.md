@@ -50,7 +50,14 @@ rather than simulate the time in between.
 cargo run --release -p headless -- --seed 42 --ticks 6000 --every 1000
 make profile OUT=profile.csv TICKS=12000      # time per tick and RSS over a run
 cargo run --release -p headless -- --sweep-seeds 8   # world-health sweep
+# a copy of a saved world: 1200 ticks at the server's population cap, then save it
+cargo run --release -p headless -- --load world.save --population-limit 5000 \
+  --ticks 1200 --every 600 --save-at-end after.save
 ```
+
+With `--load`, `--ticks` counts the ticks run after loading. A save does not
+carry the population cap (the server takes it from `MAX_POPULATION`), so give
+`--population-limit` to match the world it came from.
 
 Runs are deterministic: the same seed and tick count give the same world.
 
@@ -91,8 +98,10 @@ For anything in `crates/sim-core` that must not change behaviour, compare saved
 worlds before and after: run `Simulation::new(seed)` for a few seeds, save at a
 few tick counts (for example 1500, 4000, 9000), and hash the saved JSON, on
 `main` and on your branch (use a `git worktree` with its own `CARGO_TARGET_DIR`
-for the baseline). Every hash must match. Keep that test local: the hashes
-change legitimately whenever gameplay does, so it does not belong in the suite.
+for the baseline). Every hash must match. For work on large worlds, also run a
+copy of a real crowded save with `--load` and `--save-at-end` on both builds.
+Keep that test local: the hashes change legitimately whenever gameplay does, so
+it does not belong in the suite.
 
 When a function is rewritten for speed, keep the old version as a
 `#[cfg(test)]` reference and add a test that compares the two over a lived-in

@@ -102,6 +102,33 @@ fn unreadable_save_path_is_backed_up_before_starting_fresh() {
 }
 
 #[test]
+fn a_measuring_load_leaves_a_bad_save_where_it_is() {
+    let mut path = std::env::temp_dir();
+    path.push(format!(
+        "thehumanbox-load-save-file-test-{}.json",
+        std::process::id()
+    ));
+    let path_s = path.to_string_lossy().to_string();
+    let mut sim = Simulation::new(11);
+    sim.tick_n(20);
+    sim.save_result(&path_s).unwrap();
+    // The same world the server would load from the file.
+    let loaded = Simulation::load_save_file(3, &path_s).unwrap();
+    let served = Simulation::load_or_new(3, &path_s);
+    assert_eq!(loaded.tick_count, 20);
+    assert_eq!(
+        serde_json::to_string(&loaded.to_save_state()).unwrap(),
+        serde_json::to_string(&served.to_save_state()).unwrap()
+    );
+
+    std::fs::write(&path_s, [b'{', 0xff, b'}']).unwrap();
+    assert!(Simulation::load_save_file(3, &path_s).is_err());
+    assert_eq!(std::fs::read(&path_s).unwrap(), [b'{', 0xff, b'}']);
+    std::fs::remove_file(&path_s).unwrap();
+    assert!(Simulation::load_save_file(3, &path_s).is_err());
+}
+
+#[test]
 fn mutable_depth_wind_and_operational_infrastructure_survive_reload() {
     use crate::sim::buildings::{Building, BuildingKind};
 
