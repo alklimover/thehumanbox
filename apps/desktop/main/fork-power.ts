@@ -2,8 +2,10 @@
 // high speed keeps one core flat out; on a performance core that heats the Mac
 // and spins its fans. On macOS the simulation-rs child is demoted to the
 // background band (PRIO_DARWIN_BG: efficiency cores, throttled disk I/O) when
-// the Mac runs on battery or in Low Power Mode, is hot, or nobody is looking
-// at the window, and returned to the performance cores otherwise.
+// the Mac runs on battery or in Low Power Mode, or is hot, and returned to the
+// performance cores otherwise. On mains power a hidden or minimised window
+// keeps them: worlds are left running in the background, and the efficiency
+// cores step several times slower.
 //
 // `taskpolicy -b/-B -p <pid>` is the stock front end to
 // setpriority(PRIO_DARWIN_PROCESS, pid, PRIO_DARWIN_BG); Node's
@@ -16,14 +18,13 @@ import { activeSim } from "./sim-process";
 
 export type PowerMode = "performance" | "efficiency";
 /** Why the simulation is on the efficiency cores, most telling first. */
-export type PowerReason = "thermal" | "low-power" | "battery" | "hidden";
+export type PowerReason = "thermal" | "low-power" | "battery";
 export type ThermalState = "unknown" | "nominal" | "fair" | "serious" | "critical";
 
 export interface PowerInputs {
   onBattery: boolean;
   lowPowerMode: boolean;
   thermalState: ThermalState;
-  windowVisible: boolean;
 }
 
 export interface PowerDecision {
@@ -38,7 +39,7 @@ export interface PowerState extends PowerDecision {
 
 const TASKPOLICY = "/usr/sbin/taskpolicy";
 const PMSET = "/usr/bin/pmset";
-/** How often a new simulation (a restart gives a new pid) and the window are checked. */
+/** How often a new simulation (a restart gives a new pid) is checked for. */
 const CHECK_EVERY_MS = 2_000;
 /** Low Power Mode has no Electron event; pmset is asked this often. */
 const LOW_POWER_EVERY_MS = 30_000;
@@ -49,7 +50,6 @@ export function decidePowerMode(inputs: PowerInputs): PowerDecision {
   }
   if (inputs.lowPowerMode) return { mode: "efficiency", reason: "low-power" };
   if (inputs.onBattery) return { mode: "efficiency", reason: "battery" };
-  if (!inputs.windowVisible) return { mode: "efficiency", reason: "hidden" };
   return { mode: "performance", reason: null };
 }
 
@@ -73,12 +73,6 @@ function thermalState(): ThermalState {
   }
 }
 
-function anyWindowVisible(): boolean {
-  return BrowserWindow.getAllWindows().some(
-    (win) => !win.isDestroyed() && win.isVisible() && !win.isMinimized(),
-  );
-}
-
 let lowPowerMode = false;
 // A fresh simulation starts on the performance cores.
 let applied: { pid: number; mode: PowerMode } | null = null;
@@ -97,7 +91,6 @@ function currentState(): PowerState {
     onBattery: powerMonitor.isOnBatteryPower(),
     lowPowerMode,
     thermalState: thermalState(),
-    windowVisible: anyWindowVisible(),
   });
   return { managed: true, ...decision };
 }
@@ -169,12 +162,6 @@ export function registerForkPower(ipc: IpcMain): void {
   powerMonitor.on("on-ac", onPowerChange);
   powerMonitor.on("on-battery", onPowerChange);
   powerMonitor.on("thermal-state-change", onPowerChange);
-  app.on("browser-window-created", (_event, win) => {
-    win.on("show", evaluate);
-    win.on("hide", evaluate);
-    win.on("minimize", evaluate);
-    win.on("restore", evaluate);
-  });
   app.on("before-quit", release);
   app.on("window-all-closed", release);
 

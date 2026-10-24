@@ -27,7 +27,6 @@ import { PhotoModeExit } from './ui/toolbar/PhotoModeExit'
 import { ConfirmHost } from './ui/modals/ConfirmDialog'
 import './ui/modals/modal-theme.css'
 import { WorldSilent } from './ui/panels/WorldSilent'
-import { PrayerHint } from './ui/panels/PrayerHint'
 import { TribeCard } from './ui/panels/TribeCard'
 import { askConfirm } from './shared/confirm'
 import { toolFailure } from './ui/toolbar/tool-tips'
@@ -74,7 +73,7 @@ import { ModalRouter } from './ui/modals/ModalRouter'
 import { type ScenarioPreset } from './simulation/scenarios'
 import { setSandboxSender } from './simulation/commandBus'
 import { useSkyOverlay } from './game/render/sky-overlay'
-import { WelcomeModal } from './ui/modals/WelcomeModal'
+import { ForkModes, ModePrayerHint } from './fork/modes/ForkModes'
 import { UpdateToast } from './ui/toasts/UpdateToast'
 import { DesktopUpdateToast } from './ui/toasts/DesktopUpdateToast'
 import { useCurrentScene } from './state/scene'
@@ -939,9 +938,9 @@ function LiveApp() {
 
         {hotkeysOpen && <HotkeyHelp onClose={() => setHotkeysOpen(false)} />}
 
-        {world && <WelcomeModal />}
+        {world && <ForkModes world={world} onAnswer={handleAnswerPrayer} onTool={handlePickToolAt} />}
         <UpdateToast />
-        <PrayerHint world={world ?? null} onAnswer={handleAnswerPrayer} />
+        <ModePrayerHint world={world ?? null} onAnswer={handleAnswerPrayer} />
         <DesktopUpdateToast />
       </div>
     </SimulationDataProvider>

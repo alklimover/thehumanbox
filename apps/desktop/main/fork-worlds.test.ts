@@ -5,7 +5,7 @@ import * as path from "node:path";
 import test from "node:test";
 
 import { worldSeedEnv } from "./fork-world-seed";
-import { listWorlds, seedFromText } from "./fork-worlds";
+import { listWorlds, seedFromText, setWorldRole } from "./fork-worlds";
 
 test("a seed is a number as typed, a hash of any other text, or random when empty", () => {
   assert.equal(seedFromText("12345"), "12345");
@@ -71,4 +71,53 @@ test("the worlds of a save folder, the playing one first, without parked or brok
   assert.equal(list[0].seed, "7");
   assert.equal(list[1].name, null);
   assert.deepEqual(listWorlds(path.join(dir, "missing")), []);
+});
+
+test("a world remembers how it is played in fork-world.json, beside its name", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thb-worlds-"));
+  const meta = (hash: string) =>
+    JSON.parse(
+      fs.readFileSync(path.join(dir, hash, "fork-world.json"), "utf8"),
+    ) as Record<string, unknown>;
+  fs.mkdirSync(path.join(dir, "aaaa"));
+  fs.writeFileSync(path.join(dir, "aaaa", "world.save"), "{}");
+  fs.writeFileSync(
+    path.join(dir, "aaaa", "fork-world.json"),
+    JSON.stringify({ name: "Острова", seed: "7" }),
+  );
+  // A world just minted: its folder, no save yet, already the live one.
+  fs.mkdirSync(path.join(dir, "bbbb"));
+  fs.writeFileSync(path.join(dir, "_live"), "bbbb\n");
+
+  // Worlds from before the modes have no role: the game asks once.
+  assert.deepEqual(
+    listWorlds(dir).map((w) => [w.hash, w.role]),
+    [
+      ["bbbb", null],
+      ["aaaa", null],
+    ],
+  );
+
+  const list = setWorldRole(dir, "aaaa", "god");
+  assert.equal(list.find((w) => w.hash === "aaaa")?.role, "god");
+  assert.deepEqual(meta("aaaa"), { name: "Острова", seed: "7", role: "god" });
+  setWorldRole(dir, "aaaa", "observer");
+  assert.equal(meta("aaaa").role, "observer");
+
+  assert.equal(
+    setWorldRole(dir, "bbbb", "observer").find((w) => w.live)?.role,
+    "observer",
+  );
+
+  // Anything else in the file is not a role.
+  fs.writeFileSync(
+    path.join(dir, "aaaa", "fork-world.json"),
+    JSON.stringify({ role: "emperor" }),
+  );
+  assert.equal(listWorlds(dir).find((w) => w.hash === "aaaa")?.role, null);
+
+  assert.throws(() => setWorldRole(dir, "aaaa", "emperor"), /unknown role/);
+  assert.throws(() => setWorldRole(dir, "cccc", "god"), /no world/);
+  assert.throws(() => setWorldRole(dir, "_live", "god"), /not a world/);
+  assert.throws(() => setWorldRole(dir, "../x", "god"), /invalid world hash/);
 });
