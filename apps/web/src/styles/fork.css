@@ -131,3 +131,21 @@
   cursor: default;
   text-decoration: none;
 }
+
+/* ── Real speed on the time control (fork/SpeedReadout.tsx) ─────────────── */
+/* Behind the requested speed: what the world really runs at, in the ember of the lag mark. */
+.fork-speed-of {
+  color: #e0894a;
+  white-space: nowrap;
+}
+/* The simulation is on the efficiency cores. */
+.fork-speed-eco {
+  margin-left: 4px;
+  padding: 0 3px;
+  border: 1px solid currentColor;
+  color: #8fbf6a;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 12px;
+  vertical-align: 1px;
+}

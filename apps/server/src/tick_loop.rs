@@ -47,6 +47,7 @@ impl TickLoop {
                     break;
                 }
                 if runtime_control.paused() {
+                    crate::fork_speed::paused();
                     if sleep_until_period_end_or_shutdown(std::time::Instant::now(), 50, &mut shutdown).await
                     {
                         break;
@@ -119,6 +120,7 @@ impl TickLoop {
                 let runtime_tick_ms = runtime_control.tick_ms();
                 last_tick_at_w.store(transport::now_ms(), std::sync::atomic::Ordering::Relaxed);
                 transport_stats_s.record_sim_tick(tick_started.elapsed().as_millis() as u64, runtime_tick_ms);
+                crate::fork_speed::record(tick_started, runtime_control.steps_per_period(), runtime_tick_ms);
                 if sleep_until_period_end_or_shutdown(tick_started, runtime_tick_ms, &mut shutdown).await {
                     break;
                 }

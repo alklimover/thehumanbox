@@ -54,6 +54,12 @@ export interface DesktopBridge {
     profile(remeasure?: boolean): Promise<unknown>;
   };
 
+  /** Fork: which cores the simulation runs on (main/fork-power.ts). */
+  forkPower: {
+    state(): Promise<unknown>;
+    onChange(cb: (state: unknown) => void): () => void;
+  };
+
   /** Fork: the worlds on disk as save slots (main/fork-worlds.ts). */
   forkWorlds: {
     list(): Promise<unknown>;
@@ -126,6 +132,15 @@ const bridge: DesktopBridge = {
   forkDevice: {
     profile: (remeasure) =>
       ipcRenderer.invoke("fork:device:profile", remeasure === true),
+  },
+
+  forkPower: {
+    state: () => ipcRenderer.invoke("fork:power:state"),
+    onChange(cb) {
+      const handler = (_e: unknown, state: unknown) => cb(state);
+      ipcRenderer.on("fork:power:changed", handler);
+      return () => ipcRenderer.removeListener("fork:power:changed", handler);
+    },
   },
 
   forkWorlds: {
