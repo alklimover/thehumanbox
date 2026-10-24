@@ -964,3 +964,242 @@ fn route_check_matches_the_census_per_partner() {
     }
     assert!(possible > 0, "some actors must be able to open a route");
 }
+
+/// The crowded world with routes between most pairs of tribes: settlements of
+/// every tier, a tribe whose centre is off the map, routes to themselves and
+/// to no one, a pair joined many times over with ids shared, full and busy
+/// routes, a war, and cargo in most hands.
+fn crowded_route_world() -> Simulation {
+    let mut sim = crowded_trade_world();
+    let tribe = |i: usize| format!("tribe{i}");
+    sim.trade_routes.clear();
+    let route = |id: u32, a: String, b: String, last_dispatch_tick: u64| TradeRoute {
+        id,
+        lineage_a: a,
+        lineage_b: b,
+        last_dispatch_tick,
+        ..Default::default()
+    };
+    let mut routes = Vec::new();
+    for a in 0..12 {
+        for b in a + 1..12 {
+            // Routes to the tribes that fail the settlement check come first.
+            let last_dispatch_tick = if [a, b].iter().any(|t| [8, 10, 11].contains(t)) {
+                0
+            } else {
+                100 + ((a + b) % 3) as u64 * 100
+            };
+            if (a * 7 + b) % 5 != 0 {
+                routes.push(route(
+                    routes.len() as u32 + 1,
+                    tribe(a),
+                    tribe(b),
+                    last_dispatch_tick,
+                ));
+            }
+        }
+    }
+    // One pair joined 40 times under one id, many routes tied: on a list that
+    // long `sort_unstable` does not keep ties in order.
+    for last in [
+        1, 0, 2, 0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 1, 2, 0, 1, 0, 1, 0, 2, 1, 2, 1, 0, 0, 2, 1, 2, 0, 2, 0, 0,
+        2, 0, 1, 1, 2, 1,
+    ] {
+        routes.push(route(500, tribe(0), tribe(1), last * 100));
+    }
+    routes.push(route(900, tribe(2), tribe(2), 0));
+    routes.push(route(901, String::new(), tribe(3), 0));
+    routes.push(route(902, tribe(4), String::new(), 0));
+    routes.push(route(903, "nobody".into(), tribe(5), 0));
+    sim.trade_routes = routes;
+    // Caravans under way: routes 1 and 5 are full, others busy.
+    let mut caravans = Vec::new();
+    for (index, route_id) in [1, 1, 1, 1, 2, 2, 3, 5, 5, 5, 5, 6].into_iter().enumerate() {
+        caravans.push(Caravan {
+            id: index as u32 + 1,
+            route_id,
+            arrives_tick: 10_000,
+            ..Default::default()
+        });
+    }
+    sim.caravans = caravans;
+    sim.battles.push(ongoing_battle(&tribe(0), &tribe(3)));
+    // tribe8 lives off the map: its centre is no world point.
+    for (index, org) in sim.organisms.iter_mut().enumerate() {
+        if org.lineage_id == tribe(8) {
+            org.x = -400.0;
+        }
+        org.inv_wood = u8::from(index % 6 != 0);
+    }
+    for building in sim.buildings.iter_mut() {
+        if building.owner_lineage.as_deref() == Some("tribe8") {
+            building.x = -400;
+        }
+    }
+    sim
+}
+
+/// The dispatch route of every actor, with no partner named and toward every
+/// tribe, must be the census-per-route answer. Returns how many found one.
+fn check_dispatch_routes(sim: &Simulation, context: &str) -> usize {
+    let mut partners: Vec<Option<String>> = vec![None, Some(String::new()), Some("nobody".into())];
+    partners.extend((0..13).map(|i| Some(format!("tribe{i}"))));
+    let mut found = 0;
+    for actor in 0..sim.organisms.len() {
+        for partner in &partners {
+            let expected = dispatch_route_index_reference(sim, actor, partner.as_deref());
+            assert_eq!(
+                pick_dispatch_route(sim, actor, partner.as_deref()),
+                expected,
+                "{context}: actor {actor}, partner {partner:?}"
+            );
+            found += usize::from(expected.is_some());
+        }
+    }
+    found
+}
+
+#[test]
+fn dispatch_route_matches_the_census_per_route() {
+    let mut sim = crowded_route_world();
+    let settled = |sim: &Simulation, lineage: &str| {
+        settlements::tier_and_center(sim, lineage)
+            .is_some_and(|(tier, center)| tier >= 1 && valid_world_point(center))
+    };
+    assert!(settled(&sim, "tribe0") && settled(&sim, "tribe1"));
+    let (tier, center) = settlements::tier_and_center(&sim, "tribe8").unwrap();
+    assert!(
+        tier >= 1 && !valid_world_point(center),
+        "tribe8 is a settlement off the map"
+    );
+    let tribe0 = (0..sim.organisms.len())
+        .find(|&i| {
+            sim.organisms[i].alive && sim.organisms[i].lineage_id == "tribe0" && sim.organisms[i].inv_wood > 0
+        })
+        .unwrap();
+    let shared = dispatch_route_index_reference(&sim, tribe0, Some("tribe1")).expect("a route to tribe1");
+    assert_eq!(sim.trade_routes[shared].id, 500, "the pair joined many times");
+
+    let mut found = check_dispatch_routes(&sim, "crowded");
+    // The world changes between two people's turns: buildings are ruined, built
+    // and finished, people die, a band founds a tribe, caravans leave and arrive,
+    // a war ends.
+    let mut state = 0x9E37_79B9_7F4A_7C15u64;
+    let mut next = move |bound: u64| {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        state % bound
+    };
+    for round in 0..6 {
+        for building in sim.buildings.iter_mut() {
+            match next(10) {
+                0 => building.ruined_at_tick = Some(round),
+                1 => building.condition = 1.0,
+                2 => building.condition = 0.5,
+                _ => {}
+            }
+        }
+        let owner = format!("tribe{}", next(12));
+        let mut hut = completed_hut(
+            1_000 + round as u32,
+            &owner,
+            40 + next(300) as i32,
+            40 + next(200) as i32,
+        );
+        hut.kind = BuildingKind::House;
+        sim.buildings.push(hut);
+        for org in sim.organisms.iter_mut() {
+            if org.alive && next(12) == 0 {
+                org.alive = false;
+            }
+        }
+        let founders: Vec<usize> = (0..sim.organisms.len())
+            .filter(|&i| sim.organisms[i].alive && !sim.organisms[i].lineage_id.is_empty())
+            .collect();
+        let founder = founders[next(founders.len() as u64) as usize];
+        let (x, y) = (sim.organisms[founder].x as i32, sim.organisms[founder].y as i32);
+        sim.fork_new_tribe(founder, x, y);
+        sim.caravans.retain(|_| next(4) != 0);
+        if round == 3 {
+            sim.battles.clear();
+        }
+        found += check_dispatch_routes(&sim, &format!("round {round}"));
+    }
+    assert!(found > 100, "{found} dispatch routes found");
+}
+
+#[test]
+fn dispatch_route_matches_the_census_per_route_as_a_crowded_world_lives() {
+    let mut sim = crowded_route_world();
+    let mut found = 0;
+    for stretch in 0..12 {
+        sim.tick_n(25);
+        found += check_dispatch_routes(&sim, &format!("tick {}", sim.tick_count));
+        if stretch == 0 {
+            assert!(found > 0, "routes are found at the start");
+        }
+    }
+    assert!(found > 100, "{found} dispatch routes found");
+}
+
+/// The offered actions leave the dispatch check for 2704 to the route check
+/// alone; the list must be the one the reference builds, which asks twice.
+#[test]
+fn offered_trade_actions_match_the_reference_list() {
+    use crate::sim::actions::{available_actions_into, available_actions_into_reference};
+    let mut sim = crowded_route_world();
+    // Merchants of the Classical age at a market of their tribe: action 2704's band.
+    for lineage in (0..13).map(|i| format!("tribe{i}")) {
+        sim.lineage_eras.insert(lineage, crate::sim::era::Era::Classical);
+    }
+    let markets: Vec<(String, f32, f32)> = sim
+        .buildings
+        .iter()
+        .filter(|building| building.kind == BuildingKind::Market && building.is_operational())
+        .filter_map(|building| {
+            Some((
+                building.owner_lineage.clone()?,
+                building.x as f32,
+                building.y as f32,
+            ))
+        })
+        .collect();
+    for org in sim.organisms.iter_mut() {
+        org.age = org.max_age / 2;
+        for discovery in ["barter", "currency", "trade", "navigation", "wheel"] {
+            org.discoveries.insert(discovery.into());
+        }
+        org.specialty = Some("merchant".into());
+        if let Some((_, x, y)) = markets.iter().find(|(owner, _, _)| *owner == org.lineage_id) {
+            (org.x, org.y) = (*x + 1.5, *y + 0.5);
+        }
+    }
+    let (mut offered, mut turned_down) = (0, 0);
+    for step in 0..40 {
+        sim.tick_count = 5_000 + step;
+        let spatial = crate::sim::spatial::SpatialIndex::build(&sim.organisms, 10);
+        let (mut fast, mut reference) = (Vec::new(), Vec::new());
+        let (mut near_a, mut near_b) = (Vec::new(), Vec::new());
+        for idx in 0..sim.organisms.len() {
+            let (ix, iy) = (sim.organisms[idx].x as i32, sim.organisms[idx].y as i32);
+            available_actions_into(&sim, idx, ix, iy, &spatial, &mut fast, &mut near_a);
+            available_actions_into_reference(&sim, idx, ix, iy, &spatial, &mut reference, &mut near_b);
+            assert_eq!(fast, reference, "tick {} organism {idx}", sim.tick_count);
+            if fast.contains(&2704) {
+                offered += 1;
+            } else if sim.organisms[idx].alive && !can_dispatch_caravan(&sim, idx) {
+                turned_down += 1;
+            }
+        }
+        if step == 20 {
+            // Half the routes close: more people have nowhere to send a caravan.
+            let kept = sim.trade_routes.len() / 2;
+            sim.trade_routes.truncate(kept);
+        }
+    }
+    assert!(
+        offered > 0 && turned_down > 0,
+        "offered {offered}, turned down {turned_down}"
+    );
+}

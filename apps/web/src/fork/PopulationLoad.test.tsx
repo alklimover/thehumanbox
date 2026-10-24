@@ -69,14 +69,14 @@ describe('PopulationLoadSlider', () => {
     const text = container.textContent ?? ''
     expect(text).toContain('Тяжело')
     expect(text).toContain('Этот компьютер: Apple M1, 8 ГБ')
-    expect(text).toContain('Оптимально здесь: до 940 жителей')
+    expect(text).toMatch(/Оптимально здесь: до 1\s100 жителей/)
   })
 
   it('rates a small world light and says how much faster it can run', async () => {
     await renderSlider(desktopWith(m1), 500)
     const text = container.textContent ?? ''
     expect(text).toContain('Легко')
-    expect(text).toMatch(/без перегрузки до 3,\d×/)
+    expect(text).toContain('без перегрузки до 5×')
   })
 
   it('measures again on request', async () => {

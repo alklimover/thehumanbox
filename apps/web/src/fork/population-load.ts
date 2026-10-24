@@ -29,19 +29,25 @@ const UNKNOWN_MACHINE_FACTOR = 1.8
 
 /**
  * Milliseconds per tick of a mature world on one core of the reference
- * machine, by people alive. Measured headless after the trade-check fix
- * (#23): seeds 7 and 42 up to ~3,000 people, and a real 2,974-person world
- * grown to 3,543 and 4,285; 5,000 is extrapolated from the last two.
+ * machine, by people alive. Measured headless after the person lookups (#29)
+ * and the caravan dispatch check (3.3 in docs/fork/PERF-PLAN.ru.md), best of
+ * three 300-tick runs: seeds 7 and 42 after 60,000 ticks under a population
+ * limit of 120, 350, 1,000 and 2,000 (the mean of the two seeds), and a real
+ * 2,530-person world, also grown with `spawn` to 3,000, 3,510, 4,310 and
+ * 4,550 (150 ticks to settle first). 5,000 is extrapolated from 4,550 with
+ * the exponent below.
  */
 const TICK_CURVE: ReadonlyArray<readonly [number, number]> = [
-  [120, 4],
-  [350, 11],
-  [1000, 20],
-  [2000, 43],
-  [3000, 70],
-  [3500, 88],
-  [4250, 112],
-  [5000, 145],
+  [120, 1.7],
+  [320, 5.2],
+  [940, 16],
+  [1840, 35],
+  [2530, 52],
+  [3000, 63],
+  [3510, 76],
+  [4310, 96],
+  [4550, 100],
+  [5000, 114],
 ]
 /** Growth past the last point: tick cost ~ people^1.4. */
 const TICK_EXPONENT_PAST_CURVE = 1.4
