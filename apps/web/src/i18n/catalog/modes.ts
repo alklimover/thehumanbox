@@ -48,7 +48,7 @@ export const modes = defineMessages(
     'modes.story.brink.worst': 'The fiercest feud in the world',
     'modes.story.brink.feud': 'The neighbours hate each other',
     'modes.story.peril': '{tribe} is dying out: {left}',
-    'modes.story.peril.help': '{reason}. “{tool}” will help',
+    'modes.story.peril.help': '{reason} — {action}',
     'modes.story.faith': 'New faith: {faith}',
     'modes.story.faith.detail': {
       one: 'Founded by the {tribe} tribe · {n} believer',
@@ -165,7 +165,7 @@ export const modes = defineMessages(
     'modes.story.brink.worst': 'Самая острая вражда в мире',
     'modes.story.brink.feud': 'Соседи враждуют',
     'modes.story.peril': '{tribe} вымирает: {left}',
-    'modes.story.peril.help': '{reason}. Поможет «{tool}»',
+    'modes.story.peril.help': '{reason} — нужно {action}',
     'modes.story.faith': 'Новая вера: {faith}',
     'modes.story.faith.detail': {
       one: 'Основало племя {tribe} · {n} верующий',

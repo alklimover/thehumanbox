@@ -230,7 +230,7 @@ export function perilStories(world: World, god = false): Story[] {
       kind: 'peril' as const,
       icon: '💀',
       title: t('modes.story.peril', { tribe: displayName(p.tribe), left: remainingLine(p.population) }),
-      detail: god && help ? t('modes.story.peril.help', { reason, tool: toolLabel(help.tool) }) : reason,
+      detail: god && help ? t('modes.story.peril.help', { reason, action: help.action }) : reason,
       weight: (god ? 100 : 70) + Math.max(0, p.peak - p.population) - p.population,
       at: home(world, p.lineage_id),
       lineage: p.lineage_id,

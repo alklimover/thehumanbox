@@ -135,7 +135,7 @@ describe('the observer’s stories', () => {
       at: { x: 40, y: 20 },
     })
     const [help] = perilStories(w, true)
-    expect(help.detail).toBe('They are starving. “harvest” will help')
+    expect(help.detail).toBe('They are starving — send a harvest')
     expect(help.action).toEqual({ kind: 'tool', tool: 'harvest' })
   })
 
