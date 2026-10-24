@@ -161,7 +161,11 @@ export function StoryPanel({ world, role, onAnswer, onTool }: Props) {
           {rows.map(({ story }) => (
             <li key={story.key} className={clsx('fork-mode-row', story.kind)}>
               <ToolSprite icon={story.icon} size={18} />
-              <div className="fork-mode-text">
+              {/* A short window cuts the lines (styles/fork.css): the tooltip has them whole. */}
+              <div
+                className="fork-mode-text"
+                title={story.detail ? `${story.title}\n${story.detail}` : story.title}
+              >
                 <div className="fork-mode-row-title">{story.title}</div>
                 {story.detail && <div className="fork-mode-row-detail">{story.detail}</div>}
               </div>

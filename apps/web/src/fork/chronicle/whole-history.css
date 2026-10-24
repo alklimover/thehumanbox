@@ -137,3 +137,35 @@
   border-top: 1px solid #372a21;
   padding-top: 6px;
 }
+.fch-people-head {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fch-people-head:hover {
+  color: #e0c98f;
+}
+.fch-people-mark {
+  color: #998;
+}
+.fch-people-list {
+  margin: 0;
+  padding: 2px 70px 4px 76px;
+  list-style: none;
+  border-bottom: 1px solid #32271f;
+  font-size: 10px;
+  color: #aab;
+  line-height: 1.5;
+}
+/* The head wraps on a narrow window: the season stays at its first line. */
+.fch-people .fch-row {
+  align-items: start;
+}
+.fch-people .fch-season,
+.fch-people .fch-icon {
+  line-height: 14.5px;
+}

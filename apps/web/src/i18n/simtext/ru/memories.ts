@@ -86,4 +86,6 @@ export const memories: SimTextTable = {
 
   // Fork: the last line of a life, in the chronicle's "is gone" headline.
   'died of {cause} at age {age}': 'причина смерти: {cause|deathCause}',
+  'died of old age at {age}': 'причина смерти: старость',
+  'fell in battle at age {age}': 'пал[а] в бою',
 }

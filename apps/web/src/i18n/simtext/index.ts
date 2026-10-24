@@ -25,12 +25,13 @@ export type { Sex, SimTextChannel, SimTextContext } from './engine'
 /**
  * World milestones, already translated for the chronicle (i18n/sim/milestone):
  * the description alone in the event feed, and "first_fire: the first flame is
- * tamed" in the headlines.
+ * tamed" in the headlines as the name and what it means («первый огонь — люди
+ * укротили пламя»).
  */
 const milestones: SimTextTable = Object.fromEntries(
   Object.entries(milestoneDescription).flatMap(([id, d]) => [
     [d.en, d.ru],
-    [`${id}: ${d.en}`, `${SIM_TABLES.milestone[id]?.ru ?? id}: ${d.ru}`],
+    [`${id}: ${d.en}`, `${SIM_TABLES.milestone[id]?.ru ?? id} — ${d.titled ?? d.ru}`],
   ]),
 )
 
@@ -50,7 +51,9 @@ function labelId(domain: string, id: string): string | null {
   return entry?.ru ?? null
 }
 
-const ru = makeSimText(RU_SIM_TEXT_TABLES, labelId)
+// Someone whose sex is unknown (a third person long gone from the world on screen):
+// «человек» sets the masculine agreement whoever it is.
+const ru = makeSimText(RU_SIM_TEXT_TABLES, labelId, (name) => `человек по имени ${name}`)
 
 // A person's reflection (Organism::reflect_internally in organism/organism/inner.rs):
 // "{mood}{, a <aspiration> at heart}: {frame} — {memory, lowercased}" or

@@ -12,7 +12,11 @@
 //     (nested phrases), and is kept as is when nothing matches (names, numbers);
 //   - `{detail@actor_name}`: the nested text takes its sex from the person
 //     named by the `actor_name` value;
-//   - `{what|good}`: the value is a simulation id, shown with simLabel('good').
+//   - `{what|good}`: the value is a simulation id, shown with simLabel('good');
+//   - `{actor_name|someone}`: a person who is the subject of a nested
+//     `{detail@actor_name}`. When their sex is unknown and the nested text has
+//     forms for it, the name reads as the `unknownPerson` phrase («человек по
+//     имени Духа») and the nested text agrees with that phrase.
 
 /** Where a text is shown. Thoughts read in the present tense, the rest in the past. */
 export type SimTextChannel = 'thought' | 'event' | 'life' | 'memory' | 'headline' | 'anchor' | 'title'
@@ -94,8 +98,16 @@ const CACHE_LIMIT = 20_000
 
 const capital = (word: string) => word[0].toUpperCase() + word.slice(1)
 
-/** A translator over a set of tables. Results are cached per channel, sex and text. */
-export function makeSimText(tables: readonly SimTextTable[], label: IdLabeler) {
+/**
+ * A translator over a set of tables. Results are cached per channel, sex and text.
+ * `unknownPerson` names someone whose sex is unknown with a word that sets the
+ * masculine agreement whoever it is («человек по имени Духа сложил …»).
+ */
+export function makeSimText(
+  tables: readonly SimTextTable[],
+  label: IdLabeler,
+  unknownPerson?: (name: string) => string,
+) {
   const exact = new Map<string, SimTextEntry>()
   // Literals by their folded form: inside composed lines the simulation may
   // lowercase a phrase and drop its period ("I remember — the world is real").
@@ -135,14 +147,28 @@ export function makeSimText(tables: readonly SimTextTable[], label: IdLabeler) {
     ctx: SimTextContext,
     depth: number,
   ) {
+    // `{name|someone}` whose sex is unknown, and the nested text has forms for it.
+    const someone = new Set<string>()
+    for (const [, name, sexFrom] of text.matchAll(/\{([A-Za-z_][A-Za-z0-9_]*)@([A-Za-z_][A-Za-z0-9_]*)\}/g)) {
+      const person = values.get(sexFrom)
+      const value = values.get(name)
+      if (!unknownPerson || !person || value === undefined || ctx.sexOf?.(person)) continue
+      if (!text.includes(`{${sexFrom}|someone}`)) continue
+      const as = (sex: Sex) => translate(value, channel, { ...ctx, sex }, depth + 1)
+      if (as('male') !== as('female')) someone.add(sexFrom)
+    }
     return text.replace(
       /\{([A-Za-z_][A-Za-z0-9_]*)(?:@([A-Za-z_][A-Za-z0-9_]*))?(?:\|([A-Za-z_]+))?\}/g,
       (whole, name: string, sexFrom?: string, domain?: string) => {
         const value = values.get(name)
         if (value === undefined) return whole
+        if (domain === 'someone') return someone.has(name) ? unknownPerson!(value) : value
         if (domain) return label(domain, value) ?? value
         let inner = ctx
-        if (sexFrom) inner = { ...ctx, sex: ctx.sexOf?.(values.get(sexFrom) ?? '') ?? null }
+        if (sexFrom) {
+          const sex = someone.has(sexFrom) ? 'male' : (ctx.sexOf?.(values.get(sexFrom) ?? '') ?? null)
+          inner = { ...ctx, sex }
+        }
         const ru = translate(value, channel, inner, depth + 1)
         // `{lower}`: the simulation lowercased the whole inner text, names too. Once it is
         // translated, the Latin words left in it are those names: give them their capital back.

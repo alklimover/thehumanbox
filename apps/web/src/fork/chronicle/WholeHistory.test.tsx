@@ -77,6 +77,18 @@ async function render() {
 
 const text = () => container.textContent ?? ''
 
+/** A list this tall, scrolled this far (happy-dom lays nothing out). */
+function layout(scrollHeight: number, clientHeight: number) {
+  Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+    configurable: true,
+    get: () => scrollHeight,
+  })
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    configurable: true,
+    get: () => clientHeight,
+  })
+}
+
 beforeEach(() => {
   setLocaleForTests('ru')
   vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -100,6 +112,8 @@ afterEach(() => {
   container.remove()
   vi.useRealTimers()
   vi.unstubAllGlobals()
+  delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight
+  delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
   setLocaleForTests('en')
 })
 
@@ -188,11 +202,13 @@ describe('the whole history tab', () => {
         ],
       }
     })
+    layout(2000, 500)
     await render()
     expect(container.querySelectorAll('.fch-row')).toHaveLength(2)
 
     const list = container.querySelector<HTMLDivElement>('.fch-list')!
     await act(async () => {
+      list.scrollTop = 1200
       list.dispatchEvent(new Event('scroll', { bubbles: true }))
       await Promise.resolve()
     })
@@ -206,6 +222,47 @@ describe('the whole history tab', () => {
     const heads = [...container.querySelectorAll('.fch-year-head')].map((h) => h.textContent)
     expect(heads[0]).toBe('Год 6 · железный век1')
     expect(text()).toContain('4 записи')
+  })
+
+  it('folds a season of deaths into a row that opens to the names, and loads on while the list is short', async () => {
+    const gone = (id: number, name: string, memory: string, sex: string) =>
+      row(id, 4 * YEAR + id, {
+        src: 'headline',
+        kind: 'headline',
+        cat: 'people',
+        actor: '',
+        text: `${name} is gone. What they carried: "${memory}"`,
+        sex,
+      })
+    serve((url) =>
+      url.searchParams.has('before_tick')
+        ? { ok: true, rows: [gone(3, 'Eno', 'died of old age at 80', 'male')], more: false, started_tick: 0 }
+        : {
+            ok: true,
+            rows: [
+              gone(9, 'Goku', 'died of drowning at age 351', 'male'),
+              gone(8, 'Lida', 'died of drowning at age 40', 'female'),
+            ],
+            more: true,
+            started_tick: 0,
+            total: 3,
+            years: [{ year: 4, count: 3, era: 'iron' }],
+          },
+    )
+    layout(100, 500)
+    await render()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    // The short list asked for the next page by itself; its death joined the season's row.
+    expect(calls.some((c) => c.includes('before_tick=48008&before_id=8'))).toBe(true)
+    expect(container.querySelectorAll('.fch-row')).toHaveLength(1)
+    const head = container.querySelector<HTMLButtonElement>('.fch-people-head')!
+    expect(head.textContent).toContain('Не стало 3 человек: утопление — 2, старость — 1')
+    expect(head.getAttribute('aria-expanded')).toBe('false')
+    await act(async () => head.click())
+    const names = [...container.querySelectorAll('.fch-people-list li')].map((li) => li.textContent)
+    expect(names).toEqual(['Гоку (утонул)', 'Лида (утонула)', 'Эно (от старости)'])
   })
 
   it('says so when the chronicle cannot be read', async () => {

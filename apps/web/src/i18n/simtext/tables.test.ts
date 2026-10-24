@@ -47,7 +47,7 @@ describe('Russian simulation text tables', () => {
           if (
             !names.has(m[1]) ||
             (m[2] && !names.has(m[2])) ||
-            (m[3] && !(m[3] in SIM_TABLES) && !(m[3] in NAME_DOMAINS))
+            (m[3] && m[3] !== 'someone' && !(m[3] in SIM_TABLES) && !(m[3] in NAME_DOMAINS))
           )
             bad.push(`${key} → ${m[0]}`)
         }

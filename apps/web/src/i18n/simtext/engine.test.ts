@@ -5,7 +5,10 @@ const table: SimTextTable = {
   'write poem': { thought: 'пишет стихи', event: 'написал[а] стихи' },
   'built a navigation cairn': 'сложил[а] путевой знак из камней',
   'led a dance': '[повёл|повела] танец',
-  'heard that {actor_name} {detail}': 'услышал[а], что {actor_name} {detail@actor_name}',
+  'rests by the fire': 'отдыхает у огня',
+  'heard that {actor_name} {detail}': 'услышал[а], что {actor_name|someone} {detail@actor_name}',
+  'noticed {actor_name} {detail}': 'заметил[а]: {actor_name|someone} {detail@actor_name}',
+  '{name} is gone: "{text}"': 'Не стало {name}: «{text@name}»',
   'crafted {what} for the first time': 'впервые смастерил[а]: {what|good}',
   '🧬 {line}': '🧬 {line}',
   'the first great-grandchild of {tribe} is born': 'у племени {tribe} родился первый правнук',
@@ -34,6 +37,30 @@ describe('simText engine', () => {
     const sexOf = (name: string) => (name === 'Giho' ? ('female' as const) : null)
     expect(st.text('life', 'heard that Giho built a navigation cairn', { sex: 'male', sexOf })).toBe(
       'услышал, что Giho сложила путевой знак из камней',
+    )
+  })
+
+  it('names someone whose sex is unknown so that the verb agrees anyway', () => {
+    const named = makeSimText(
+      [table],
+      () => null,
+      (name) => `человек по имени ${name}`,
+    )
+    const sexOf = () => null
+    expect(named.text('life', 'heard that Giho built a navigation cairn', { sex: 'male', sexOf })).toBe(
+      'услышал, что человек по имени Giho сложил путевой знак из камней',
+    )
+    // A verb with one form for both needs nothing.
+    expect(named.text('life', 'noticed Giho rests by the fire', { sex: 'female', sexOf })).toBe(
+      'заметила: Giho отдыхает у огня',
+    )
+    // Only a `{name|someone}` subject is renamed: elsewhere the name may not be in the nominative.
+    expect(named.text('headline', 'Giho is gone: "led a dance"', { sexOf })).toBe(
+      'Не стало Giho: «повёл/повела танец»',
+    )
+    // Without the phrase both forms show, as before.
+    expect(st.text('life', 'heard that Giho built a navigation cairn', { sex: 'male', sexOf })).toBe(
+      'услышал, что Giho сложил(а) путевой знак из камней',
     )
   })
 

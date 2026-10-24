@@ -52,16 +52,31 @@ export const milestone: SimTable = {
 
 /**
  * The line each milestone is announced with: `Milestone::description()`, word for word in `en`, so
- * whoever translates chronicle lines can match the English the simulation sent.
+ * whoever translates chronicle lines can match the English the simulation sent. `ru` stands alone
+ * (the event feed); `titled` is how it reads after the milestone's name in a headline («Пятьсот
+ * человек — народ разросся»), given where `ru` would repeat the name.
  */
-export const milestoneDescription: Record<string, { en: string; ru: string }> = {
-  first_fire: { en: 'the first flame is tamed', ru: 'впервые укрощён огонь' },
-  first_tool: { en: 'the first tool is shaped from stone', ru: 'из камня впервые сделано орудие' },
-  first_shelter: { en: 'the first roof rises against the rain', ru: 'от дождя впервые укрывает крыша' },
-  first_birth: { en: 'the first child is born into the world', ru: 'в мире родился первый ребёнок' },
+export const milestoneDescription: Record<string, { en: string; ru: string; titled?: string }> = {
+  first_fire: { en: 'the first flame is tamed', ru: 'впервые укрощён огонь', titled: 'люди укротили пламя' },
+  first_tool: {
+    en: 'the first tool is shaped from stone',
+    ru: 'из камня впервые сделано орудие',
+    titled: 'камень обтесали для дела',
+  },
+  first_shelter: {
+    en: 'the first roof rises against the rain',
+    ru: 'от дождя впервые укрывает крыша',
+    titled: 'над головой есть крыша от дождя',
+  },
+  first_birth: {
+    en: 'the first child is born into the world',
+    ru: 'в мире родился первый ребёнок',
+    titled: 'в мир пришёл ребёнок',
+  },
   first_death: {
     en: 'the first eyes close for the last time',
     ru: 'чьи-то глаза впервые закрылись навсегда',
+    titled: 'чьи-то глаза закрылись навсегда',
   },
   first_speech: {
     en: 'words gather meaning across many tongues',
@@ -70,6 +85,7 @@ export const milestoneDescription: Record<string, { en: string; ru: string }> = 
   first_religion: {
     en: 'a people lifts its eyes to the unseen',
     ru: 'народ впервые обращает взор к незримому',
+    titled: 'народ обращает взор к незримому',
   },
   first_writing: {
     en: 'marks on stone outlive the hand that made them',
@@ -101,6 +117,7 @@ export const milestoneDescription: Record<string, { en: string; ru: string }> = 
   first_hospital: {
     en: 'the sick gather in one place to be healed',
     ru: 'больных собирают в одном месте, чтобы лечить',
+    titled: 'недужных собирают в одном месте, чтобы лечить',
   },
   first_electricity: {
     en: 'lightning is bottled and put to work',
@@ -112,11 +129,23 @@ export const milestoneDescription: Record<string, { en: string; ru: string }> = 
   },
   first_satellite: { en: 'a made thing orbits the sky', ru: 'рукотворная вещь кружит по небу' },
   first_ai: { en: 'thought is poured into silicon', ru: 'мысль перелита в кремний' },
-  pop_100: { en: 'the people number one hundred', ru: 'людей уже сто' },
-  pop_500: { en: 'the people number five hundred', ru: 'людей уже пятьсот' },
-  pop_1000: { en: 'the people number one thousand', ru: 'людей уже тысяча' },
-  pop_5000: { en: 'the people number five thousand', ru: 'людей уже пять тысяч' },
-  golden_age: { en: 'an age of plenty and song begins', ru: 'начинается век изобилия и песен' },
+  pop_100: { en: 'the people number one hundred', ru: 'людей уже сто', titled: 'людей уже не горстка' },
+  pop_500: { en: 'the people number five hundred', ru: 'людей уже пятьсот', titled: 'народ разросся' },
+  pop_1000: {
+    en: 'the people number one thousand',
+    ru: 'людей уже тысяча',
+    titled: 'земля заселяется всё гуще',
+  },
+  pop_5000: {
+    en: 'the people number five thousand',
+    ru: 'людей уже пять тысяч',
+    titled: 'людям становится тесно',
+  },
+  golden_age: {
+    en: 'an age of plenty and song begins',
+    ru: 'начинается век изобилия и песен',
+    titled: 'настало время изобилия и песен',
+  },
   renaissance: {
     en: 'old knowledge is rediscovered, and new questions follow',
     ru: 'старое знание открыто заново, и за ним приходят новые вопросы',
@@ -140,6 +169,10 @@ export const milestoneDescription: Record<string, { en: string; ru: string }> = 
     en: 'the rulers are cast down by their own people',
     ru: 'правителей свергает их собственный народ',
   },
-  moon_landing: { en: 'feet stand upon the moon', ru: 'нога человека ступила на Луну' },
+  moon_landing: {
+    en: 'feet stand upon the moon',
+    ru: 'нога человека ступила на Луну',
+    titled: 'человек шагнул за пределы своего мира',
+  },
   internet_age: { en: 'minds are linked across every land', ru: 'умы связаны во всех краях' },
 }
