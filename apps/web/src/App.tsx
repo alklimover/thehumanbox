@@ -83,6 +83,7 @@ import clsx from 'clsx'
 import './App.css'
 import './pixel-theme.css'
 import { simText } from './i18n/simtext'
+import { ImportantMoment } from './fork/chronicle/ImportantMoment'
 
 // The map renderer (the xipjs engine plus every draw layer and sprite painter) is a
 // third of the app's JavaScript and is only needed once the first world frame has
@@ -941,6 +942,7 @@ function LiveApp() {
         {world && <ForkModes world={world} onAnswer={handleAnswerPrayer} onTool={handlePickToolAt} />}
         <UpdateToast />
         <ModePrayerHint world={world ?? null} onAnswer={handleAnswerPrayer} />
+        {world && <ImportantMoment setSpeed={setSpeed} resume={resume} />}
         <DesktopUpdateToast />
       </div>
     </SimulationDataProvider>

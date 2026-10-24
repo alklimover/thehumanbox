@@ -5,12 +5,13 @@ use std::sync::Arc;
 use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 
 use super::classify::Category;
 use super::store::{ChronicleDb, Filter};
+use super::watch::WatchUpdate;
 use super::Chronicle;
 
 pub(crate) const DEFAULT_LIMIT: usize = 200;
@@ -18,6 +19,24 @@ pub(crate) const MAX_LIMIT: usize = 500;
 
 pub(crate) fn routes<S: Clone + Send + Sync + 'static>() -> Router<S> {
     routes_for(super::global())
+}
+
+/// `POST /chronicle/watch`: mounted with the sandbox's other controls, behind its guard.
+pub(crate) fn sandbox_routes<S: Clone + Send + Sync + 'static>() -> Router<S> {
+    sandbox_routes_for(super::global())
+}
+
+pub(crate) fn sandbox_routes_for<S: Clone + Send + Sync + 'static>(
+    chronicle: &'static Chronicle,
+) -> Router<S> {
+    Router::new().route(
+        "/chronicle/watch",
+        post(move |Json(update): Json<WatchUpdate>| async move {
+            let mut watch = chronicle.watch();
+            watch.update(update);
+            no_store(serde_json::json!({ "ok": true, "watch": watch.config }))
+        }),
+    )
 }
 
 /// The routes over a given chronicle (the server's own, or a test's).
@@ -28,6 +47,23 @@ pub(crate) fn routes_for<S: Clone + Send + Sync + 'static>(chronicle: &'static C
             get(move |q: Query<PageQuery>| chronicle_handler(chronicle, q)),
         )
         .route("/chronicle/tribes", get(move || tribes_handler(chronicle)))
+        .route(
+            "/chronicle/alerts",
+            get(move |Query(q): Query<AlertsQuery>| async move {
+                let watch = chronicle.watch();
+                no_store(serde_json::json!({
+                    "ok": true,
+                    "alerts": watch.alerts_after(q.after.unwrap_or(0)),
+                    "latest_id": watch.latest_id(),
+                    "watch": watch.config,
+                }))
+            }),
+        )
+}
+
+#[derive(Deserialize, Default, Debug)]
+pub(crate) struct AlertsQuery {
+    pub after: Option<u64>,
 }
 
 #[derive(Deserialize, Default, Debug)]

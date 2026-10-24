@@ -96,7 +96,6 @@ async fn main() {
             None
         }
     });
-    fork_chronicle::start(&sim, &world_store).await;
     let (tx, _rx) = broadcast::channel::<Bytes>(WS_BROADCAST_BUFFER);
     let latest_full: LatestFull = Arc::new(std::sync::RwLock::new(None));
     let latest_full_at: Arc<std::sync::atomic::AtomicU64> = Arc::new(std::sync::atomic::AtomicU64::new(0));
@@ -106,6 +105,7 @@ async fn main() {
     let low_memory_mode = env_flag("THB_LOW_MEMORY");
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
     let runtime_control = Arc::new(RuntimeControl::new(*TICK_MS));
+    fork_chronicle::start(&sim, &world_store, &runtime_control).await;
     let save_gate: SaveGate = Arc::new(tokio::sync::Mutex::new(()));
     let pending_save_task: Arc<std::sync::Mutex<Option<tokio::task::JoinHandle<()>>>> =
         Arc::new(std::sync::Mutex::new(None));

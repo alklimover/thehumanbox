@@ -510,6 +510,132 @@ async fn the_routes_answer_from_the_live_world() {
     assert!(!tribes["tribes"].as_array().unwrap().is_empty());
 }
 
+/// The world stops in the tick that wrote what matters, only when it runs
+/// fast, and the client hears of it with "Show" pointing at the first tribe in.
+#[tokio::test]
+async fn a_new_world_era_pauses_the_world_in_its_own_tick() {
+    use tower::ServiceExt;
+    let root = tmp_root("watch");
+    let chronicle: &'static Chronicle = Box::leak(Box::new(Chronicle::new(Some(root.clone()))));
+    let runtime = std::sync::Arc::new(crate::RuntimeControl::new(100));
+    chronicle.set_runtime(runtime.clone());
+    let mut sim = Simulation::new(42);
+    chronicle.attach(&sim, "w", true);
+
+    // At 1x nothing stops it.
+    let mut stopped_at = None;
+    for _ in 0..700 {
+        sim.tick();
+        if chronicle.after_tick(&sim, Some("w")) {
+            stopped_at = Some(sim.tick_count);
+        }
+    }
+    assert_eq!(stopped_at, None);
+    let era_tick = sim
+        .history
+        .era_history
+        .back()
+        .map(|e| e.tick)
+        .expect("a world era by now");
+
+    // Fast: the next world era stops it in its own tick.
+    runtime.set_speed(50.0);
+    let next_era = loop {
+        sim.tick();
+        if chronicle.after_tick(&sim, Some("w")) {
+            break sim.tick_count;
+        }
+        assert!(sim.tick_count < 20_000, "no new era in time");
+    };
+    assert!(runtime.paused(), "a world era pauses by default");
+    assert!(next_era > era_tick);
+    assert_eq!(sim.history.era_history.back().map(|e| e.tick), Some(next_era));
+
+    let app = super::routes::routes_for::<()>(chronicle);
+    let get = |uri: &str| {
+        axum::http::Request::builder()
+            .uri(uri)
+            .body(axum::body::Body::empty())
+            .unwrap()
+    };
+    let body = app
+        .clone()
+        .oneshot(get("/chronicle/alerts?after=0"))
+        .await
+        .unwrap();
+    let body: serde_json::Value =
+        serde_json::from_slice(&axum::body::to_bytes(body.into_body(), usize::MAX).await.unwrap()).unwrap();
+    let alerts = body["alerts"].as_array().unwrap();
+    assert_eq!(alerts.len(), 1);
+    let alert = &alerts[0];
+    assert_eq!(alert["action"], "pause");
+    assert_eq!(alert["tick"], next_era);
+    assert_eq!(alert["main"]["rule"], "world_era");
+    assert_eq!(alert["prev_speed"], 50.0);
+    // "Show" goes to the tribe the chronicle saw entering that era first.
+    let first = alert["focus"]["id"]
+        .as_str()
+        .expect("the first tribe into the era");
+    chronicle.flush();
+    let firsts = chronicle.db().unwrap().first_into_eras().unwrap();
+    let era = sim.current_era.clone();
+    assert_eq!(
+        firsts.iter().find(|(e, _)| *e == era).map(|(_, t)| t.id.as_str()),
+        Some(first)
+    );
+    assert_eq!(body["latest_id"], alert["id"]);
+    let none = app
+        .oneshot(get(&format!("/chronicle/alerts?after={}", alert["id"])))
+        .await
+        .unwrap();
+    let none: serde_json::Value =
+        serde_json::from_slice(&axum::body::to_bytes(none.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert!(none["alerts"].as_array().unwrap().is_empty());
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[tokio::test]
+async fn the_player_choices_reach_the_watch() {
+    use tower::ServiceExt;
+    let root = tmp_root("watch_post");
+    let chronicle: &'static Chronicle = Box::leak(Box::new(Chronicle::new(Some(root.clone()))));
+    let app = super::routes::sandbox_routes_for::<()>(chronicle);
+    let post = axum::http::Request::builder()
+        .method("POST")
+        .uri("/chronicle/watch")
+        .header("content-type", "application/json")
+        .body(axum::body::Body::from(
+            r#"{"enabled":false,"debounce_secs":180,"rules":{"war":"pause"},"focus":"aaaa1111"}"#,
+        ))
+        .unwrap();
+    let response = app.oneshot(post).await.unwrap();
+    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(body["watch"]["enabled"], false);
+    assert_eq!(body["watch"]["debounce_secs"], 180);
+    assert_eq!(body["watch"]["rules"]["war"], "pause");
+    assert_eq!(body["watch"]["rules"]["world_era"], "pause");
+    assert_eq!(body["watch"]["focus"], "aaaa1111");
+
+    // Switched off: a fast world runs past its eras.
+    let runtime = std::sync::Arc::new(crate::RuntimeControl::new(100));
+    chronicle.set_runtime(runtime.clone());
+    runtime.set_speed(50.0);
+    let mut sim = Simulation::new(42);
+    chronicle.attach(&sim, "w", true);
+    for _ in 0..1300 {
+        sim.tick();
+        assert!(!chronicle.after_tick(&sim, Some("w")));
+    }
+    assert!(!runtime.paused());
+    let _ = std::fs::remove_dir_all(root);
+}
+
 /// A measurement, not a check: what capturing costs per tick on a saved world,
 /// and how much the chronicle grows.
 /// `THB_CHRONICLE_BENCH_SAVE=<world.save> THB_CHRONICLE_BENCH_TICKS=2000 cargo test --release -p simulation-rs -- --ignored --nocapture capture_cost`

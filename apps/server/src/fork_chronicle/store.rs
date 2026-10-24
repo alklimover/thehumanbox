@@ -416,6 +416,34 @@ impl ChronicleDb {
             .query_row("SELECT COUNT(*) FROM fork_chronicle", [], |r| r.get(0))?;
         Ok(n.max(0) as u64)
     }
+
+    /// The first tribe into each era, as the chronicle saw them.
+    pub(crate) fn first_into_eras(&self) -> rusqlite::Result<Vec<(String, TribeLink)>> {
+        let conn = self.conn();
+        let mut stmt = conn.prepare(
+            "SELECT c.text, l.lineage_id, l.name FROM fork_chronicle c
+               JOIN fork_chronicle_link l ON l.entry_id = c.id
+              WHERE c.cat = 'eras' AND c.kind = 'era_advance'
+              ORDER BY c.tick, c.id, l.rowid",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+            ))
+        })?;
+        let mut out: Vec<(String, TribeLink)> = Vec::new();
+        for row in rows {
+            let (text, id, name) = row?;
+            if let Some(era) = super::watch::era_of_tribe_line(&text) {
+                if !out.iter().any(|(e, _)| e == era) {
+                    out.push((era.to_string(), TribeLink { id, name }));
+                }
+            }
+        }
+        Ok(out)
+    }
 }
 
 fn write_row(

@@ -25,6 +25,7 @@ import {
   pageQuery,
   saveCategories,
   seasonOf,
+  sentence,
   shownActor,
   tribeOptions,
   type ChronicleCategory,
@@ -282,7 +283,7 @@ function EntryRow({
       </span>
       <span className="fch-text">
         {actor && <span className="fch-actor">{shownActor(actor)} </span>}
-        {text}
+        {actor ? text : sentence(text)}
         {entry.restored && (
           <span className="fch-restored" title={t('chronicle.restoredTip')}>
             {' '}

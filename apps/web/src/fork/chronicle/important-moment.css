@@ -1,0 +1,154 @@
+/* Fork: the "Important moment" card (ImportantMoment.tsx): top centre, over the map, under the modals.
+   placement.ts keeps it clear of the mode panel in the top-left corner; these are the defaults. */
+.fmoment {
+  position: fixed;
+  top: calc(56px + var(--safe-top, 0px));
+  left: calc(50vw - min(260px, 50vw - 16px));
+  width: min(520px, calc(100vw - 32px));
+  z-index: 60;
+  background: #28201a;
+  border: 1px solid #8a6a3a;
+  border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: monospace;
+  color: #ccd;
+}
+.fmoment-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.fmoment-title {
+  color: #e0c98f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.fmoment-date {
+  margin-left: auto;
+  color: #998;
+  font-size: 10px;
+}
+.fmoment-x,
+.fmoment-gear {
+  background: transparent;
+  border: none;
+  color: #998;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+}
+.fmoment-x:hover,
+.fmoment-gear:hover {
+  color: #e0c98f;
+}
+.fmoment-main {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #eee;
+}
+.fmoment-first {
+  color: #c8b88a;
+}
+.fmoment-icon {
+  text-align: center;
+}
+.fmoment-also {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px solid #372a21;
+  padding-top: 6px;
+  font-size: 10px;
+}
+.fmoment-also-title {
+  color: #998;
+}
+.fmoment-also-row {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 6px;
+  padding-left: 8px;
+  line-height: 1.4;
+}
+.fmoment-more {
+  padding-left: 30px;
+  color: #887;
+  font-style: italic;
+}
+.fmoment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fmoment-actions .lang-btn {
+  font-size: 11px;
+  padding: 3px 10px;
+}
+.fmoment-actions .lang-btn.primary {
+  border-color: #8a6a3a;
+  color: #e0c98f;
+}
+.fmoment-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #998;
+}
+.fmoment-foot label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.fmoment-gear {
+  margin-left: auto;
+}
+
+/* The settings section (WatchSection.tsx). */
+.fwatch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.fwatch-table th {
+  font-weight: 400;
+  color: #998;
+  padding: 2px 6px;
+  text-align: center;
+}
+.fwatch-table td {
+  padding: 3px 6px;
+  border-top: 1px solid #32271f;
+}
+.fwatch-table td.fwatch-pick {
+  text-align: center;
+}
+.fwatch-table th:first-child,
+.fwatch-table td:first-child {
+  text-align: left;
+}
+.fwatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+}
+.fwatch-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.fwatch-off {
+  opacity: 0.5;
+}

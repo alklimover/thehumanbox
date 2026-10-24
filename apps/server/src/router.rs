@@ -63,6 +63,7 @@ pub(super) fn build_app(state: AppState) -> Router {
                     get(routes::runtime_status_handler).post(routes::runtime_handler),
                 )
                 .route("/save", post(routes::save_handler))
+                .merge(crate::fork_chronicle::sandbox_routes())
                 .route_layer(axum::middleware::from_fn_with_state(
                     guard,
                     sandbox_guard::sandbox_guard,
