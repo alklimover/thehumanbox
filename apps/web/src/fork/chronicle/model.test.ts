@@ -14,6 +14,7 @@ import {
   mergeNewer,
   pageQuery,
   seasonOf,
+  sentence,
   tribeOptions,
   withNames,
   type ChronicleEntry,
@@ -127,6 +128,12 @@ describe('a line as shown', () => {
     expect(entryText(entry(1, 1, { src: 'era', kind: 'era', text: 'bronze', tribes: [] }))).toBe(
       'В мире наступает новая эпоха: бронзовый век.',
     )
+  })
+
+  it('starts a row with a capital when no actor stands before it', () => {
+    expect(sentence('в мире наступает новая эпоха')).toBe('В мире наступает новая эпоха')
+    expect(sentence('🤝 Кефе и Зову')).toBe('🤝 Кефе и Зову')
+    expect(sentence('')).toBe('')
   })
 
   it('tells a small tribe dying out, with how big it once was', () => {

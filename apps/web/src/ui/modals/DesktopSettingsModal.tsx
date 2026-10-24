@@ -25,6 +25,7 @@ import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
 import { localeTag } from '../../i18n/locale'
 import { LanguageSwitch } from './LanguageSwitch'
 import { WorldsSection } from '../../fork/WorldsSection'
+import { WatchSection } from '../../fork/chronicle/WatchSection'
 
 interface Props {
   onClose: () => void
@@ -523,6 +524,7 @@ export function DesktopSettingsModal({ onClose }: Props) {
                 )}
                 {safetyMessage && <div className="settings-note">{safetyMessage}</div>}
                 {desktop.forkWorlds && <WorldsSection desktop={desktop} />}
+                <WatchSection />
               </Section>
             ) : (
               <WorldSourceSection />

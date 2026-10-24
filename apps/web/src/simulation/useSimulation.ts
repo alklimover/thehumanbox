@@ -35,6 +35,7 @@ import {
   type RuntimeState,
 } from './runtimeControls'
 import { bootStage } from '../fork/boot-stages'
+import { shareRuntimeRefresh } from '../fork/chronicle/runtime-refresh'
 
 const RELOAD_CHECKPOINT_DEADLINE_MS = 6_000
 const RELOAD_CHECKPOINT_TIMEOUT_MS = 7_000
@@ -617,7 +618,7 @@ export function useSimulation(source: WorldSource = 'native'): {
         )
         return pending
       }
-      runtimeHydrationRef.current = queueRuntimeHydration
+      runtimeHydrationRef.current = shareRuntimeRefresh(queueRuntimeHydration)
     }
 
     let reconnectDelayMs = 1000

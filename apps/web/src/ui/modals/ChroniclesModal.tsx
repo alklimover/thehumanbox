@@ -6,7 +6,7 @@ import { t } from '../../i18n'
 import { simText } from '../../i18n/simtext'
 import { displayName } from '../../i18n/names'
 import { WholeHistory } from '../../fork/chronicle/WholeHistory'
-import { wholeHistoryTab } from '../../fork/chronicle/navigate'
+import { initialChronicleTab, wholeHistoryTab } from '../../fork/chronicle/navigate'
 
 const DAY_LENGTH = 600
 
@@ -19,7 +19,7 @@ interface Props {
 type Tab = 'history' | 'lives' | 'all'
 
 export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
-  const [tab, setTab] = useState<Tab>('history')
+  const [tab, setTab] = useState<Tab>(() => initialChronicleTab('history'))
   const sortedStories = [...stories]
   // Headlines arrive newest-first; show as a descending timeline.
   const timeline = [...headlines]

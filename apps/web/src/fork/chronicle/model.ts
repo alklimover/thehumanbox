@@ -235,6 +235,11 @@ export function entryText(e: ChronicleEntry, sex: Sex | null = null, peak = 0): 
   return simText(e.src === 'headline' ? 'headline' : 'event', text, { sex })
 }
 
+/** A line that starts the row (no actor before it) starts with a capital. */
+export function sentence(text: string): string {
+  return text ? text[0].toUpperCase() + text.slice(1) : text
+}
+
 /** The actor as shown: a tribe or a person by name, in the player's alphabet. */
 export function shownActor(actor: string): string {
   return actor ? simActor(actor) : ''

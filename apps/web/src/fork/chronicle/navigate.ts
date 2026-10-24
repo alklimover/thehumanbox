@@ -29,3 +29,18 @@ export function goToTribe(lineage: string) {
   }
   if (at) useCameraFocus.getState().focusTile(Math.round(at.x), Math.round(at.y))
 }
+
+let wantWholeHistory = false
+
+/** Opens the Chronicles on the "Whole history" tab (the card's "Chronicle" button). */
+export function openWholeHistory() {
+  wantWholeHistory = true
+  useUIStore.getState().openChronicles()
+}
+
+/** The tab the Chronicles open on: "Whole history" once after openWholeHistory, else `fallback`. */
+export function initialChronicleTab<T extends string>(fallback: T): T | 'all' {
+  const want = wantWholeHistory
+  wantWholeHistory = false
+  return want && isDesktop() ? 'all' : fallback
+}
