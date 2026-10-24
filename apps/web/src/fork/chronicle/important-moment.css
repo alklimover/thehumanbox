@@ -1,10 +1,9 @@
 /* Fork: the "Important moment" card (ImportantMoment.tsx): top centre, over the map, under the modals.
-   The top left is the "Interesting now" panel's. */
+   placement.ts keeps it clear of the mode panel in the top-left corner; these are the defaults. */
 .fmoment {
   position: fixed;
   top: calc(56px + var(--safe-top, 0px));
-  left: 50%;
-  transform: translateX(-50%);
+  left: calc(50vw - min(260px, 50vw - 16px));
   width: min(520px, calc(100vw - 32px));
   z-index: 60;
   background: #28201a;

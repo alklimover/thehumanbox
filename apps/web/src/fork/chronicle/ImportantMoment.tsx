@@ -22,6 +22,7 @@ import {
   type ChronicleEntry,
 } from './model'
 import { goToTribe, openWholeHistory } from './navigate'
+import { useCardPlacement, type Placement } from './placement'
 import { refreshRuntime } from './runtime-refresh'
 import {
   RULE_LABEL,
@@ -113,10 +114,12 @@ function Watcher({ setSpeed, resume }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [alert])
 
+  const place = useCardPlacement(alert !== null)
   if (!alert) return null
   return (
     <MomentCard
       alert={alert}
+      place={place}
       ignored={settings.rules[alert.main.rule] === 'ignore'}
       onIgnore={(ignore) =>
         setSettings({ rules: { [alert.main.rule]: ignore ? 'ignore' : alertDefault(alert) } })
@@ -140,6 +143,7 @@ function alertDefault(alert: WatchAlert) {
 
 export function MomentCard({
   alert,
+  place,
   ignored,
   onIgnore,
   onShow,
@@ -149,6 +153,7 @@ export function MomentCard({
   onClose,
 }: {
   alert: WatchAlert
+  place?: Placement
   ignored: boolean
   onIgnore: (ignore: boolean) => void
   onShow: () => void
@@ -161,7 +166,12 @@ export function MomentCard({
   const { lines, more } = alsoShown(alert)
   const firstInto = alert.main.kind === 'era' && alert.focus ? alert.focus : null
   return (
-    <div className="fmoment" role="status" aria-live="polite">
+    <div
+      className="fmoment"
+      role="status"
+      aria-live="polite"
+      style={place && { left: place.left, top: place.top, width: place.width }}
+    >
       <div className="fmoment-head">
         <span className="fmoment-title">
           {alert.action === 'pause' ? t('moment.paused') : t('moment.slowed')}
