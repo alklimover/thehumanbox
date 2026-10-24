@@ -9,7 +9,7 @@ import { fmtNumber, t, type MessageKey } from '../i18n'
 import { API_BASE } from '../shared/config'
 import { getDesktop, isDesktop } from '../shared/desktop'
 
-export type SimPowerReason = 'thermal' | 'low-power' | 'battery' | 'hidden'
+export type SimPowerReason = 'thermal' | 'low-power' | 'battery'
 
 export interface SimPowerState {
   /** False outside macOS, or while no simulation runs. */
@@ -19,7 +19,7 @@ export interface SimPowerState {
 }
 
 const POLL_MS = 2_000
-const REASONS: readonly SimPowerReason[] = ['thermal', 'low-power', 'battery', 'hidden']
+const REASONS: readonly SimPowerReason[] = ['thermal', 'low-power', 'battery']
 
 /** Below this share of the requested speed the difference is worth showing. */
 const LAG_SHARE = 0.8

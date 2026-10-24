@@ -9,7 +9,7 @@ import { isTourSupported, markSeen } from './tour'
 
 type Side = 'top' | 'bottom' | 'left' | 'right' | 'auto'
 
-interface StepDef {
+export interface StepDef {
   /** Element to point at; empty for a centred card. */
   selector: string
   title: string
@@ -137,13 +137,14 @@ export interface TourHandle {
 
 let activeTour: TourHandle | null = null
 
-export function runTour(worldKind: PlayerWorldKind = 'local'): TourHandle | null {
+/** Runs the tour, or the given steps on the same card (the fork's mode tips, fork/modes/guide.ts). */
+export function runTour(worldKind: PlayerWorldKind = 'local', custom?: StepDef[]): TourHandle | null {
   if (!isTourSupported()) {
     markSeen()
     return null
   }
   activeTour?.complete()
-  const steps = tourSteps(worldKind).filter((s) => !s.selector || find(s.selector))
+  const steps = (custom ?? tourSteps(worldKind)).filter((s) => !s.selector || find(s.selector))
   if (steps.length === 0) {
     markSeen()
     return null

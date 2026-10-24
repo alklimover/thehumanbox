@@ -12,10 +12,9 @@ const cool: PowerInputs = {
   onBattery: false,
   lowPowerMode: false,
   thermalState: "nominal",
-  windowVisible: true,
 };
 
-test("on mains power, cool and in sight, the simulation has the performance cores", () => {
+test("on mains power and cool, the simulation has the performance cores", () => {
   assert.deepEqual(decidePowerMode(cool), { mode: "performance", reason: null });
   assert.deepEqual(decidePowerMode({ ...cool, thermalState: "fair" }), {
     mode: "performance",
@@ -28,7 +27,7 @@ test("on mains power, cool and in sight, the simulation has the performance core
   });
 });
 
-test("battery, Low Power Mode, heat or a hidden window move it to the efficiency cores", () => {
+test("battery, Low Power Mode or heat move it to the efficiency cores", () => {
   assert.deepEqual(decidePowerMode({ ...cool, onBattery: true }), {
     mode: "efficiency",
     reason: "battery",
@@ -45,10 +44,13 @@ test("battery, Low Power Mode, heat or a hidden window move it to the efficiency
     mode: "efficiency",
     reason: "thermal",
   });
-  assert.deepEqual(decidePowerMode({ ...cool, windowVisible: false }), {
-    mode: "efficiency",
-    reason: "hidden",
-  });
+});
+
+test("a hidden or minimised window does not matter: the world keeps the performance cores", () => {
+  // Window visibility is not an input at all, so mains power and a cool Mac
+  // are enough for the performance cores.
+  assert.deepEqual(Object.keys(cool).sort(), ["lowPowerMode", "onBattery", "thermalState"]);
+  assert.deepEqual(decidePowerMode(cool), { mode: "performance", reason: null });
 });
 
 test("the reason shown is the most telling one", () => {
@@ -56,7 +58,6 @@ test("the reason shown is the most telling one", () => {
     onBattery: true,
     lowPowerMode: true,
     thermalState: "critical",
-    windowVisible: false,
   };
   assert.equal(decidePowerMode(everything).reason, "thermal");
   assert.equal(decidePowerMode({ ...everything, thermalState: "nominal" }).reason, "low-power");

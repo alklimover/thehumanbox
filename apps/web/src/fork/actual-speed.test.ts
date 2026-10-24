@@ -52,6 +52,8 @@ describe('the power note', () => {
       reason: 'battery',
     })
     expect(parsePowerState({ managed: true, mode: 'efficiency', reason: 'solar' })?.reason).toBeNull()
+    // A hidden window no longer moves the world off the performance cores.
+    expect(parsePowerState({ managed: true, mode: 'efficiency', reason: 'hidden' })?.reason).toBeNull()
     expect(parsePowerState({ managed: true, mode: 'turbo', reason: null })).toBeNull()
     expect(parsePowerState('junk')).toBeNull()
   })

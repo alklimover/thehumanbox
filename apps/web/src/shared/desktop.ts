@@ -47,7 +47,12 @@ export interface WorldSlot {
   savedAt: number
   sizeBytes: number
   live: boolean
+  /** How the player plays this world (fork/modes); null until chosen. Missing in an older desktop shell. */
+  role?: WorldRole | null
 }
+
+/** Fork: watching a world, or answering it as its god (fork/modes). */
+export type WorldRole = 'observer' | 'god'
 
 export interface DesktopBridge {
   isDesktop: true
@@ -101,8 +106,11 @@ export interface DesktopBridge {
       seed?: string | null
       populationCap?: number | null
       name?: string | null
+      role?: WorldRole | null
     }): Promise<{ created: boolean; hash: string; seed: string }>
     rename(hash: string, name: string): Promise<WorldSlot[]>
+    /** Missing in an older desktop shell. */
+    setRole?(hash: string, role: WorldRole): Promise<WorldSlot[]>
     trash(hash: string): Promise<WorldSlot[]>
   }
   on(

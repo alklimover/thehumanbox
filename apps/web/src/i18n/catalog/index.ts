@@ -10,6 +10,7 @@ import { load } from './load'
 import { map } from './map'
 import { modals } from './modals'
 import { model } from './model'
+import { modes } from './modes'
 import { onboarding } from './onboarding'
 import { panels } from './panels'
 import { people } from './people'
@@ -39,6 +40,7 @@ const AREAS = {
   map,
   modals,
   model,
+  modes,
   onboarding,
   panels,
   people,
