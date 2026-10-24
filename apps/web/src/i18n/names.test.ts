@@ -44,7 +44,7 @@ describe('names in Cyrillic', () => {
   it('shows names in Cyrillic in translated simulation text only', () => {
     setLocaleForTests('ru')
     expect(simText('life', 'heard that Giho built a navigation cairn', { sex: 'female' })).toMatch(
-      /^услышала, что Гихо /,
+      /^услышала, что человек по имени Гихо /,
     )
     expect(simText('event', 'some line no table knows, by Giho')).toBe('some line no table knows, by Giho')
     expect(simActor('Giho')).toBe('Гихо')

@@ -3,9 +3,10 @@
 // the simulation wrote them; they are grouped by calendar year here and
 // translated only when shown.
 import { calendarSeasonAt, YEAR_TICKS } from '../../game/model/calendar'
-import { t, tn, type MessageKey } from '../../i18n'
+import { getLocale, t, tn, type MessageKey } from '../../i18n'
 import { displayName } from '../../i18n/names'
 import { simLabel } from '../../i18n/sim'
+import { milestoneDescription } from '../../i18n/sim/milestone'
 import { simActor, simText, type Sex } from '../../i18n/simtext'
 
 export interface ChronicleTribeLink {
@@ -249,11 +250,36 @@ export function entryText(
     return peak > 0 ? tn('chronicle.diedOutPeak', peak, { name }) : t('chronicle.diedOut', { name })
   }
   if (e.src === 'era') return t('chronicle.worldEra', { era: simLabel('era', e.text) })
+  if (e.src === 'headline' && getLocale() === 'en') {
+    const milestone = milestoneLine(e.text)
+    if (milestone) return milestone
+  }
   const sex = entrySex(e, sexOf)
   const person = entryPerson(e)
   const ctx = { sex, sexOf: (name: string) => (name === person && sex ? sex : sexOf(name)) }
   const text = withNames(e.text, e.tribes)
   return simText(e.src === 'headline' ? 'headline' : 'event', text, ctx)
+}
+
+/** A world milestone's headline ("pop_500: the people number five hundred") without its id. */
+function milestoneLine(text: string): string | null {
+  const [, id, rest] = /^([a-z0-9_]+): (.+)$/s.exec(text) ?? []
+  return id && milestoneDescription[id]?.en === rest ? rest : null
+}
+
+/**
+ * The sex of the people the loaded lines are about, by name: a memory quoting
+ * someone no longer in the world on screen still agrees when a line of their
+ * own told it.
+ */
+export function sexesOfLines(entries: readonly ChronicleEntry[]): Map<string, Sex> {
+  const out = new Map<string, Sex>()
+  for (const e of entries) {
+    if (e.sex !== 'male' && e.sex !== 'female') continue
+    const person = entryPerson(e)
+    if (person && !out.has(person)) out.set(person, e.sex)
+  }
+  return out
 }
 
 /** A line that starts the row (no actor before it) starts with a capital. */

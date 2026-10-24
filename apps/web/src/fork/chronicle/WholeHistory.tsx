@@ -5,7 +5,7 @@ import { calendarAt } from '../../game/model/calendar'
 import { fmtNumber, t, tn } from '../../i18n'
 import { displayName } from '../../i18n/names'
 import { simLabel } from '../../i18n/sim'
-import { sexByName } from '../../i18n/simtext'
+import { sexByName, type Sex } from '../../i18n/simtext'
 import type { WorldState } from '../../shared/types'
 import { useWorldStore } from '../../state/worldStore'
 import { fetchChroniclePage, fetchChronicleTribes } from './api'
@@ -26,14 +26,25 @@ import {
   saveCategories,
   seasonOf,
   sentence,
+  sexesOfLines,
   shownActor,
   tribeOptions,
   type ChronicleCategory,
   type ChronicleEntry,
   type ChronicleFilter,
   type ChronicleTribe,
+  type ChronicleTribeLink,
   type ChronicleYear,
 } from './model'
+import {
+  collapsePeople,
+  groupText,
+  memberText,
+  personText,
+  type PersonKind,
+  type PersonLine,
+  type PersonMember,
+} from './people'
 import './whole-history.css'
 
 const PAGE = 200
@@ -82,10 +93,12 @@ export function WholeHistory() {
   const [state, setState] = useState<State>(EMPTY)
   const [tribes, setTribes] = useState<ChronicleTribe[]>([])
   const [alive, setAlive] = useState<Set<string> | null>(() => aliveLineages(useWorldStore.getState().world))
+  const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set())
   const filter: ChronicleFilter = useMemo(() => ({ categories, lineage }), [categories, lineage])
   const stateRef = useRef(state)
   stateRef.current = state
   const loadingMore = useRef(false)
+  const listRef = useRef<HTMLDivElement>(null)
 
   // The first page whenever the filter changes.
   useEffect(() => {
@@ -174,6 +187,12 @@ export function WholeHistory() {
       })
   }, [filter])
 
+  // A page of people folds into a few rows: load on until the list can scroll.
+  useEffect(() => {
+    const el = listRef.current
+    if (el && state.more && !state.loading && el.scrollHeight <= el.clientHeight + 400) loadMore()
+  }, [state.entries, state.more, state.loading, loadMore])
+
   const toggle = (c: ChronicleCategory) => {
     const next = categories.includes(c) ? categories.filter((x) => x !== c) : [...categories, c]
     const ordered = CATEGORIES.filter((x) => next.includes(x))
@@ -181,10 +200,21 @@ export function WholeHistory() {
     setCategories(ordered)
   }
 
-  const groups = useMemo(() => groupByYear(state.entries, state.years), [state.entries, state.years])
+  const groups = useMemo(
+    () => groupByYear(state.entries, state.years).map((g) => ({ ...g, items: collapsePeople(g.entries) })),
+    [state.entries, state.years],
+  )
   const options = useMemo(() => tribeOptions(tribes, alive), [tribes, alive])
   const peaks = useMemo(() => new Map(tribes.map((tr) => [tr.id, tr.peak])), [tribes])
-  const sex = sexByName(useWorldStore.getState().world?.organisms)
+  const lineSexes = useMemo(() => sexesOfLines(state.entries), [state.entries])
+  const worldSex = sexByName(useWorldStore.getState().world?.organisms)
+  const sex = (name: string): Sex | null => worldSex(name) ?? lineSexes.get(name) ?? null
+  const flip = (key: string) =>
+    setOpened((was) => {
+      const next = new Set(was)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
 
   return (
     <div className="fch">
@@ -215,6 +245,7 @@ export function WholeHistory() {
         </label>
       </div>
       <div
+        ref={listRef}
         className="fch-list"
         onScroll={(e) => {
           const el = e.currentTarget
@@ -238,9 +269,31 @@ export function WholeHistory() {
                 </span>
                 <span className="fch-year-count">{fmtNumber(g.count)}</span>
               </div>
-              {g.entries.map((e) => (
-                <EntryRow key={e.id} entry={e} tribes={tribes} alive={alive} peaks={peaks} sex={sex} />
-              ))}
+              {g.items.map((item) =>
+                item.type === 'entry' ? (
+                  <EntryRow
+                    key={item.entry.id}
+                    entry={item.entry}
+                    line={item.line}
+                    tribes={tribes}
+                    alive={alive}
+                    peaks={peaks}
+                    sex={sex}
+                  />
+                ) : (
+                  <PeopleRow
+                    key={item.key}
+                    kind={item.kind}
+                    tick={item.tick}
+                    members={item.members}
+                    open={opened.has(item.key)}
+                    onFlip={() => flip(item.key)}
+                    tribes={tribes}
+                    alive={alive}
+                    sex={sex}
+                  />
+                ),
+              )}
             </section>
           ))
         )}
@@ -258,23 +311,28 @@ export function WholeHistory() {
   )
 }
 
+type SexOf = (name: string) => Sex | null
+
 function EntryRow({
   entry,
+  line,
   tribes,
   alive,
   peaks,
   sex,
 }: {
   entry: ChronicleEntry
+  line: PersonLine | null
   tribes: readonly ChronicleTribe[]
   alive: ReadonlySet<string> | null
   peaks: ReadonlyMap<string, number>
-  sex: ReturnType<typeof sexByName>
+  sex: SexOf
 }) {
   const actor = entryActor(entry)
   const tribe = liveTribe(entry, tribes, alive)
   const first = entry.tribes[0]
-  const text = entryText(entry, sex, first ? (peaks.get(first.id) ?? 0) : 0)
+  const peak = first ? (peaks.get(first.id) ?? 0) : 0
+  const text = line ? personText({ entry, line }, sex, peak) : entryText(entry, sex, peak)
   return (
     <div className="fch-row">
       <span className="fch-season">{seasonOf(entry.tick)}</span>
@@ -291,21 +349,91 @@ function EntryRow({
           </span>
         )}
       </span>
-      <span className="fch-go">
-        {tribe ? (
+      <GoTo tribe={tribe} gone={!!first} />
+    </div>
+  )
+}
+
+/** The ▸ to a tribe on the map, or «(вымерли)» when the line's tribes have nobody left. */
+function GoTo({ tribe, gone }: { tribe: ChronicleTribeLink | null; gone: boolean }) {
+  return (
+    <span className="fch-go">
+      {tribe ? (
+        <button
+          type="button"
+          className="fch-go-btn"
+          title={t('chronicle.goTo', { name: displayName(tribe.name) })}
+          aria-label={t('chronicle.goTo', { name: displayName(tribe.name) })}
+          onClick={() => goToTribe(tribe.id)}
+        >
+          ▸
+        </button>
+      ) : (
+        gone && <span className="fch-gone">{t('chronicle.diedOutMark')}</span>
+      )}
+    </span>
+  )
+}
+
+/** A season's deaths or new elders in one row, opened to the names. */
+function PeopleRow({
+  kind,
+  tick,
+  members,
+  open,
+  onFlip,
+  tribes,
+  alive,
+  sex,
+}: {
+  kind: PersonKind
+  tick: number
+  members: readonly PersonMember[]
+  open: boolean
+  onFlip: () => void
+  tribes: readonly ChronicleTribe[]
+  alive: ReadonlySet<string> | null
+  sex: SexOf
+}) {
+  // The ▸ when everyone was of one tribe that still has people.
+  const live = members.map((m) => liveTribe(m.entry, tribes, alive))
+  const tribe = live.every((tr) => tr && tr.id === live[0]?.id) ? live[0] : null
+  const gone = members.every((m) => m.entry.tribes.length > 0)
+  return (
+    <div className="fch-people">
+      <div className="fch-row">
+        <span className="fch-season">{seasonOf(tick)}</span>
+        <span className="fch-icon" style={{ color: CATEGORY_COLOR.people }}>
+          {CATEGORY_ICON.people}
+        </span>
+        <span className="fch-text">
           <button
             type="button"
-            className="fch-go-btn"
-            title={t('chronicle.goTo', { name: displayName(tribe.name) })}
-            aria-label={t('chronicle.goTo', { name: displayName(tribe.name) })}
-            onClick={() => goToTribe(tribe.id)}
+            className="fch-people-head"
+            aria-expanded={open}
+            title={open ? t('chronicle.people.close') : t('chronicle.people.open')}
+            onClick={onFlip}
           >
-            ▸
+            <span className="fch-people-mark">{open ? '▾' : '▸'}</span> {groupText(kind, members)}
           </button>
-        ) : (
-          first && <span className="fch-gone">{t('chronicle.diedOutMark')}</span>
-        )}
-      </span>
+        </span>
+        <GoTo tribe={tribe} gone={gone && live.every((tr) => !tr)} />
+      </div>
+      {open && (
+        <ul className="fch-people-list">
+          {members.map((m) => (
+            <li key={m.entry.id}>
+              {memberText(m, sex)}
+              {m.entry.restored && (
+                <span className="fch-restored" title={t('chronicle.restoredTip')}>
+                  {' '}
+                  · {t('chronicle.restored')}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

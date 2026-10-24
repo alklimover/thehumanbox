@@ -4,6 +4,7 @@ import { setLocaleForTests } from '../locale'
 import { cargoLabel, simLabel, simLabelAsSent } from '.'
 import { SIM_TABLES, type SimDomain } from './tables'
 import { milestoneDescription } from './milestone'
+import { simText } from '../simtext'
 
 const SIM = '../../../../../crates/sim-core/src/sim/'
 
@@ -141,6 +142,22 @@ describe('world and economy names', () => {
       expect(descriptions, id).toContain(`"${line.en}"`)
       expect(line.ru.trim(), id).not.toBe('')
     }
+  })
+
+  it('announce a milestone in Russian without saying its name twice', () => {
+    setLocaleForTests('ru')
+    const stems = (text: string) => (text.toLowerCase().match(/[а-яё]{4,}/g) ?? []).map((w) => w.slice(0, 4))
+    for (const [id, line] of Object.entries(milestoneDescription)) {
+      const shown = simText('headline', `${id}: ${line.en}`)
+      const [name, tail] = shown.split(' — ')
+      expect(name, id).toBe(simLabel('milestone', id))
+      for (const stem of stems(name)) expect(tail, `${id}: ${shown}`).not.toContain(stem)
+    }
+    expect(simText('headline', 'pop_500: the people number five hundred')).toBe(
+      'пятьсот человек — народ разросся',
+    )
+    // The event feed has no name before it: the line stands alone.
+    expect(simText('event', 'the people number five hundred')).toBe('людей уже пятьсот')
   })
 
   it('show the prettified id in English and the Russian name in Russian', () => {

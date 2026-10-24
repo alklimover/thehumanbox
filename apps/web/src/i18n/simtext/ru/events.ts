@@ -34,8 +34,8 @@ export const events: SimTextTable = {
     'отметил[а] место, которое заливает водой, чтобы уберечь своих',
 
   // Templates: names stay as they are, ids go through the simLabel tables.
-  'heard that {actor_name} {detail}': 'услышал[а], что {actor_name} {detail@actor_name}',
-  'noticed {actor_name} {detail}': 'заметил[а]: {actor_name} {detail@actor_name}',
+  'heard that {actor_name} {detail}': 'услышал[а], что {actor_name|someone} {detail@actor_name}',
+  'noticed {actor_name} {detail}': 'заметил[а]: {actor_name|someone} {detail@actor_name}',
   'watched {actor_name} pass': 'видел[а], как уходит {actor_name}',
   'found and ate food at ({cx},{cy})': '[нашёл|нашла] и съел[а] еду в ({cx},{cy})',
   'drank from water at ({cx},{cy})': 'попил[а] воды в ({cx},{cy})',
@@ -123,7 +123,7 @@ export const events: SimTextTable = {
     'начал[а] строить: {name|building} (дерево {wood}, камень {stone}, богатство {wealth})',
   'expecting {child_name} (due in ~2 days)': 'ждёт ребёнка ({child_name}), роды через пару дней',
   'saw {actor_name} take up a trade: {detail}':
-    'видел[а], как {actor_name} сменил ремесло: {detail@actor_name}',
+    'видел[а], как {actor_name|someone} берётся за ремесло: {detail@actor_name}',
 
   'mourned the loss of a young kin member': 'оплакал[а] юного родича',
   'sounded the alarm, alerting the group to an approaching threat':

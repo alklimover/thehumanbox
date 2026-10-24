@@ -15,6 +15,7 @@ import {
   pageQuery,
   seasonOf,
   sentence,
+  sexesOfLines,
   tribeOptions,
   withNames,
   type ChronicleEntry,
@@ -229,6 +230,37 @@ describe('the filter', () => {
     })
     expect(entryText(gone)).toBe('Не стало Гуто. В памяти осталось: «влюбилась в Кепор»')
     expect(entryText({ ...gone, sex: undefined })).toContain('влюбился/ась')
+  })
+
+  it('shows a world milestone in English without its id, and in Russian by its name', () => {
+    const milestone = entry(1, 1, {
+      src: 'headline',
+      kind: 'milestone',
+      cat: 'milestones',
+      actor: '',
+      text: 'pop_500: the people number five hundred',
+    })
+    expect(sentence(entryText(milestone))).toBe('The people number five hundred')
+    expect(entryText({ ...milestone, text: 'some_id: not a milestone line' })).toBe(
+      'some_id: not a milestone line',
+    )
+    setLocaleForTests('ru')
+    expect(sentence(entryText(milestone))).toBe('Пятьсот человек — народ разросся')
+  })
+
+  it('knows the sex of the people its lines are about', () => {
+    const gone = entry(1, 1, {
+      src: 'headline',
+      actor: '',
+      text: 'Guto is gone. What they carried: "x"',
+      sex: 'female',
+    })
+    const theft = entry(2, 1, { kind: 'theft', actor: 'Ramona', text: 'stole 3', sex: 'male' })
+    const unknown = entry(3, 1, { kind: 'theft', actor: 'Daki', text: 'stole 3' })
+    expect([...sexesOfLines([gone, theft, unknown])]).toEqual([
+      ['Guto', 'female'],
+      ['Ramona', 'male'],
+    ])
   })
 
   it('takes a tribe the world shows alive as alive, whatever the record says', () => {
