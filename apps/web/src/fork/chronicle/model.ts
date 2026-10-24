@@ -27,6 +27,8 @@ export interface ChronicleEntry {
   era: string
   restored?: boolean
   tribes: ChronicleTribeLink[]
+  /** The sex of the person the line is about, as the simulation knew it. */
+  sex?: string
 }
 
 export interface ChronicleYear {
@@ -209,30 +211,49 @@ export function entryActor(e: ChronicleEntry): string {
   return withNames(e.text, e.tribes).includes(actor) ? '' : actor
 }
 
+/** The person a line is about: an event's actor, or the name a headline starts with. */
+export function entryPerson(e: ChronicleEntry): string | null {
+  if (e.src === 'event') return e.actor || null
+  if (e.src !== 'headline') return null
+  const first = /^[^\p{L}]*(\p{Lu}\p{Ll}+) /u.exec(e.text)?.[1]
+  return first && first !== 'The' && first !== 'Year' ? first : null
+}
+
 /**
- * Whose sex the Russian verbs follow: the person the line is about, looked up
- * by name. A tribe reads as «народ» (masculine) rather than «учредил(а)».
+ * Whose sex the Russian verbs follow: the person the line is about, as the
+ * simulation recorded it, or looked up by name. A tribe reads as «народ»
+ * (masculine) rather than «учредил(а)».
  */
 export function entrySex(e: ChronicleEntry, sexOf: (name: string) => Sex | null): Sex | null {
+  if (e.sex === 'male' || e.sex === 'female') return e.sex
   if (e.src === 'event') {
     const actor = withNames(e.actor, e.tribes)
     if (e.tribes.some((tr) => tr.name === actor)) return 'male'
-    return sexOf(e.actor)
   }
-  const person =
-    /^(\S+) (?:became an elder|is gone\.)/.exec(e.text)?.[1] ?? /^👑\S*\s+(\S+) of the /u.exec(e.text)?.[1]
+  const person = entryPerson(e)
   return person ? sexOf(person) : null
 }
 
-/** The line as shown in the player's language (the actor is shown apart, see entryActor). */
-export function entryText(e: ChronicleEntry, sex: Sex | null = null, peak = 0): string {
+/**
+ * The line as shown in the player's language (the actor is shown apart, see
+ * entryActor). `sexOf` knows the people of the world on screen; the line's own
+ * person comes from the line, so a memory of someone long dead still agrees.
+ */
+export function entryText(
+  e: ChronicleEntry,
+  sexOf: (name: string) => Sex | null = () => null,
+  peak = 0,
+): string {
   if (e.src === 'server' && e.kind === 'died_out') {
     const name = displayName(e.tribes[0]?.name ?? e.actor)
     return peak > 0 ? tn('chronicle.diedOutPeak', peak, { name }) : t('chronicle.diedOut', { name })
   }
   if (e.src === 'era') return t('chronicle.worldEra', { era: simLabel('era', e.text) })
+  const sex = entrySex(e, sexOf)
+  const person = entryPerson(e)
+  const ctx = { sex, sexOf: (name: string) => (name === person && sex ? sex : sexOf(name)) }
   const text = withNames(e.text, e.tribes)
-  return simText(e.src === 'headline' ? 'headline' : 'event', text, { sex })
+  return simText(e.src === 'headline' ? 'headline' : 'event', text, ctx)
 }
 
 /** A line that starts the row (no actor before it) starts with a capital. */

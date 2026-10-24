@@ -25,6 +25,8 @@ mod resolved;
 mod tests;
 
 use action_set::ActionSet;
+#[cfg(test)]
+pub(crate) use available::available_actions_into_reference;
 pub use available::{available_actions, available_actions_into};
 use band_table::*;
 use band_types::*;

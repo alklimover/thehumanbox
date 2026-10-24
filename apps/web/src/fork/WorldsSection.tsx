@@ -7,6 +7,8 @@ import { t, tn } from '../i18n'
 import type { DesktopBridge, WorldSlot } from '../shared/desktop'
 import { PopulationLoadSlider } from './PopulationLoad'
 import { worldFacts, worldTitle } from './worlds-text'
+import { ROLE_ICONS, ROLES, useModeStore, type Role } from './modes/role'
+import { ToolSprite } from '../ui/toolbar/ToolSprite'
 
 type Worlds = NonNullable<DesktopBridge['forkWorlds']>
 
@@ -28,6 +30,8 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
   const [seed, setSeed] = useState('')
   const [cap, setCap] = useState<number | null>(null)
   const [tickMs, setTickMs] = useState(100)
+  // A new world is played the way this one is, unless the player picks the other.
+  const [role, setRole] = useState<Role>(() => useModeStore.getState().role ?? 'observer')
 
   const run = useCallback(async (label: string | null, action: () => Promise<unknown>) => {
     setBusy(label ?? '')
@@ -85,6 +89,12 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
                 <div className="settings-row-title">
                   {worldTitle(w)}
                   {w.live && <span className="settings-beta">{t('worlds.playing')}</span>}
+                  {w.role && (
+                    <span className="fork-mode-badge">
+                      <ToolSprite icon={ROLE_ICONS[w.role]} size={10} />
+                      {w.role === 'god' ? t('modes.badge.god') : t('modes.badge.observer')}
+                    </span>
+                  )}
                 </div>
               )}
               <div className="settings-row-desc">{worldFacts(w)}</div>
@@ -178,6 +188,29 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
           onChange={(e) => setSeed(e.target.value)}
         />
       </div>
+      <div className="settings-field">
+        <div className="settings-field-label">{t('modes.worlds.role')}</div>
+        <div className="fork-mode-cards compact" role="radiogroup" aria-label={t('modes.worlds.role')}>
+          {ROLES.map((r) => (
+            <button
+              key={r}
+              type="button"
+              role="radio"
+              aria-checked={role === r}
+              className={'fork-mode-card' + (role === r ? ' picked' : '')}
+              onClick={() => setRole(r)}
+            >
+              <ToolSprite icon={ROLE_ICONS[r]} size={20} />
+              <span className="fork-mode-card-name">
+                {r === 'god' ? t('modes.god.name') : t('modes.observer.name')}
+              </span>
+              <span className="fork-mode-card-promise">
+                {r === 'god' ? t('modes.god.promise') : t('modes.observer.promise')}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
       {cap !== null && (
         <div className="settings-field">
           <div className="settings-field-label">{tn('settings.sim.capacity', cap)}</div>
@@ -198,7 +231,7 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
           disabled={busy !== null}
           onClick={() =>
             void run(t('worlds.new.creating'), () =>
-              api.create({ name: name.trim() || null, seed: seed.trim() || null, populationCap: cap }),
+              api.create({ name: name.trim() || null, seed: seed.trim() || null, populationCap: cap, role }),
             )
           }
         >

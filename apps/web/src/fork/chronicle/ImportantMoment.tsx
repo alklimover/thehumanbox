@@ -15,7 +15,6 @@ import {
   CATEGORY_COLOR,
   CATEGORY_ICON,
   entryActor,
-  entrySex,
   entryText,
   sentence,
   shownActor,
@@ -53,7 +52,7 @@ function asEntry(line: AlertLine): ChronicleEntry {
 function lineText(line: AlertLine): string {
   const people = useWorldStore.getState().world?.organisms
   const entry = asEntry(line)
-  const text = entryText(entry, entrySex(entry, sexByName(people)))
+  const text = entryText(entry, sexByName(people))
   const actor = entryActor(entry)
   return actor ? `${shownActor(actor)} ${text}` : sentence(text)
 }

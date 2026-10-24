@@ -86,6 +86,117 @@ pub(super) fn dispatch_route_index(
     actor_idx: usize,
     partner_lineage: Option<&str>,
 ) -> Option<usize> {
+    let found = pick_dispatch_route(sim, actor_idx, partner_lineage);
+    #[cfg(test)]
+    assert_eq!(
+        found,
+        dispatch_route_index_reference(sim, actor_idx, partner_lineage),
+        "dispatch route of actor {actor_idx} toward {partner_lineage:?}"
+    );
+    found
+}
+
+pub(super) fn pick_dispatch_route(
+    sim: &Simulation,
+    actor_idx: usize,
+    partner_lineage: Option<&str>,
+) -> Option<usize> {
+    let actor = sim.organisms.get(actor_idx).filter(|organism| organism.alive)?;
+    if sim.caravans.len() >= MAX_CARAVANS || cargo_candidate(sim, actor_idx).is_none() {
+        return None;
+    }
+
+    // The route `dispatch_route_index_reference` picks: of the routes that pass
+    // every check, the first by (caravans under way, last dispatch, id) after
+    // `sort_unstable`. The settlement check costs a census of a tribe, so it
+    // runs last and only until a route passes: the actor's tribe is counted
+    // once, each partner tribe at most once.
+    let actor_lineage = actor.lineage_id.as_str();
+    let candidates: Vec<(usize, &str, (usize, u64, u32))> = sim
+        .trade_routes
+        .iter()
+        .enumerate()
+        .filter_map(|(route_index, route)| {
+            let receiver_lineage = if route.lineage_a == actor_lineage {
+                route.lineage_b.as_str()
+            } else if route.lineage_b == actor_lineage {
+                route.lineage_a.as_str()
+            } else {
+                return None;
+            };
+            if partner_lineage.is_some_and(|requested| requested != receiver_lineage)
+                || route_is_embargoed(sim, actor_lineage, receiver_lineage)
+            {
+                return None;
+            }
+            let active = sim
+                .caravans
+                .iter()
+                .filter(|caravan| caravan.route_id == route.id)
+                .count();
+            (active < MAX_CARAVANS_PER_ROUTE).then_some((
+                route_index,
+                receiver_lineage,
+                (active, route.last_dispatch_tick, route.id),
+            ))
+        })
+        .collect();
+    let settled = |lineage: &str| {
+        settlements::tier_and_center(sim, lineage)
+            .is_some_and(|(tier, center)| tier >= 1 && valid_world_point(center))
+    };
+    let mut actor_settled: Option<bool> = None;
+    let mut judged: Vec<(&str, bool)> = Vec::new();
+    // `settlement_endpoints(sim, actor_lineage, receiver).is_some()` for a candidate.
+    let mut has_endpoints = |candidate: usize| {
+        let receiver = candidates[candidate].1;
+        if actor_lineage.is_empty() || receiver.is_empty() || receiver == actor_lineage {
+            return false;
+        }
+        if !*actor_settled.get_or_insert_with(|| settled(actor_lineage)) {
+            return false;
+        }
+        if let Some(&(_, answer)) = judged.iter().find(|(lineage, _)| *lineage == receiver) {
+            return answer;
+        }
+        let answer = settled(receiver);
+        judged.push((receiver, answer));
+        answer
+    };
+    let mut by_key: Vec<usize> = (0..candidates.len()).collect();
+    by_key.sort_by_key(|&candidate| candidates[candidate].2);
+    let chosen = by_key
+        .iter()
+        .copied()
+        .find(|&candidate| has_endpoints(candidate))?;
+    let key = candidates[chosen].2;
+    if candidates.iter().filter(|candidate| candidate.2 == key).count() > 1 {
+        // Two routes share an id (a damaged save): which one `sort_unstable`
+        // puts first depends on the rest of the list, so build that list.
+        let mut passing: Vec<(usize, usize, u64, u32)> = (0..candidates.len())
+            .filter(|&candidate| has_endpoints(candidate))
+            .map(|candidate| {
+                let (route_index, _, (active, last_dispatch_tick, route_id)) = candidates[candidate];
+                (route_index, active, last_dispatch_tick, route_id)
+            })
+            .collect();
+        passing.sort_unstable_by_key(|(_, active, last_dispatch_tick, route_id)| {
+            (*active, *last_dispatch_tick, *route_id)
+        });
+        return passing.first().map(|(route_index, _, _, _)| *route_index);
+    }
+    Some(candidates[chosen].0)
+}
+
+/// The route the dispatch check picked when it asked `settlement_endpoints`
+/// (two censuses) for every route of the actor's tribe, kept to check
+/// `dispatch_route_index` against.
+#[cfg(test)]
+pub(super) fn dispatch_route_index_reference(
+    sim: &Simulation,
+    actor_idx: usize,
+    partner_lineage: Option<&str>,
+) -> Option<usize> {
     let actor = sim.organisms.get(actor_idx).filter(|organism| organism.alive)?;
     if sim.caravans.len() >= MAX_CARAVANS || cargo_candidate(sim, actor_idx).is_none() {
         return None;

@@ -10,6 +10,10 @@
 // world is verified, the next startup puts the previous marker back. A new
 // world parks the marker as `_live.reset-*`, exactly like the upstream reset,
 // so the same crash recovery restores it.
+//
+// fork-world.json also keeps how the player plays the world (`role`, the
+// fork's observer and god modes, docs/fork/MODES.ru.md); the renderer reads it
+// from the list and asks for it when a world has none.
 import { BrowserWindow, IpcMain, shell } from "electron";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
@@ -41,11 +45,15 @@ import {
   validateWorldSaveBytesInWorker,
 } from "./world-safety";
 
+/** How the player plays a world: watching it, or answering it as its god. */
+export type WorldRole = "observer" | "god";
+
 /** What the fork remembers about a world, beside its save: worlds/<hash>/fork-world.json. */
 interface WorldMeta {
   name?: string;
   seed?: string;
   createdAt?: number;
+  role?: WorldRole;
 }
 
 export interface WorldSlot {
@@ -56,6 +64,7 @@ export interface WorldSlot {
   savedAt: number;
   sizeBytes: number;
   live: boolean;
+  role: WorldRole | null;
 }
 
 const META_FILE = "fork-world.json";
@@ -82,6 +91,11 @@ export function seedFromText(text: string | null | undefined): string | null {
 }
 
 // ---------------------------------------------------------------- the list
+
+/** A role as stored or sent, or null for anything else. */
+export function worldRole(value: unknown): WorldRole | null {
+  return value === "observer" || value === "god" ? value : null;
+}
 
 function readMeta(dir: string): WorldMeta {
   try {
@@ -148,6 +162,7 @@ export function listWorlds(worldsDir: string): WorldSlot[] {
       savedAt: stat.mtimeMs,
       sizeBytes: stat.isFile() ? stat.size : 0,
       live: hash === live,
+      role: worldRole(meta.role),
     });
   }
   return out.sort(
@@ -312,6 +327,7 @@ async function createWorld(
     seed?: string | null;
     populationCap?: number | null;
     name?: string | null;
+    role?: WorldRole | null;
   },
 ): Promise<{ created: boolean; hash: string; seed: string }> {
   const previous = loadSettings();
@@ -368,10 +384,12 @@ async function createWorld(
       );
     }
     const name = (options.name ?? "").trim().slice(0, MAX_NAME);
+    const role = worldRole(options.role);
     writeMeta(path.dirname(fresh.savePath), {
       ...(name ? { name } : {}),
       seed: loaded.seedText,
       createdAt: Date.now(),
+      ...(role ? { role } : {}),
     });
     await reloadRenderer(getWindow, sim);
     fs.unlinkSync(parkedMarker);
@@ -436,6 +454,25 @@ function renameWorld(hash: string, name: string): WorldSlot[] {
   return listWorlds(worldsRoot(settings));
 }
 
+/** Remember how the player plays a world; the list comes back with it. */
+export function setWorldRole(
+  worldsDir: string,
+  hash: string,
+  role: unknown,
+): WorldSlot[] {
+  validateWorldHash(hash);
+  if (hash.startsWith(".") || hash.startsWith("_"))
+    throw new Error(`not a world: ${hash}`);
+  const checked = worldRole(role);
+  if (!checked) throw new Error(`unknown role: ${String(role)}`);
+  const dir = path.join(worldsDir, hash);
+  // The world being played has a folder from its first moment, before any save.
+  if (!fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory())
+    throw new Error(`no world ${hash}`);
+  writeMeta(dir, { ...readMeta(dir), role: checked });
+  return listWorlds(worldsDir);
+}
+
 /** Move a world that is not being played to the Trash (it can be put back from there). */
 async function trashWorld(hash: string): Promise<WorldSlot[]> {
   const settings = loadSettings();
@@ -475,12 +512,14 @@ export function registerForkWorlds(
         seed?: unknown;
         populationCap?: unknown;
         name?: unknown;
+        role?: unknown;
       };
       return createWorld(getWindow, {
         seed: typeof o.seed === "string" ? o.seed : null,
         populationCap:
           typeof o.populationCap === "number" ? o.populationCap : null,
         name: typeof o.name === "string" ? o.name : null,
+        role: worldRole(o.role),
       });
     }),
   );
@@ -488,6 +527,12 @@ export function registerForkWorlds(
     "fork:worlds:rename",
     exclusive("rename a world", (_e, hash: unknown, name: unknown) =>
       renameWorld(String(hash), String(name ?? "")),
+    ),
+  );
+  ipc.handle(
+    "fork:worlds:set-role",
+    exclusive("choose how to play a world", (_e, hash: unknown, role: unknown) =>
+      setWorldRole(worldsRoot(loadSettings()), String(hash), role),
     ),
   );
   ipc.handle(

@@ -92,6 +92,8 @@ export function genderize(text: string, sex: Sex | null | undefined): string {
 const MAX_DEPTH = 4
 const CACHE_LIMIT = 20_000
 
+const capital = (word: string) => word[0].toUpperCase() + word.slice(1)
+
 /** A translator over a set of tables. Results are cached per channel, sex and text. */
 export function makeSimText(tables: readonly SimTextTable[], label: IdLabeler) {
   const exact = new Map<string, SimTextEntry>()
@@ -141,7 +143,11 @@ export function makeSimText(tables: readonly SimTextTable[], label: IdLabeler) {
         if (domain) return label(domain, value) ?? value
         let inner = ctx
         if (sexFrom) inner = { ...ctx, sex: ctx.sexOf?.(values.get(sexFrom) ?? '') ?? null }
-        return translate(value, channel, inner, depth + 1) ?? value
+        const ru = translate(value, channel, inner, depth + 1)
+        // `{lower}`: the simulation lowercased the whole inner text, names too. Once it is
+        // translated, the Latin words left in it are those names: give them their capital back.
+        if (ru !== null && name.startsWith('lower')) return ru.replace(/\b[a-z][a-z]+\b/g, capital)
+        return ru ?? value
       },
     )
   }

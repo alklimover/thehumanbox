@@ -64,7 +64,8 @@ pub(crate) fn rule_of(row: &Row, focus: Option<&str>) -> Option<&'static str> {
         "war_declared" => "war",
         "rebellion" | "murder" => "uprising",
         "milestone" if row.category == Category::Discovery => "wonder",
-        "drought" if text.starts_with("drought begins") => "disaster",
+        // The event's "drought begins", or the headline that tells it ("🌥️ A drought grips the land").
+        "drought" if text.starts_with("drought begins") || text.contains("drought grips") => "disaster",
         "earthquake" | "eruption" if natural => "disaster",
         "outbreak" => "epidemic",
         "battle_ended" | "treaty" | "treaty_signed" | "vassal_state" | "raid_started" => "battles",
@@ -129,6 +130,8 @@ pub(crate) struct AlertLine {
     pub text: String,
     pub era: String,
     pub tribes: Vec<TribeLink>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sex: Option<&'static str>,
     pub rule: &'static str,
 }
 
@@ -150,6 +153,7 @@ impl AlertLine {
                     name: name.clone(),
                 })
                 .collect(),
+            sex: row.sex,
             rule,
         }
     }
@@ -338,6 +342,7 @@ mod tests {
                 .iter()
                 .map(|(a, b)| (a.to_string(), b.to_string()))
                 .collect(),
+            sex: None,
         }
     }
 

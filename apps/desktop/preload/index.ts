@@ -68,8 +68,10 @@ export interface DesktopBridge {
       seed?: string | null;
       populationCap?: number | null;
       name?: string | null;
+      role?: "observer" | "god" | null;
     }): Promise<{ created: boolean; hash: string; seed: string }>;
     rename(hash: string, name: string): Promise<unknown>;
+    setRole(hash: string, role: "observer" | "god"): Promise<unknown>;
     trash(hash: string): Promise<unknown>;
   };
 
@@ -148,6 +150,8 @@ const bridge: DesktopBridge = {
     open: (hash) => ipcRenderer.invoke("fork:worlds:open", hash),
     create: (options) => ipcRenderer.invoke("fork:worlds:create", options),
     rename: (hash, name) => ipcRenderer.invoke("fork:worlds:rename", hash, name),
+    setRole: (hash, role) =>
+      ipcRenderer.invoke("fork:worlds:set-role", hash, role),
     trash: (hash) => ipcRenderer.invoke("fork:worlds:trash", hash),
   },
 

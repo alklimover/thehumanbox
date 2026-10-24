@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use sim_core::sim::simulation::Simulation;
 
 use super::capture::Cursor;
-use super::classify::{event_category, fingerprint, normalized};
+use super::classify::fingerprint;
 use super::routes::{page, PageQuery};
 use super::store::{EntryJson, Filter};
 use super::Chronicle;
@@ -19,34 +19,16 @@ fn tmp_root(label: &str) -> PathBuf {
     root
 }
 
-/// Every kept entry the world holds for its current tick: what the chronicle
-/// must have for that tick once the next tick starts. Written independently
-/// of the cursor: a plain filter over the logs.
+/// Every kept line the world holds for its current tick: what the chronicle
+/// must have for that tick once the next tick starts. Read straight from the
+/// logs, without the cursor whose exactly-once taking is under test.
 fn entries_of_this_tick(sim: &Simulation) -> Vec<(u64, String, i64)> {
     let now = sim.tick_count;
-    let mut out = Vec::new();
-    let mut told = HashSet::new();
-    for (t, text) in sim.headlines.iter().filter(|h| h.0 == now) {
-        told.insert(normalized(text));
-        out.push((*t, "headline".to_string(), fingerprint(&["h", text])));
-    }
-    for e in sim.events.iter().filter(|e| e.tick == now) {
-        if event_category(&e.etype, &e.detail).is_some() && !told.contains(&normalized(&e.detail)) {
-            out.push((
-                e.tick,
-                "event".to_string(),
-                fingerprint(&["e", &e.etype, &e.actor, &e.detail]),
-            ));
-        }
-    }
-    for s in sim.story_history.iter().filter(|s| s.tick == now) {
-        out.push((
-            s.tick,
-            "story".to_string(),
-            fingerprint(&["s", &s.org_name, &s.story]),
-        ));
-    }
-    out
+    super::capture::lines_since(sim, now)
+        .into_iter()
+        .filter(|l| l.tick == now)
+        .map(|l| (l.tick, l.source.key().to_string(), l.fp))
+        .collect()
 }
 
 fn all_rows(chronicle: &Chronicle) -> Vec<EntryJson> {
@@ -675,6 +657,7 @@ fn capture_cost_on_a_saved_world() {
     chronicle.attach(&sim, "bench", true);
     chronicle.flush();
     let salvaged = chronicle.db().unwrap().count().unwrap();
+    let twins_before = super::capture::OTHER_WORDS_TWINS.load(std::sync::atomic::Ordering::Relaxed);
     let mut tick_ns = Vec::with_capacity(ticks);
     let mut capture_ns = Vec::with_capacity(ticks);
     for _ in 0..ticks {
@@ -689,6 +672,15 @@ fn capture_cost_on_a_saved_world() {
     chronicle.flush();
     let db = chronicle.db().unwrap();
     let rows = db.count().unwrap() - salvaged;
+    let twins = super::capture::OTHER_WORDS_TWINS.load(std::sync::atomic::Ordering::Relaxed) - twins_before;
+    if let Ok(dump) = std::env::var("THB_CHRONICLE_BENCH_DUMP") {
+        let all = db.page(&Filter::default(), None, None, usize::MAX >> 2).unwrap();
+        std::fs::write(
+            dump,
+            serde_json::to_vec(&serde_json::json!({ "rows": all })).unwrap(),
+        )
+        .unwrap();
+    }
     db.checkpoint().unwrap();
     let stats = |v: &mut Vec<u64>| {
         v.sort_unstable();
@@ -701,7 +693,8 @@ fn capture_cost_on_a_saved_world() {
     eprintln!(
         "{alive} alive, from tick {}: {ticks} ticks, tick mean {:.2} ms (p50 {:.2}); capture mean {:.1} µs, \
          p50 {:.1} µs, p99 {:.1} µs, max {:.1} µs; {rows} rows ({salvaged} salvaged), {:.0} rows per 100k ticks; \
-         database {:.2} MB ({:.0} bytes a row)",
+         database {:.2} MB ({:.0} bytes a row); {twins} events folded into their headlines \
+         ({:.0} per 100k ticks)",
         sim.tick_count - ticks as u64,
         tm / 1e6,
         tp50 as f64 / 1e6,
@@ -712,6 +705,7 @@ fn capture_cost_on_a_saved_world() {
         rows as f64 * 100_000.0 / ticks as f64,
         bytes as f64 / 1e6,
         bytes as f64 / (rows + salvaged).max(1) as f64,
+        twins as f64 * 100_000.0 / ticks as f64,
     );
     let _ = std::fs::remove_dir_all(root);
 }

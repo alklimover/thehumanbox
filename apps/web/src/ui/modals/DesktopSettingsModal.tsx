@@ -25,6 +25,7 @@ import { fmtNumber, t, tn, type MessageKey } from '../../i18n'
 import { localeTag } from '../../i18n/locale'
 import { LanguageSwitch } from './LanguageSwitch'
 import { WorldsSection } from '../../fork/WorldsSection'
+import { ModeSetting } from '../../fork/modes/ModeSetting'
 import { WatchSection } from '../../fork/chronicle/WatchSection'
 
 interface Props {
@@ -503,6 +504,7 @@ export function DesktopSettingsModal({ onClose }: Props) {
           ))}
         </nav>
         <div className="settings-pane">
+          {tab === 'world' && <ModeSetting />}
           {tab === 'world' &&
             (desktop ? (
               <Section title={t('settings.world.title')}>

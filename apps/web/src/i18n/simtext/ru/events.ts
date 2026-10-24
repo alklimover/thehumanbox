@@ -179,7 +179,7 @@ export const events: SimTextTable = {
   'hold their {name}': 'справляют праздник: {name|festival}',
   'hunted a {kind} at ({ax},{ay})': 'добыл[а] зверя ({kind|animal}) в ({ax},{ay})',
   'the first caravan from {sender_name} reached {receiver_name}, bringing {delivered} {cargo}':
-    'первый караван из {sender_name} дошёл до {receiver_name} и привёз: {cargo|good} ×{delivered}',
+    'первый караван из {sender_name} дошёл до {receiver_name} и привёз: {cargo|cargo} ×{delivered}',
   'became a {name}': 'новое ремесло: {name|specialty}',
   '{lname} learned farming from its neighbours': '{lname}: земледелию научились у соседей',
   'moved in with {host_name}': 'переехал[а] к {host_name}',
@@ -707,4 +707,8 @@ export const events: SimTextTable = {
   'a thief took {taken} measures of grain from the granary and got away':
     'вор унёс из амбара зерно (мер: {taken}) и скрылся',
   '{kind} at ({x},{y}) was ruined by {cause}': 'разрушена постройка «{kind|building}»: {cause}',
+  'succumbed to illness': '[умер|умерла] от болезни',
+  'a dry spell withered {wilted} fields the water does not reach':
+    'теряет от засухи поля, куда не доходит вода: {wilted}',
+  'a pond at ({x},{y}) dried out from overuse': 'пересох пруд — из него брали слишком много воды',
 }

@@ -23,7 +23,7 @@ export const headlines: SimTextTable = {
   '🧬 {line}': '🧬 {line}',
   // The news: rulers, crime, roads, buildings, peril, seasons and the sky.
   '👑 {leader_name} of the {lname} {verb}.': '👑 {leader_name}, племя {lname}: {verb@leader_name}.',
-  'seized power in a coup': 'захватил[а] власть',
+  'seized power in a coup': 'берёт власть переворотом',
   'takes the throne, the old line ended': 'восходит на престол — старая династия пресеклась',
   'succeeds to the throne as heir': 'наследует престол',
   '⚖️ {thief_name} of {tribe} was caught stealing from {victim_name}: {verdict_text}.':
@@ -117,4 +117,6 @@ export const headlines: SimTextTable = {
   'the weight of snow': 'тяжесть снега',
   'the rising rock': 'поднявшаяся скала',
   dragonfire: 'драконий огонь',
+  'a lunar eclipse stunned the people: {text}': 'лунное затмение потрясло людей: {text}',
+  'a solar eclipse stunned the people: {text}': 'солнечное затмение потрясло людей: {text}',
 }

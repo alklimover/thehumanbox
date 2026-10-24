@@ -174,6 +174,8 @@ export interface AlertLine {
   text: string
   era: string
   tribes: ChronicleTribeLink[]
+  /** The sex of the person the line is about. */
+  sex?: string
   rule: WatchRule
 }
 
