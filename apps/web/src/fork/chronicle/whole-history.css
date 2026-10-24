@@ -1,0 +1,139 @@
+/* Fork: the "Whole history" tab of the Chronicles (WholeHistory.tsx). */
+.fch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+.fch-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.fch-chip {
+  background: transparent;
+  border: 1px solid #2a2520;
+  color: #887;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.fch-chip.on {
+  background: rgba(216, 178, 112, 0.14);
+  border-color: rgba(216, 178, 112, 0.45);
+  color: #e0c98f;
+  opacity: 1;
+}
+.fch-tribe {
+  font-size: 10px;
+  color: #998;
+}
+.fch-tribe select {
+  background: #1d1712;
+  color: #e0c98f;
+  border: 1px solid #443329;
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 2px 4px;
+  max-width: 260px;
+}
+.fch-list {
+  overflow-y: auto;
+  max-height: calc(85vh - 210px);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 4px;
+}
+.fch-year {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fch-year-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  background: #28201a;
+  border-bottom: 1px solid #5a4430;
+  color: #e0c98f;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 2px 3px;
+  z-index: 1;
+}
+.fch-year-count {
+  color: #998;
+}
+.fch-row {
+  display: grid;
+  grid-template-columns: 48px 14px 1fr 64px;
+  gap: 6px;
+  align-items: baseline;
+  border-bottom: 1px solid #32271f;
+  padding: 4px 2px;
+}
+.fch-season {
+  font-size: 9px;
+  color: #776;
+}
+.fch-icon {
+  font-size: 10px;
+  text-align: center;
+}
+.fch-text {
+  font-size: 10px;
+  color: #ccd;
+  line-height: 1.45;
+}
+.fch-actor {
+  color: #e0c98f;
+  font-weight: 700;
+}
+.fch-restored {
+  color: #887;
+  font-style: italic;
+}
+.fch-go {
+  text-align: right;
+}
+.fch-go-btn {
+  background: transparent;
+  border: 1px solid #443329;
+  color: #e0c98f;
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 0 6px;
+  cursor: pointer;
+}
+.fch-go-btn:hover {
+  background: rgba(216, 178, 112, 0.18);
+}
+.fch-gone {
+  font-size: 9px;
+  color: #887;
+  font-style: italic;
+}
+.fch-note {
+  font-size: 10px;
+  color: #887;
+  font-style: italic;
+  padding: 8px 2px;
+}
+.fch-foot {
+  font-size: 9px;
+  color: #887;
+  border-top: 1px solid #372a21;
+  padding-top: 6px;
+}

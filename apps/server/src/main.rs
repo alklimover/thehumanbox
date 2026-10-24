@@ -7,6 +7,7 @@ mod broadcaster;
 mod config;
 mod desktop_lock;
 mod fork_bench;
+mod fork_chronicle;
 mod fork_speed;
 mod rollover;
 mod router;
@@ -95,6 +96,7 @@ async fn main() {
             None
         }
     });
+    fork_chronicle::start(&sim, &world_store).await;
     let (tx, _rx) = broadcast::channel::<Bytes>(WS_BROADCAST_BUFFER);
     let latest_full: LatestFull = Arc::new(std::sync::RwLock::new(None));
     let latest_full_at: Arc<std::sync::atomic::AtomicU64> = Arc::new(std::sync::atomic::AtomicU64::new(0));
@@ -255,6 +257,7 @@ async fn main() {
             tracing::error!(target: "save", "final world save failed: {}", error);
         }
     }
+    fork_chronicle::shutdown();
 
     if let Some(Err(error)) = server_result {
         tracing::error!("axum::serve exited: {}", error);

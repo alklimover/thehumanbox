@@ -669,4 +669,42 @@ export const events: SimTextTable = {
   'the storm weakens into rain': 'буря стихает до дождя',
   'an elder leads a young tribesman through an initiation rite':
     'старейшина проводит юного соплеменника через обряд посвящения',
+
+  // Fork: lines the whole chronicle (fork/chronicle) keeps. Battles and treaties
+  // name tribes by lineage id; the chronicle writes the tribes' names in first.
+  '{a} attacks {b} (raid)': '{a} идёт набегом на {b}',
+  '{a} attacks {b} (skirmish)': '{a} затевает стычку с {b}',
+  '{a} attacks {b} (siege)': '{a} осаждает {b}',
+  '{a} attacks {b} (battle)': '{a} даёт бой {b}',
+  '{a} attacks {b} (war)': '{a} идёт войной на {b}',
+  '{a} attacks {b} (raid, {na} v {nd})': '{a} идёт набегом на {b} ({na} против {nd})',
+  '{a} attacks {b} (skirmish, {na} v {nd})': '{a} затевает стычку с {b} ({na} против {nd})',
+  '{a} attacks {b} (siege, {na} v {nd})': '{a} осаждает {b} ({na} против {nd})',
+  '{a} attacks {b} (battle, {na} v {nd})': '{a} даёт бой {b} ({na} против {nd})',
+  '{a} attacks {b} (war, {na} v {nd})': '{a} идёт войной на {b} ({na} против {nd})',
+  '{a} vs {b}: attacker_victory (cas {ca}/{cd})': '{a} против {b}: победили нападавшие (потери {ca} и {cd})',
+  '{a} vs {b}: defender_victory (cas {ca}/{cd})': '{a} против {b}: отбились защитники (потери {ca} и {cd})',
+  '{a} vs {b}: stalemate (cas {ca}/{cd})': '{a} против {b}: ничья (потери {ca} и {cd})',
+  'raid against {b} at ({x},{y})': 'идёт набегом на {b}',
+  '{a} signs trade with {b}': '{a} и {b} заключают торговый договор',
+  '{a} signs non_aggression with {b}': '{a} и {b} заключают пакт о ненападении',
+  '{a} signs alliance with {b}': '{a} и {b} заключают союз',
+  '{a} signs vassalage with {b}': '{a} и {b} заключают договор о вассалитете',
+  '{a} signs {name} with {b}': '{a} и {b} заключают договор: {name|treaty}',
+  '{a} becomes vassal of {b}': '{a} становится вассалом {b}',
+  '{a} declared raid on {b} over the border at ({x},{y})': '{a} из-за спорной границы идёт набегом на {b}',
+  '{a} declared skirmish on {b} over the border at ({x},{y})':
+    '{a} из-за спорной границы затевает стычку с {b}',
+  '{a} declared siege on {b} over the border at ({x},{y})': '{a} из-за спорной границы осаждает {b}',
+  '{a} declared battle on {b} over the border at ({x},{y})': '{a} из-за спорной границы вызывает на бой {b}',
+  '{a} declared war on {b} over the border at ({x},{y})': '{a} из-за спорной границы объявляет войну {b}',
+  'concluded a non-aggression treaty with lineage {their}':
+    '[заключил|заключила] пакт о ненападении с племенем {their}',
+  'a wandering tribe arrives ({n} souls)': 'приходит кочевое племя, человек: {n}',
+  'pray for clean water': 'молятся о чистой воде',
+  'a thief took {taken} measures of grain from the granary, and the guards caught them':
+    'вор унёс из амбара зерно (мер: {taken}), но стража его поймала',
+  'a thief took {taken} measures of grain from the granary and got away':
+    'вор унёс из амбара зерно (мер: {taken}) и скрылся',
+  '{kind} at ({x},{y}) was ruined by {cause}': 'разрушена постройка «{kind|building}»: {cause}',
 }

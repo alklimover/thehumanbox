@@ -103,4 +103,18 @@ export const headlines: SimTextTable = {
     'этой ночью падали звёзды — я [загадал|загадала] желание',
   'the people watched green light dance across the cold sky':
     'люди смотрели, как по холодному небу пляшет зелёный свет',
+
+  // Fork: what the whole chronicle (fork/chronicle) keeps of these.
+  'the first great-grandchild of {tribe} is born': 'у племени {tribe} родился первый правнук основателей',
+  'the {n}th generation of {tribe} is born': 'у племени {tribe} родилось {n}-е поколение',
+  'a storm': 'буря',
+  battle: 'битва',
+  'age and neglect': 'ветхость',
+  'a falling star': 'падающая звезда',
+  lightning: 'молния',
+  'an earthquake': 'землетрясение',
+  lava: 'лава',
+  'the weight of snow': 'тяжесть снега',
+  'the rising rock': 'поднявшаяся скала',
+  dragonfire: 'драконий огонь',
 }

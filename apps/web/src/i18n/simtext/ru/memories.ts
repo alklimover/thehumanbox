@@ -82,4 +82,7 @@ export const memories: SimTextTable = {
     'Этой ночью я [любовался|любовалась] звёздами — мир казался невозможно большим',
   'we shared a dream tonight — bright shapes that neither of us could name':
     'этой ночью нам снился один сон на двоих — яркие образы, которым никто из нас не знал названия',
+
+  // Fork: the last line of a life, in the chronicle's "is gone" headline.
+  'died of {cause} at age {age}': 'причина смерти: {cause|deathCause}',
 }
