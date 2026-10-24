@@ -17,7 +17,6 @@ import {
   CATEGORY_LABEL,
   countNewer,
   entryActor,
-  entrySex,
   entryText,
   groupByYear,
   liveTribe,
@@ -274,7 +273,7 @@ function EntryRow({
   const actor = entryActor(entry)
   const tribe = liveTribe(entry, tribes, alive)
   const first = entry.tribes[0]
-  const text = entryText(entry, entrySex(entry, sex), first ? (peaks.get(first.id) ?? 0) : 0)
+  const text = entryText(entry, sex, first ? (peaks.get(first.id) ?? 0) : 0)
   return (
     <div className="fch-row">
       <span className="fch-season">{seasonOf(entry.tick)}</span>

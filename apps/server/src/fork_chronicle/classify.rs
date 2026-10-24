@@ -109,7 +109,10 @@ fn is_severe_weather(detail: &str) -> bool {
 }
 
 fn milestone_category(detail: &str) -> Category {
-    if detail.starts_with('\u{1F480}') || detail.starts_with("will be known as") {
+    if detail.starts_with('\u{1F480}')
+        || detail.starts_with("will be known as")
+        || detail.starts_with("found refuge among")
+    {
         Category::Tribes
     } else if detail.starts_with("the first ") || detail.contains(" first ") {
         Category::Discovery

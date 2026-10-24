@@ -132,17 +132,17 @@ describe('a line as shown', () => {
   it('tells a small tribe dying out, with how big it once was', () => {
     const died = entry(1, 1, { src: 'server', kind: 'died_out', cat: 'tribes', actor: 'Meleru', text: '' })
     setLocaleForTests('ru')
-    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, null, 5)).toBe(
+    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, undefined, 5)).toBe(
       'Племя Мелеру вымерло, а когда-то в нём было 5 человек.',
     )
-    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, null, 3)).toBe(
+    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, undefined, 3)).toBe(
       'Племя Мелеру вымерло, а когда-то в нём было 3 человека.',
     )
-    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, null, 0)).toBe(
+    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, undefined, 0)).toBe(
       'Племя Мелеру вымерло.',
     )
     setLocaleForTests('en')
-    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, null, 1)).toBe(
+    expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, undefined, 1)).toBe(
       'The Meleru died out; at their height they were 1.',
     )
   })
@@ -206,6 +206,22 @@ describe('the filter', () => {
     expect(entrySex(elder, sexOf)).toBe('male')
     expect(entrySex(entry(1, 1), sexOf)).toBe('male')
     expect(entrySex(entry(1, 1, { kind: 'theft', actor: 'Ramona', text: 'stole 3' }), sexOf)).toBe('female')
+    // The simulation's own record wins: the person may be long gone from the world on screen.
+    expect(entrySex({ ...crown, sex: 'male' }, () => null)).toBe('male')
+  })
+
+  it('makes a dead person’s last memory agree with them', () => {
+    setLocaleForTests('ru')
+    const gone = entry(1, 1, {
+      src: 'headline',
+      kind: 'headline',
+      cat: 'people',
+      actor: '',
+      text: 'Guto is gone. What they carried: "fell in love with Kepor"',
+      sex: 'female',
+    })
+    expect(entryText(gone)).toBe('Не стало Гуто. В памяти осталось: «влюбилась в Кепор»')
+    expect(entryText({ ...gone, sex: undefined })).toContain('влюбился/ась')
   })
 
   it('takes a tribe the world shows alive as alive, whatever the record says', () => {

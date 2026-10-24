@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS fork_chronicle (
     text      TEXT NOT NULL,
     era       TEXT NOT NULL,
     restored  INTEGER NOT NULL DEFAULT 0,
-    fp        INTEGER NOT NULL
+    fp        INTEGER NOT NULL,
+    sex       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_fork_chronicle_tick ON fork_chronicle(tick, id);
 CREATE INDEX IF NOT EXISTS idx_fork_chronicle_cat ON fork_chronicle(cat, tick, id);
@@ -73,6 +74,9 @@ pub(crate) struct EntryJson {
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub restored: bool,
     pub tribes: Vec<TribeLink>,
+    /// The sex of the person the line is about, when it is about one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sex: Option<String>,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
@@ -135,6 +139,13 @@ impl ChronicleDb {
         conn.pragma_update(None, "synchronous", "NORMAL")?;
         conn.busy_timeout(std::time::Duration::from_secs(5))?;
         conn.execute_batch(SCHEMA)?;
+        // A chronicle begun before lines carried the sex of their person.
+        let has_sex: bool = conn
+            .prepare("SELECT 1 FROM pragma_table_info('fork_chronicle') WHERE name = 'sex'")?
+            .exists([])?;
+        if !has_sex {
+            conn.execute_batch("ALTER TABLE fork_chronicle ADD COLUMN sex TEXT")?;
+        }
         Ok(ChronicleDb {
             hash: hash.to_string(),
             conn: Mutex::new(conn),
@@ -239,8 +250,8 @@ impl ChronicleDb {
         let mut written = 0;
         {
             let mut entry = tx.prepare_cached(
-                "INSERT INTO fork_chronicle (tick, src, kind, cat, actor, text, era, restored, fp)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO fork_chronicle (tick, src, kind, cat, actor, text, era, restored, fp, sex)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             )?;
             let mut link = tx.prepare_cached(
                 "INSERT INTO fork_chronicle_link (entry_id, lineage_id, name) VALUES (?, ?, ?)",
@@ -291,7 +302,7 @@ impl ChronicleDb {
         let conn = self.conn();
         let mut args: Vec<rusqlite::types::Value> = Vec::new();
         let mut sql = format!(
-            "SELECT c.id, c.tick, c.src, c.kind, c.cat, c.actor, c.text, c.era, c.restored
+            "SELECT c.id, c.tick, c.src, c.kind, c.cat, c.actor, c.text, c.era, c.restored, c.sex
                FROM fork_chronicle c WHERE {}",
             filter.clause(&mut args)
         );
@@ -321,6 +332,7 @@ impl ChronicleDb {
                     era: r.get(7)?,
                     restored: r.get::<_, i64>(8)? != 0,
                     tribes: Vec::new(),
+                    sex: r.get(9)?,
                 })
             })?
             .collect::<rusqlite::Result<_>>()?;
@@ -423,6 +435,7 @@ fn write_row(
         row.era,
         row.restored as i64,
         row.fp,
+        row.sex,
     ])?;
     let id = tx.last_insert_rowid();
     for (lid, name) in &row.tribes {

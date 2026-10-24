@@ -41,6 +41,7 @@ export const memories: SimTextTable = {
   'I came of age, and my people gathered for me':
     'Я [стал|стала] [взрослым|взрослой], и мой народ собрался ради меня',
   'the sun was eaten by the moon at midday': 'в полдень луна проглотила солнце',
+  'the moon ran red in the night sky': 'ночью луна налилась красным',
   'I am growing — my body changes and the elders watch': 'Я расту — тело меняется, и старшие смотрят на меня',
   'a young one of our people came of age, and we gathered to see them stand':
     'кто-то из наших юных повзрослел, и мы собрались посмотреть на это',

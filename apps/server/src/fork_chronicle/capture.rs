@@ -61,6 +61,8 @@ pub(crate) struct Row {
     pub fp: i64,
     /// The tribes it names: lineage id and the name they had then.
     pub tribes: Vec<(String, String)>,
+    /// The sex of the person the line is about, for the grammar of a translation.
+    pub sex: Option<&'static str>,
 }
 
 pub(crate) const DIED_OUT: &str = "died_out";
@@ -181,95 +183,16 @@ impl Cursor {
         };
 
         // Only the tail written since `from` is looked at: a handful of entries per tick.
-        let events: Vec<&Event> = tail(&sim.events, from, |e| e.tick);
-        let headlines: Vec<&(u64, String)> = tail(&sim.headlines, from, |h| h.0);
-        let stories: Vec<&StoryEntry> = tail(&sim.story_history, from, |s| s.tick);
-
-        let mut links = Links::new(sim);
         let era = sim.current_era.as_str();
-        let mut rows = Vec::new();
-
-        // Headlines first: an event that repeats a headline of its tick is told by the headline.
-        let headline_texts: Vec<(u64, String)> = headlines.iter().map(|h| (h.0, normalized(&h.1))).collect();
-        let mut twins: HashMap<(u64, String), &Event> = HashMap::new();
-        for e in &events {
-            if event_category(&e.etype, &e.detail).is_some() {
-                twins.entry((e.tick, normalized(&e.detail))).or_insert(e);
-            }
-        }
-        for (h, (tick, norm)) in headlines.iter().zip(&headline_texts) {
-            let fp = headline_fp(&h.1);
-            if !is_new(*tick, fp) {
-                continue;
-            }
-            let twin = twins.get(&(*tick, norm.clone()));
-            let (kind, actor) = twin.map_or(("headline", ""), |e| (e.etype.as_str(), e.actor.as_str()));
-            let mut tribes = links.in_text(&h.1);
-            if twin.is_some() {
-                links.add_actor(&mut tribes, actor);
-            } else if let Some(person) = person_of_headline(&h.1) {
-                links.add_person(&mut tribes, person);
-            }
-            rows.push(Row {
-                tick: *tick,
-                source: Source::Headline,
-                kind: kind.to_string(),
-                // A headline that repeats an event files under the event's heading.
-                category: twin
-                    .and_then(|e| event_category(&e.etype, &e.detail))
-                    .unwrap_or_else(|| headline_category(&h.1)),
-                actor: actor.to_string(),
-                text: h.1.clone(),
+        let rows: Vec<Row> = lines_since(sim, from)
+            .into_iter()
+            .filter(|l| is_new(l.tick, l.fp))
+            .map(|l| Row {
                 era: era.to_string(),
                 restored,
-                fp,
-                tribes,
-            });
-        }
-        let told: HashSet<(u64, &str)> = headline_texts.iter().map(|(t, n)| (*t, n.as_str())).collect();
-        for e in &events {
-            let Some(category) = event_category(&e.etype, &e.detail) else {
-                continue;
-            };
-            let fp = event_fp(e);
-            if !is_new(e.tick, fp) || told.contains(&(e.tick, normalized(&e.detail).as_str())) {
-                continue;
-            }
-            let mut tribes = links.in_text(&e.detail);
-            links.add_actor(&mut tribes, &e.actor);
-            rows.push(Row {
-                tick: e.tick,
-                source: Source::Event,
-                kind: e.etype.clone(),
-                category,
-                actor: e.actor.clone(),
-                text: e.detail.clone(),
-                era: era.to_string(),
-                restored,
-                fp,
-                tribes,
-            });
-        }
-        for s in &stories {
-            let fp = story_fp(s);
-            if !is_new(s.tick, fp) {
-                continue;
-            }
-            let mut tribes = Vec::new();
-            links.add_lineage(&mut tribes, &s.lineage_id);
-            rows.push(Row {
-                tick: s.tick,
-                source: Source::Story,
-                kind: "story".to_string(),
-                category: Category::Milestones,
-                actor: s.org_name.clone(),
-                text: s.story.clone(),
-                era: era.to_string(),
-                restored,
-                fp,
-                tribes,
-            });
-        }
+                ..l
+            })
+            .collect();
         // Every kept entry of `now`, taken before or just now, is what the next call has seen.
         self.seen = next_seen;
         self.tick = now;
@@ -338,6 +261,7 @@ impl Cursor {
                     restored,
                     fp: fingerprint(&["x", &lid, &sim.tick_count.to_string()]),
                     tribes: vec![(lid.clone(), name.clone())],
+                    sex: None,
                 });
             }
             out.died_out.push((lid, name, peak));
@@ -345,6 +269,161 @@ impl Cursor {
         self.alive = now_alive.into_iter().map(str::to_string).collect();
     }
 }
+
+/// Every kept line of the logs written at `from` or later, oldest log first,
+/// without the cursor: what a capture of those ticks can produce. A headline
+/// and an event that tell the same fact in the same tick are one line, told by
+/// the headline with the event's kind, actor and heading (see `same_fact`).
+pub(crate) fn lines_since(sim: &Simulation, from: u64) -> Vec<Row> {
+    let events: Vec<&Event> = tail(&sim.events, from, |e| e.tick);
+    let headlines: Vec<&(u64, String)> = tail(&sim.headlines, from, |h| h.0);
+    let stories: Vec<&StoryEntry> = tail(&sim.story_history, from, |s| s.tick);
+    let mut links = Links::new(sim);
+    let line = |tick, source, kind: &str, category, actor: &str, text: &str, fp, tribes, sex| Row {
+        tick,
+        source,
+        kind: kind.to_string(),
+        category,
+        actor: actor.to_string(),
+        text: text.to_string(),
+        era: String::new(),
+        restored: false,
+        fp,
+        tribes,
+        sex,
+    };
+
+    let mut told = vec![false; events.len()];
+    let mut out = Vec::new();
+    let candidates: Vec<(usize, Row)> = events
+        .iter()
+        .enumerate()
+        .filter_map(|(i, e)| {
+            let category = event_category(&e.etype, &e.detail)?;
+            let mut tribes = links.in_text(&e.detail);
+            let sex = links.add_actor(&mut tribes, &e.actor);
+            let fp = event_fp(e);
+            Some((
+                i,
+                line(
+                    e.tick,
+                    Source::Event,
+                    &e.etype,
+                    category,
+                    &e.actor,
+                    &e.detail,
+                    fp,
+                    tribes,
+                    sex,
+                ),
+            ))
+        })
+        .collect();
+    for (tick, text) in &headlines {
+        let mut tribes = links.in_text(text);
+        let person = person_of_headline(text);
+        if let Some(name) = person.filter(|_| names_its_person_first(text)) {
+            links.add_person(&mut tribes, name);
+        }
+        let sex = person.and_then(|name| links.sex_of(name));
+        let mut row = line(
+            *tick,
+            Source::Headline,
+            "headline",
+            headline_category(text),
+            "",
+            text,
+            headline_fp(text),
+            tribes,
+            sex,
+        );
+        let twin = candidates
+            .iter()
+            .find(|(i, e)| !told[*i] && e.tick == row.tick && same_fact(e, &row));
+        if let Some((i, e)) = twin {
+            told[*i] = true;
+            #[cfg(test)]
+            if normalized(&e.text) != normalized(&row.text) {
+                OTHER_WORDS_TWINS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            }
+            row.kind = e.kind.clone();
+            row.actor = e.actor.clone();
+            row.category = e.category;
+            row.sex = e.sex.or(row.sex);
+            for (id, name) in &e.tribes {
+                if !row.tribes.iter().any(|(t, _)| t == id) {
+                    row.tribes.push((id.clone(), name.clone()));
+                }
+            }
+        }
+        out.push(row);
+    }
+    out.extend(candidates.into_iter().filter(|(i, _)| !told[*i]).map(|(_, e)| e));
+    for s in &stories {
+        let mut tribes = Vec::new();
+        links.add_lineage(&mut tribes, &s.lineage_id);
+        out.push(line(
+            s.tick,
+            Source::Story,
+            "story",
+            Category::Milestones,
+            &s.org_name,
+            &s.story,
+            story_fp(s),
+            tribes,
+            None,
+        ));
+    }
+    out
+}
+
+/// Events folded into a headline that told them in other words (for the measurement in tests.rs).
+#[cfg(test)]
+pub(crate) static OTHER_WORDS_TWINS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Whether an event and a headline of the same tick tell one fact: the same
+/// text, or the same heading about the same tribes sharing a word that is not
+/// a tribe's name ("longhouse … ruined by flooding" and "🔥 A longhouse of the
+/// Mufos fell to flooding."), or a pair the sim always writes together.
+pub(crate) fn same_fact(event: &Row, headline: &Row) -> bool {
+    if normalized(&event.text) == normalized(&headline.text) {
+        return true;
+    }
+    if event.category != headline.category {
+        return false;
+    }
+    fn ids(r: &Row) -> Vec<&str> {
+        let mut v: Vec<&str> = r.tribes.iter().map(|(id, _)| id.as_str()).collect();
+        v.sort_unstable();
+        v
+    }
+    if ids(event) != ids(headline) {
+        return false;
+    }
+    if event.text.starts_with("found refuge among") && headline.text.starts_with('\u{1F3D5}') {
+        return true;
+    }
+    let names: HashSet<String> = event
+        .tribes
+        .iter()
+        .chain(&headline.tribes)
+        .map(|(_, name)| name.to_lowercase())
+        .collect();
+    let words = |text: &str| -> HashSet<String> {
+        text.split(|c: char| !c.is_alphabetic())
+            .filter(|w| w.chars().count() >= 4)
+            .map(str::to_lowercase)
+            .filter(|w| !STOPWORDS.contains(&w.as_str()) && !names.contains(w))
+            .collect()
+    };
+    let a = words(&event.text);
+    words(&headline.text).iter().any(|w| a.contains(w))
+}
+
+const STOPWORDS: [&str; 16] = [
+    "the", "their", "they", "them", "with", "from", "into", "have", "were", "that", "this", "after", "over",
+    "among", "tribe", "people",
+];
 
 /// The world's era ladder, for a salvaged world: the eras the event log no
 /// longer tells. Called once, with the rows the first capture produced.
@@ -365,6 +444,7 @@ pub(crate) fn salvaged_eras(sim: &Simulation, rows: &[Row]) -> Vec<Row> {
             restored: true,
             fp: fingerprint(&["r", &e.era, &e.tick.to_string()]),
             tribes: Vec::new(),
+            sex: None,
         })
         .collect()
 }
@@ -389,10 +469,21 @@ fn alive_lineages(sim: &Simulation) -> FastSet<&str> {
     out
 }
 
-/// "Daki became an elder, carrying: …" and "Daki is gone. …" name a person first.
+/// The person a headline starts with: "Daki became an elder…", "Daki is
+/// gone.", "👑 Ramona of the Mufos seized power…", "⚖️ Dijena of Kefe was caught…".
 fn person_of_headline(text: &str) -> Option<&str> {
+    let text = text.trim_start_matches(|c: char| !c.is_alphanumeric());
     let (name, rest) = text.split_once(' ')?;
-    (rest.starts_with("became an elder") || rest.starts_with("is gone.")).then_some(name)
+    let person = name.len() > 1
+        && name.as_bytes()[0].is_ascii_uppercase()
+        && name.bytes().skip(1).all(|b| b.is_ascii_lowercase())
+        && !matches!(name, "The" | "Year" | "Machines");
+    (person && !rest.is_empty()).then_some(name)
+}
+
+/// The lines whose tribe is the tribe of the person they start with.
+fn names_its_person_first(text: &str) -> bool {
+    text.contains(" became an elder") || text.contains(" is gone.")
 }
 
 /// Finds the tribes a line is about, by the names and ids it carries.
@@ -429,31 +520,41 @@ impl<'a> Links<'a> {
         }
     }
 
-    /// The tribe of a person by name, the living first. A walk over the people,
-    /// but only for the few lines a tick writes about someone.
-    fn add_person(&mut self, out: &mut Vec<(String, String)>, name: &str) {
+    /// A person by name, the living first. A walk over the people, but only
+    /// for the few lines a tick writes about someone.
+    fn person(&self, name: &str) -> Option<&'a sim_core::organism::organism::Organism> {
         let sim = self.sim;
-        let person = sim
-            .organisms
+        sim.organisms
             .iter()
             .find(|o| o.alive && o.name == name)
-            .or_else(|| sim.organisms.iter().rev().find(|o| !o.alive && o.name == name));
-        if let Some(o) = person {
-            self.add_lineage(out, &o.lineage_id);
-        }
+            .or_else(|| sim.organisms.iter().rev().find(|o| !o.alive && o.name == name))
     }
 
-    /// The actor of an event: a tribe by name or id, a battle ("battle_3120_<a>_<b>"), or a person.
-    fn add_actor(&mut self, out: &mut Vec<(String, String)>, actor: &str) {
+    fn sex_of(&self, name: &str) -> Option<&'static str> {
+        self.person(name).map(|o| o.sex.as_str())
+    }
+
+    /// The tribe of a person by name; their sex, if they were found.
+    fn add_person(&mut self, out: &mut Vec<(String, String)>, name: &str) -> Option<&'static str> {
+        let o = self.person(name)?;
+        self.add_lineage(out, &o.lineage_id);
+        Some(o.sex.as_str())
+    }
+
+    /// The actor of an event: a tribe by name or id, a battle ("battle_3120_<a>_<b>"), or a person
+    /// (whose sex it returns).
+    fn add_actor(&mut self, out: &mut Vec<(String, String)>, actor: &str) -> Option<&'static str> {
         let actor = actor.strip_prefix("the ").unwrap_or(actor);
         if actor.is_empty() {
-            return;
+            return None;
         }
         if let Some(lid) = self.by_name().get(actor).copied() {
-            return self.add_lineage(out, lid);
+            self.add_lineage(out, lid);
+            return None;
         }
         if self.sim.lineage_names.contains_key(actor) {
-            return self.add_lineage(out, actor);
+            self.add_lineage(out, actor);
+            return None;
         }
         if actor.starts_with("battle_") {
             for part in actor.split('_') {
@@ -461,9 +562,9 @@ impl<'a> Links<'a> {
                     self.add_lineage(out, part);
                 }
             }
-            return;
+            return None;
         }
-        self.add_person(out, actor);
+        self.add_person(out, actor)
     }
 
     /// Tribes named in a text, by name or by lineage id, in order of appearance.
@@ -489,5 +590,117 @@ impl<'a> Links<'a> {
             }
         }
         out
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn row(source: Source, kind: &str, category: Category, text: &str, tribes: &[&str]) -> Row {
+        Row {
+            tick: 7,
+            source,
+            kind: kind.to_string(),
+            category,
+            actor: String::new(),
+            text: text.to_string(),
+            era: String::new(),
+            restored: false,
+            fp: 0,
+            tribes: tribes
+                .iter()
+                .map(|t| (t.to_string(), "Mufos".to_string()))
+                .collect(),
+            sex: None,
+        }
+    }
+
+    #[test]
+    fn an_event_and_a_headline_of_one_fact_are_one_line() {
+        use Category::*;
+        let e = |kind, cat, text, tribes: &[&str]| row(Source::Event, kind, cat, text, tribes);
+        let h = |cat, text, tribes: &[&str]| row(Source::Headline, "headline", cat, text, tribes);
+        // A ruin, in other words.
+        assert!(same_fact(
+            &e(
+                "building_ruined",
+                Disaster,
+                "longhouse at (3,4) was ruined by flooding",
+                &["a1"]
+            ),
+            &h(
+                Disaster,
+                "\u{1F525} A longhouse of the Mufos fell to flooding.",
+                &["a1"]
+            ),
+        ));
+        // A sickness.
+        assert!(same_fact(
+            &e("outbreak", Disaster, "influenza spreads", &["a1"]),
+            &h(Disaster, "\u{1F912} Influenza spreads among the Mufos.", &["a1"]),
+        ));
+        // The last of a tribe taken in.
+        assert!(same_fact(
+            &e("milestone", Tribes, "found refuge among the Kefe", &["a1", "b2"]),
+            &h(
+                Tribes,
+                "\u{1F3D5}\u{FE0F} The last 3 of the Mufos were taken in by the Kefe.",
+                &["b2", "a1"]
+            ),
+        ));
+        // Another tribe's ruin, or another kind of news about the same tribe, stays apart.
+        assert!(!same_fact(
+            &e(
+                "building_ruined",
+                Disaster,
+                "longhouse at (3,4) was ruined by flooding",
+                &["b2"]
+            ),
+            &h(
+                Disaster,
+                "\u{1F525} A longhouse of the Mufos fell to flooding.",
+                &["a1"]
+            ),
+        ));
+        assert!(!same_fact(
+            &e(
+                "building_ruined",
+                Disaster,
+                "hut at (3,4) was ruined by fire",
+                &["a1"]
+            ),
+            &h(Disaster, "\u{1F912} Influenza spreads among the Mufos.", &["a1"]),
+        ));
+        assert!(!same_fact(
+            &e(
+                "war_declared",
+                War,
+                "a1 declared war on b2 over the border at (1,2)",
+                &["a1", "b2"]
+            ),
+            &h(
+                War,
+                "\u{2694}\u{FE0F} The Mufos conquered 5 tiles of Kefe land.",
+                &["a1", "b2"]
+            ),
+        ));
+    }
+
+    #[test]
+    fn a_headline_starts_with_its_person() {
+        assert_eq!(
+            person_of_headline("Daki became an elder, carrying: \"x\""),
+            Some("Daki")
+        );
+        assert_eq!(
+            person_of_headline("\u{1F451} Ramona of the Mufos seized power in a coup."),
+            Some("Ramona")
+        );
+        assert_eq!(
+            person_of_headline("\u{1F525} A hut of the Mufos fell to fire."),
+            None
+        );
+        assert_eq!(person_of_headline("\u{1F4C5} Year 3 begins."), None);
     }
 }
