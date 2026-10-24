@@ -149,3 +149,258 @@
   line-height: 12px;
   vertical-align: 1px;
 }
+
+/* ── Observer and god modes (fork/modes) ──────────────────────────────────
+   The choice keeps the welcome card's frame; the panel and the chip sit in
+   the map's top-left corner (StoryPanel measures it), under every dialog. */
+.welcome-modal.fork-mode-choice {
+  max-width: 760px;
+  padding: 24px 26px 20px;
+}
+.fork-mode-choice .welcome-title {
+  margin-bottom: 6px;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+.fork-mode-choice-sub {
+  margin: 0 0 18px;
+  color: var(--px-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.fork-mode-cards {
+  display: flex;
+  gap: 14px;
+}
+.fork-mode-card {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 16px 14px;
+  background: var(--px-inset);
+  color: var(--px-text);
+  border: 2px solid var(--px-ink);
+  box-shadow: inset 0 0 0 2px var(--px-groove);
+  font-family: var(--dialog-font);
+  text-align: left;
+  cursor: pointer;
+}
+.fork-mode-card:hover {
+  box-shadow: inset 0 0 0 2px var(--px-brass);
+}
+.fork-mode-card.picked {
+  box-shadow: inset 0 0 0 2px var(--px-gold);
+}
+.fork-mode-card:focus-visible {
+  outline: 2px solid var(--px-gold);
+  outline-offset: 2px;
+}
+.fork-mode-card-name {
+  margin-top: 4px;
+  color: var(--px-gold-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+.fork-mode-card-promise {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.fork-mode-card-points {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  color: var(--px-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.fork-mode-card-points > span::before {
+  content: '· ';
+}
+.fork-mode-choice-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  color: var(--px-muted);
+  font-size: 12px;
+}
+.fork-mode-cards.compact {
+  gap: 8px;
+}
+.fork-mode-cards.compact .fork-mode-card {
+  padding: 10px 10px 9px;
+  gap: 4px;
+}
+.fork-mode-cards.compact .fork-mode-card-name {
+  margin-top: 0;
+  font-size: 13px;
+}
+.fork-mode-cards.compact .fork-mode-card-promise {
+  font-size: 11px;
+}
+@media (max-width: 640px) {
+  .fork-mode-cards:not(.compact) {
+    flex-direction: column;
+  }
+  .fork-mode-choice-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.fork-mode-panel,
+.fork-mode-chip {
+  position: fixed;
+  z-index: 35;
+  background: var(--px-wood);
+  color: var(--px-text);
+  border: 2px solid var(--px-ink);
+  box-shadow: var(--px-frame-shadow);
+  font-family: var(--dialog-font);
+}
+/* Narrow enough on a small window to leave the top-centre cards (the tribe card) clear. */
+.fork-mode-panel {
+  width: clamp(260px, calc(50vw - 150px), 340px);
+  font-size: 12px;
+}
+@media (max-width: 767px) {
+  .fork-mode-panel {
+    width: min(340px, calc(100vw - 24px));
+  }
+}
+.fork-mode-panel,
+.fork-mode-chip {
+  transition: left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fork-mode-panel,
+  .fork-mode-chip {
+    transition: none;
+  }
+}
+.fork-mode-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px 7px 12px;
+  background: var(--px-grain);
+  border-bottom: 2px solid var(--px-ink);
+}
+.fork-mode-title {
+  flex: 1;
+  color: var(--px-gold-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 0 #000;
+}
+.fork-mode-year {
+  color: var(--px-muted);
+  font-size: 11px;
+}
+.fork-mode-fold,
+.fork-mode-link {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--px-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.fork-mode-fold,
+.fork-mode-link {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.fork-mode-fold:hover,
+.fork-mode-link:hover {
+  color: var(--px-gold-text);
+}
+.fork-mode-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fork-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px 8px 12px;
+  border-bottom: 1px solid var(--px-groove);
+}
+.fork-mode-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+}
+.fork-mode-row-title {
+  font-weight: 700;
+}
+.fork-mode-row-detail {
+  color: var(--px-muted);
+  font-size: 11px;
+}
+.fork-mode-row .lang-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.fork-mode-quiet {
+  padding: 12px;
+  color: var(--px-muted);
+  line-height: 1.5;
+}
+.fork-mode-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 7px 12px;
+  color: var(--px-muted);
+  font-size: 11px;
+}
+.fork-mode-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  color: var(--px-gold-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.fork-mode-chip:hover {
+  background: var(--px-raised-hover);
+}
+.fork-mode-count {
+  min-width: 16px;
+  padding: 0 4px;
+  background: var(--px-active);
+  color: var(--px-gold-text);
+  text-align: center;
+}
+.fork-mode-switch {
+  display: flex;
+  gap: 6px;
+}
+.fork-mode-switch .lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fork-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  color: var(--px-muted);
+  font-size: 10px;
+  font-weight: 400;
+}

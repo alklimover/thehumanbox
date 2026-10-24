@@ -100,9 +100,9 @@ export const settings = defineMessages(
 
     // Help tab
     'settings.help.title': 'Help',
-    'settings.tour.title': 'Guided tour',
-    'settings.tour.desc': 'A short walkthrough of the map, the dock and the panels.',
-    'settings.tour.start': 'start tour',
+    'settings.tour.title': 'Mode tips',
+    'settings.tour.desc': 'Four steps on what to watch in your mode and where.',
+    'settings.tour.start': 'show tips',
     'settings.about.title': 'About',
     'settings.about.desc': 'Version, build and links.',
     'settings.about.open': 'open',
@@ -276,9 +276,9 @@ export const settings = defineMessages(
     'settings.lowPerf.failed': 'не удалось сохранить текущий мир; смена режима безопасно отменена',
 
     'settings.help.title': 'Справка',
-    'settings.tour.title': 'Краткий тур',
-    'settings.tour.desc': 'Короткое знакомство с картой, панелью инструментов и остальными панелями.',
-    'settings.tour.start': 'начать тур',
+    'settings.tour.title': 'Подсказки режима',
+    'settings.tour.desc': 'Четыре шага о том, за чем и где следить в вашем режиме.',
+    'settings.tour.start': 'показать подсказки',
     'settings.about.title': 'Об игре',
     'settings.about.desc': 'Версия, сборка и ссылки.',
     'settings.about.open': 'открыть',

@@ -3,6 +3,8 @@
 import { logger } from '../../shared/logger'
 import { isPhoneViewport } from '../../shared/phone'
 import type { PlayerWorldKind } from '../../simulation/worldSource'
+import { startModeGuide } from '../../fork/modes/guide'
+import { useModeStore } from '../../fork/modes/role'
 
 const TOUR_KEY = 'thb-tour-completed-v1'
 
@@ -27,6 +29,8 @@ export function preloadTour() {
 }
 
 export function startTour(worldKind: PlayerWorldKind = 'local') {
+  // Fork: once the world has a mode, its tips stand in for the tour.
+  if (useModeStore.getState().role) return startModeGuide()
   if (!isTourSupported()) {
     markSeen()
     return
