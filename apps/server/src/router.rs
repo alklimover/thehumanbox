@@ -50,7 +50,8 @@ pub(super) fn build_app(state: AppState) -> Router {
         .route("/worlds", get(routes::list_worlds_handler))
         .route("/worlds/{hash}/meta", get(routes::world_meta_handler))
         .route("/worlds/{hash}/snapshot", get(routes::world_snapshot_handler))
-        .route("/worlds/{hash}/save", get(routes::world_save_handler));
+        .route("/worlds/{hash}/save", get(routes::world_save_handler))
+        .merge(crate::fork_chronicle::routes());
 
     if std::env::var("THB_SANDBOX").ok().as_deref() == Some("1") {
         // Mutating sandbox requests from a browser must come from an allowed origin (see `sandbox_guard`).

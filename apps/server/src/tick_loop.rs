@@ -222,6 +222,7 @@ async fn step_period(
                 flush_groups.push((ws, flushes));
             }
         }
+        crate::fork_chronicle::after_tick(&s, world_store);
     }
     (pending_save, flush_groups)
 }

@@ -1,4 +1,5 @@
 import type { Message, PluralForms } from '../define'
+import { chronicle } from './chronicle'
 import { civ } from './civ'
 import { common } from './common'
 import { dialogs } from './dialogs'
@@ -29,6 +30,7 @@ import { worlds } from './worlds'
 
 /** Every area of the interface. Add a new area here; its keys join MessageKey. */
 const AREAS = {
+  chronicle,
   civ,
   common,
   dialogs,

@@ -94,4 +94,6 @@ export const NAME_DOMAINS: Record<string, (value: string) => string | null> = {
   faith: faithName,
   // A word of a tribe's own language, made of the same syllables as names: «ри».
   word: (value) => nameRu(value),
+  // What a caravan carries: a good, or a practice counter it trades like one ("paint mural").
+  cargo: (value) => (SIM_TABLES.good[value] ?? SIM_TABLES.practice[value])?.ru ?? null,
 }

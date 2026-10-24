@@ -5,6 +5,8 @@ import { Modal } from './Modal'
 import { t } from '../../i18n'
 import { simText } from '../../i18n/simtext'
 import { displayName } from '../../i18n/names'
+import { WholeHistory } from '../../fork/chronicle/WholeHistory'
+import { wholeHistoryTab } from '../../fork/chronicle/navigate'
 
 const DAY_LENGTH = 600
 
@@ -14,7 +16,7 @@ interface Props {
   onClose: () => void
 }
 
-type Tab = 'history' | 'lives'
+type Tab = 'history' | 'lives' | 'all'
 
 export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
   const [tab, setTab] = useState<Tab>('history')
@@ -33,7 +35,7 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
       <div className="lang-modal-header">
         <span className="lang-modal-title">{t('chronicles.heading')}</span>
         <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', marginRight: 8 }}>
-          {(['history', 'lives'] as Tab[]).map((id) => (
+          {(['history', 'lives', ...wholeHistoryTab()] as Tab[]).map((id) => (
             <button
               key={id}
               onClick={() => setTab(id)}
@@ -49,7 +51,11 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
                 textTransform: 'uppercase',
               }}
             >
-              {id === 'history' ? t('chronicles.tab.history') : t('chronicles.tab.lives')}
+              {id === 'history'
+                ? t('chronicles.tab.history')
+                : id === 'lives'
+                  ? t('chronicles.tab.lives')
+                  : t('chronicle.tab')}
             </button>
           ))}
         </div>
@@ -58,7 +64,9 @@ export function ChroniclesModal({ stories, headlines = [], onClose }: Props) {
         </button>
       </div>
       <div className="lang-modal-body">
-        {tab === 'history' ? (
+        {tab === 'all' ? (
+          <WholeHistory />
+        ) : tab === 'history' ? (
           <>
             <p className="lang-modal-sub">{t('chronicles.history.sub')}</p>
             {timeline.length === 0 ? (
