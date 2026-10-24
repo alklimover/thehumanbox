@@ -11,7 +11,14 @@ import { simFaithName } from '../../i18n/simtext'
 import { ageInYears, YEAR_TICKS } from '../../game/model/calendar'
 import { familyLines } from '../../game/model/family-lines'
 import { PERIL_HELP, remainingLine, tribeHome } from '../../game/model/tribe-peril'
-import { prayerPlea, prayerRows, prayerRowText, prayerTimeLeft, PRAYER_KINDS } from '../../game/model/prayers'
+import {
+  prayerPlea,
+  prayerRows,
+  prayerRowText,
+  prayerTimeLeft,
+  PRAYER_KINDS,
+  type PrayerRow,
+} from '../../game/model/prayers'
 import { eraRows } from '../../game/model/era-flourish'
 import { personName } from '../../shared/personName'
 import { SANDBOX_CATEGORIES } from '../../simulation/sandbox'
@@ -48,6 +55,11 @@ export interface Story {
   at: { x: number; y: number } | null
   /** The tribe to single out. */
   lineage?: string
+  /**
+   * The tribes the row is about, for MAX_PER_TRIBE. A row that counts its
+   * tribes rather than names them (a feast of five, rain for three) has none.
+   */
+  tribes?: readonly string[]
   /** The person to single out. */
   person?: string
   action: StoryAction
@@ -65,9 +77,12 @@ function tribeName(world: Pick<World, 'lineage_names'>, id: string): string {
   return displayName(world.lineage_names?.[id]) || id.slice(0, 6)
 }
 
+/** A side of a war, as the row names it: its first two tribes. */
+const SIDE = 2
+
 function names(world: Pick<World, 'lineage_names'>, ids: readonly string[]): string {
   return ids
-    .slice(0, 2)
+    .slice(0, SIDE)
     .map((id) => tribeName(world, id))
     .join(', ')
 }
@@ -171,6 +186,7 @@ export function warStories(world: World, god = false): Story[] {
         weight: (god ? 60 : 90) + Math.min(fallen, 40) + Math.min(b.initial_a + b.initial_d, 40) / 4,
         at: { x: b.location[0], y: b.location[1] },
         lineage: b.attackers[0],
+        tribes: [...b.attackers.slice(0, SIDE), ...b.defenders.slice(0, SIDE)],
         action: { kind: 'show' as const },
       }
     })
@@ -199,6 +215,7 @@ export function brinkStories(world: World): Story[] {
       weight: 40 + Math.round(-r.attitude * 30),
       at: ha && hb ? { x: (ha.x + hb.x) / 2, y: (ha.y + hb.y) / 2 } : (ha ?? hb),
       lineage: r.a,
+      tribes: [r.a, r.b],
       action: { kind: 'show' as const },
     }
   })
@@ -213,10 +230,11 @@ export function perilStories(world: World, god = false): Story[] {
       kind: 'peril' as const,
       icon: '💀',
       title: t('modes.story.peril', { tribe: displayName(p.tribe), left: remainingLine(p.population) }),
-      detail: god && help ? t('modes.story.peril.help', { reason, tool: toolLabel(help.tool) }) : reason,
+      detail: god && help ? t('modes.story.peril.help', { reason, action: help.action }) : reason,
       weight: (god ? 100 : 70) + Math.max(0, p.peak - p.population) - p.population,
       at: home(world, p.lineage_id),
       lineage: p.lineage_id,
+      tribes: [p.lineage_id],
       action: god && help ? { kind: 'tool' as const, tool: help.tool } : { kind: 'show' as const },
     }
   })
@@ -250,6 +268,7 @@ export function faithStories(world: World, watch: StoryWatch): Story[] {
         weight: 65 + Math.min(n, 30) / 3,
         at: home(world, lineage),
         lineage,
+        tribes: lineage ? [lineage] : [],
         action: { kind: 'show' as const },
       }
     })
@@ -282,6 +301,7 @@ export function thresholdStories(world: World, god = false): Story[] {
         weight: (god ? 20 : 30) + (missing ? 0 : 5),
         at: home(world, p.lineage_id),
         lineage: p.lineage_id,
+        tribes: [p.lineage_id],
         action: { kind: 'show' as const },
       }
     })
@@ -316,6 +336,7 @@ export function eraStories(world: World, watch: StoryWatch): Story[] {
       weight: 60,
       at: home(world, c.lineage),
       lineage: c.lineage,
+      tribes: [c.lineage],
       action: { kind: 'show' as const },
     }))
 }
@@ -337,6 +358,7 @@ export function townStories(world: World, watch: StoryWatch): Story[] {
         weight: rose ? 55 : 12,
         at: { x: s.center[0], y: s.center[1] },
         lineage: s.lineage_id,
+        tribes: [s.lineage_id],
         action: { kind: 'show' as const },
       },
     ]
@@ -359,25 +381,49 @@ export function outbreakStories(world: World, god = false): Story[] {
       weight: (god ? 70 : 50) + Math.min(o.infected ?? 0, 30),
       at,
       lineage: o.lineage_id,
+      tribes: o.lineage_id ? [o.lineage_id] : [],
       action: god && at ? { kind: 'tool' as const, tool: 'cure' } : { kind: 'show' as const },
     }
   })
 }
 
+/**
+ * One row per festival, however many tribes hold it: the season's feast comes
+ * to every tribe at once. Two tribes are named, more are counted.
+ */
 export function festivalStories(world: World): Story[] {
-  return (world.festivals ?? [])
-    .filter((f) => typeof f.x === 'number' && typeof f.y === 'number')
-    .map((f) => ({
-      key: `festival:${f.lineage_id ?? ''}:${f.name}`,
+  const byName = new Map<string, { at: { x: number; y: number }; tribes: string[] }>()
+  for (const f of world.festivals ?? []) {
+    if (typeof f.x !== 'number' || typeof f.y !== 'number') continue
+    const row = byName.get(f.name) ?? { at: { x: f.x, y: f.y }, tribes: [] }
+    if (f.lineage_id && !row.tribes.includes(f.lineage_id)) row.tribes.push(f.lineage_id)
+    byName.set(f.name, row)
+  }
+  return [...byName].map(([name, { at, tribes }]) => {
+    const named = tribes.length <= 2 ? tribes : []
+    return {
+      key: `festival:${name}`,
       kind: 'festival' as const,
       icon: '🎁',
-      title: t('modes.story.festival', { festival: simLabel('festival', f.name) }),
-      detail: f.lineage_id ? t('modes.story.festival.detail', { tribe: tribeName(world, f.lineage_id) }) : '',
-      weight: 20,
-      at: { x: f.x!, y: f.y! },
-      lineage: f.lineage_id,
+      title: capital(simLabel('festival', name)),
+      detail:
+        tribes.length === 0
+          ? ''
+          : tribes.length === 1
+            ? t('modes.story.festival.detail', { tribe: tribeName(world, tribes[0]) })
+            : tribes.length === 2
+              ? t('modes.story.festival.two', {
+                  a: tribeName(world, tribes[0]),
+                  b: tribeName(world, tribes[1]),
+                })
+              : tn('modes.story.festival.many', tribes.length),
+      weight: 20 + Math.min(tribes.length, 6),
+      at,
+      lineage: tribes[0],
+      tribes: named,
       action: { kind: 'show' as const },
-    }))
+    }
+  })
 }
 
 /** The oldest person alive and the largest family: something to look at in a quiet world. */
@@ -399,6 +445,7 @@ export function fillerStories(world: World): Story[] {
       weight: 5,
       at: { x: eldest.x, y: eldest.y },
       lineage: eldest.lineage_id,
+      tribes: [eldest.lineage_id],
       person: eldest.id,
       action: { kind: 'show' },
     })
@@ -419,6 +466,7 @@ export function fillerStories(world: World): Story[] {
       weight: 4,
       at: home(world, best.lineage),
       lineage: best.lineage,
+      tribes: [best.lineage],
       action: { kind: 'show' },
     })
   }
@@ -442,18 +490,37 @@ export function observerStories(world: World, watch: StoryWatch): Story[] {
 
 // ---------------------------------------------------------------- the god
 
-/** Prayers waiting for an answer, the one about to lapse first. */
+/**
+ * Prayers waiting for an answer, the one about to lapse first. A tribe that
+ * prays for several things is one row, its most urgent prayer, with the rest
+ * counted; rain asked by many tribes is one row too.
+ */
 export function prayerStories(world: World): Story[] {
-  return prayerRows(world.prayers ?? [], world.tick).map((row) => {
+  const rows: { row: PrayerRow; more: number }[] = []
+  const byTribe = new Map<string, { row: PrayerRow; more: number }>()
+  for (const row of prayerRows(world.prayers ?? [], world.tick)) {
+    const lineage = row.count === 1 ? row.prayer.lineage_id : undefined
+    const same = lineage ? byTribe.get(lineage) : undefined
+    if (same) {
+      same.more += 1
+      continue
+    }
+    const entry = { row, more: 0 }
+    if (lineage) byTribe.set(lineage, entry)
+    rows.push(entry)
+  }
+  return rows.map(({ row, more }) => {
     const p = row.prayer
     const left = prayerTimeLeft(p, world.tick)
     const tool = PRAYER_KINDS[p.kind]?.tool
     const parts = [
       tool ? t('modes.story.prayer.tool', { tool: toolLabel(tool) }) : null,
-      left < 0.35 ? t('modes.story.prayer.soon') : t('modes.story.prayer.faith'),
+      more > 0 ? tn('modes.story.prayer.more', more) : null,
+      left < 0.35 ? t('modes.story.prayer.soon') : more > 0 ? null : t('modes.story.prayer.faith'),
     ]
+    const tribe = row.count === 1 ? p.lineage_id : undefined
     return {
-      key: `prayer:${row.count > 1 ? p.kind : p.id}`,
+      key: tribe ? `prayer:tribe:${tribe}` : `prayer:${row.count > 1 ? p.kind : p.id}`,
       kind: 'prayer' as const,
       icon: PRAYER_KINDS[p.kind]?.icon ?? '🙏',
       title: row.count > 1 ? capital(prayerRowText(row)) : prayerPlea({ ...p, tribe: displayName(p.tribe) }),
@@ -461,6 +528,7 @@ export function prayerStories(world: World): Story[] {
       weight: 80 + Math.round((1 - left) * 15),
       at: { x: p.x, y: p.y },
       lineage: p.lineage_id,
+      tribes: tribe ? [tribe] : [],
       action: { kind: 'prayer' as const, prayer: p },
     }
   })
@@ -490,6 +558,7 @@ export function nearestGoal(goals: readonly GoalStatus[] | undefined): GoalStatu
 export const HOLD_MS = 20_000
 export const MAX_ROWS = 5
 export const MAX_PER_KIND = 2
+export const MAX_PER_TRIBE = 2
 
 export interface Shown {
   story: Story
@@ -500,33 +569,31 @@ export interface Shown {
 /**
  * The rows the panel shows, from the rows it showed before and the stories of
  * now. A row stays at least HOLD_MS, even past its story's end, and rows keep
- * their order: new ones join at the bottom. At most MAX_ROWS rows and
- * MAX_PER_KIND of a kind; the oldest person and the largest family only while
- * fewer than three real stories are going on.
+ * their order: new ones join at the bottom. At most MAX_ROWS rows,
+ * MAX_PER_KIND of a kind and MAX_PER_TRIBE about one tribe; the oldest person
+ * and the largest family only while fewer than three real stories are going on.
  */
 export function pickStories(prev: readonly Shown[], stories: readonly Story[], now: number): Shown[] {
   const ranked = [...stories].sort((a, b) => b.weight - a.weight || a.key.localeCompare(b.key))
   const real = ranked.filter((s) => !FILLER_KINDS.has(s.kind)).length
+  const fits = (rows: readonly Story[], s: Story) =>
+    rows.filter((r) => r.kind === s.kind).length < MAX_PER_KIND &&
+    (s.tribes ?? []).every((id) => rows.filter((r) => r.tribes?.includes(id)).length < MAX_PER_TRIBE)
   const wanted: Story[] = []
-  const perKind = new Map<StoryKind, number>()
   for (const s of ranked) {
     if (wanted.length >= MAX_ROWS) break
     if (FILLER_KINDS.has(s.kind) && real >= 3) continue
-    const n = perKind.get(s.kind) ?? 0
-    if (n >= MAX_PER_KIND) continue
-    perKind.set(s.kind, n + 1)
-    wanted.push(s)
+    if (fits(wanted, s)) wanted.push(s)
   }
   const wantedKeys = new Set(wanted.map((s) => s.key))
   const byKey = new Map(stories.map((s) => [s.key, s]))
   const kept: Shown[] = prev
     .filter((row) => wantedKeys.has(row.story.key) || now - row.since < HOLD_MS)
     .map((row) => ({ story: byKey.get(row.story.key) ?? row.story, since: row.since }))
-  const shown = new Set(kept.map((row) => row.story.key))
-  const count = (kind: StoryKind) => kept.filter((row) => row.story.kind === kind).length
   for (const s of wanted) {
     if (kept.length >= MAX_ROWS) break
-    if (shown.has(s.key) || count(s.kind) >= MAX_PER_KIND) continue
+    const shown = kept.map((row) => row.story)
+    if (shown.some((r) => r.key === s.key) || !fits(shown, s)) continue
     kept.push({ story: s, since: now })
   }
   return kept

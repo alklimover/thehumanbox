@@ -6,9 +6,11 @@ import {
   brinkStories,
   eraStories,
   faithStories,
+  festivalStories,
   fillerStories,
   godStories,
   HOLD_MS,
+  MAX_ROWS,
   nearestGoal,
   observerStories,
   outbreakStories,
@@ -133,7 +135,7 @@ describe('the observer’s stories', () => {
       at: { x: 40, y: 20 },
     })
     const [help] = perilStories(w, true)
-    expect(help.detail).toBe('They are starving. “harvest” will help')
+    expect(help.detail).toBe('They are starving — send a harvest')
     expect(help.action).toEqual({ kind: 'tool', tool: 'harvest' })
   })
 
@@ -285,6 +287,41 @@ describe('the observer’s stories', () => {
     expect(outbreakStories(w)[0]).toMatchObject({ title: 'Эпидемия: мор', detail: 'Болеют 5 · племя Тимово' })
   })
 
+  it('a festival is one row however many tribes hold it', () => {
+    const fest = (name: string, lineage_id: string | undefined, x?: number) => ({
+      name,
+      lineage_id,
+      x: x ?? 5,
+      y: x === undefined ? 5 : 7,
+    })
+    const w = world({
+      festivals: [
+        fest('Spring Festival', 'a', 11),
+        fest('Spring Festival', 'b'),
+        fest('Harvest Feast', 'c'),
+        { name: 'Midwinter Feast', lineage_id: 'd' },
+      ],
+    })
+    const stories = festivalStories(w)
+    // The midwinter feast has no place on the map: nothing to show.
+    expect(stories.map((s) => [s.key, s.title, s.detail, s.tribes])).toEqual([
+      ['festival:Spring Festival', 'Spring Festival', 'Celebrated by Timovo and Sedua', ['a', 'b']],
+      ['festival:Harvest Feast', 'Harvest Feast', 'Celebrated by the Zerogu tribe', ['c']],
+    ])
+    expect(stories[0]).toMatchObject({ at: { x: 11, y: 7 }, lineage: 'a' })
+
+    const three = world({
+      festivals: [fest('Spring Festival', 'a'), fest('Spring Festival', 'b'), fest('Spring Festival', 'c')],
+    })
+    expect(festivalStories(three)[0]).toMatchObject({ detail: 'Celebrated by 3 tribes', tribes: [] })
+    setLocaleForTests('ru')
+    expect(festivalStories(w).map((s) => [s.title, s.detail])).toEqual([
+      ['Весенний праздник', 'Празднуют Тимово и Седуа'],
+      ['Праздник урожая', 'Празднует племя Зерогу'],
+    ])
+    expect(festivalStories(three)[0].detail).toBe('Празднуют 3 племени')
+  })
+
   it('the oldest person and the largest family', () => {
     const w = world({
       organisms: [
@@ -335,11 +372,58 @@ describe('the god’s stories', () => {
     })
     const stories = prayerStories(w)
     expect(stories.map((s) => [s.title, s.detail])).toEqual([
-      ['Timovo pray for food', '“harvest” answers it. The prayer will fade soon'],
-      ['2 tribes pray for rain', '“rain” answers it. An answer strengthens their faith'],
+      ['Timovo pray for food', '“harvest” will help. The prayer will fade soon'],
+      ['2 tribes pray for rain', '“rain” will help. An answer strengthens their faith'],
     ])
     expect(stories[0].action).toEqual({ kind: 'prayer', prayer: w.prayers![0] })
     expect(stories[0].weight).toBeGreaterThan(stories[1].weight)
+    // The powers' labels are read when the module loads, so only the phrase around one changes here.
+    setLocaleForTests('ru')
+    expect(prayerStories(w)[0].detail).toBe('Поможет «harvest». Молитва скоро угаснет')
+  })
+
+  it('a tribe praying for several things is one row, its most urgent prayer', () => {
+    const prayer = (id: number, kind: string, lineage_id: string, expires: number) => ({
+      id,
+      kind,
+      lineage_id,
+      tribe: NAMES[lineage_id as keyof typeof NAMES],
+      x: id,
+      y: 6,
+      created: 49_000,
+      expires,
+    })
+    const w = world({
+      prayers: [
+        prayer(1, 'shelter', 'a', 52_000),
+        prayer(2, 'hunger', 'a', 50_100),
+        prayer(3, 'thirst', 'a', 51_000),
+        prayer(4, 'children', 'b', 52_000),
+      ],
+    })
+    const stories = prayerStories(w)
+    expect(stories.map((s) => [s.key, s.title, s.detail])).toEqual([
+      [
+        'prayer:tribe:a',
+        'Timovo pray for food',
+        '“harvest” will help. 2 more prayers. The prayer will fade soon',
+      ],
+      ['prayer:tribe:b', 'Sedua pray for children', '“love” will help. An answer strengthens their faith'],
+    ])
+    // The button answers the most urgent one, where it is.
+    expect(stories[0].action).toEqual({ kind: 'prayer', prayer: w.prayers![1] })
+    expect(stories[0].at).toEqual({ x: 2, y: 6 })
+    expect(stories[0].tribes).toEqual(['a'])
+    // Once it is answered the row is the same row, about the next one.
+    const answered = world({ prayers: [w.prayers![0], w.prayers![2], w.prayers![3]] })
+    expect(prayerStories(answered)[0]).toMatchObject({
+      key: 'prayer:tribe:a',
+      title: 'Timovo pray for clean water',
+      detail: '“spring” will help. 1 more prayer',
+    })
+    setLocaleForTests('ru')
+    expect(prayerStories(w)[0].detail).toBe('Поможет «harvest». Ещё 2 молитвы. Молитва скоро угаснет')
+    expect(prayerStories(answered)[0].detail).toBe('Поможет «spring». Ещё 1 молитва')
   })
 
   it('puts the dying tribe above a war, and a war above an era to come', () => {
@@ -371,7 +455,7 @@ describe('the god’s stories', () => {
 })
 
 describe('the rows shown', () => {
-  const story = (key: string, weight: number, kind: Story['kind'] = 'war'): Story => ({
+  const story = (key: string, weight: number, kind: Story['kind'] = 'war', tribes?: string[]): Story => ({
     key,
     kind,
     icon: '',
@@ -379,6 +463,7 @@ describe('the rows shown', () => {
     detail: '',
     weight,
     at: null,
+    tribes,
     action: { kind: 'show' },
   })
   const keys = (rows: { story: Story }[]) => rows.map((r) => r.story.key)
@@ -417,6 +502,59 @@ describe('the rows shown', () => {
     const withNew = [story('n', 99, 'faith'), ...five.slice(0, 4)]
     expect(keys(pickStories(shown, withNew, 1_000))).toEqual(['a', 'b', 'c', 'd', 'e'])
     expect(keys(pickStories(shown, withNew, HOLD_MS + 1))).toEqual(['a', 'b', 'c', 'd', 'n'])
+  })
+
+  it('at most two rows about one tribe; the next story takes the place', () => {
+    const rows = pickStories(
+      [],
+      [
+        story('p1', 90, 'peril', ['g']),
+        story('b1', 80, 'brink', ['g', 'a']),
+        story('b2', 70, 'brink', ['g', 'b']),
+        story('e1', 60, 'era', ['g']),
+        story('f1', 50, 'faith', ['c']),
+        story('t1', 40, 'threshold', ['a']),
+        story('o1', 30, 'outbreak'),
+      ],
+      0,
+    )
+    expect(keys(rows)).toEqual(['p1', 'b1', 'f1', 't1', 'o1'])
+  })
+
+  it('a held row still counts for its tribe, so a new story about it waits', () => {
+    const first = pickStories([], [story('p1', 90, 'peril', ['g']), story('b1', 80, 'brink', ['g', 'a'])], 0)
+    // The feud is over, but its row is held; the tribe's new era waits for it.
+    const later = [story('p1', 90, 'peril', ['g']), story('e1', 85, 'era', ['g'])]
+    expect(keys(pickStories(first, later, 5_000))).toEqual(['p1', 'b1'])
+    expect(keys(pickStories(first, later, HOLD_MS + 1))).toEqual(['p1', 'e1'])
+  })
+
+  it('a live world: one tribe in two rows, one row for the festival', () => {
+    const w = world({
+      lineage_names: { ...NAMES, g: 'Gijontum' },
+      lineage_sizes: [...Object.keys(NAMES), 'g'].map((id) => ({ id, count: id === 'g' ? 3 : 10 })),
+      tribal_relations: [
+        { a: 'g', b: 'a', attitude: -0.9, status: 'rivals' },
+        { a: 'g', b: 'b', attitude: -0.8, status: 'rivals' },
+      ],
+      tribes_in_peril: [
+        { lineage_id: 'g', tribe: 'Gijontum', population: 3, peak: 30, cause: 'war', since: 1 },
+      ],
+      festivals: [
+        { name: 'Spring Festival', lineage_id: 'c', x: 1, y: 1 },
+        { name: 'Spring Festival', lineage_id: 'd', x: 2, y: 2 },
+      ],
+      active_outbreaks: [{ kind: 'plague', infected: 4, lineage_id: 'b' }],
+    })
+    const rows = pickStories([], observerStories(w, new StoryWatch()), 0).map((r) => r.story)
+    expect(rows.length).toBeLessThanOrEqual(MAX_ROWS)
+    expect(rows.filter((s) => s.tribes?.includes('g'))).toHaveLength(2)
+    expect(rows.map((s) => s.title)).toEqual([
+      'Gijontum is dying out: only 3 left',
+      'Gijontum and Timovo: on the brink of war',
+      'Epidemic: plague',
+      'Spring Festival',
+    ])
   })
 
   it('the oldest person and the largest family only while the world is quiet', () => {
