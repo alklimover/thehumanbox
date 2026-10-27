@@ -168,6 +168,11 @@ impl Simulation {
             physics,
             organisms,
             animals: state.animals.into_iter().map(animal_from_save).collect(),
+            game_wariness: state
+                .game_wariness
+                .iter()
+                .map(|&(x, y, w)| ((x, y), w.clamp(0.0, 1.0)))
+                .collect(),
             carcasses: state
                 .carcasses
                 .into_iter()
@@ -218,6 +223,10 @@ impl Simulation {
             lineage_eras: state.lineage_eras,
             lineage_generations_reached: state.lineage_generations_reached,
             lineage_unrest: state.lineage_unrest,
+            lineage_winter_memory: state.lineage_winter_memory,
+            lineage_war_weariness: state.lineage_war_weariness,
+            lineage_crafts: HashMap::default(),
+            lineage_crafts_ready: false,
             lineage_crime: state.lineage_crime,
             lineage_aggregates: HashMap::default(),
             current_era: if state.current_era.is_empty() {
@@ -265,6 +274,7 @@ impl Simulation {
             planting_revision: 1,
             serialized_planting_revision: 0,
             serialized_structure: None,
+            serialized_static_tick: 0,
             buildings: buildings.into(),
             next_building_id,
             governments: state.governments,
@@ -276,6 +286,7 @@ impl Simulation {
             next_festival_id,
             action_counts: HashMap::default(),
             decision_counts: HashMap::default(),
+            lessons_watched: 0,
             workshop_hits: HashMap::default(),
             last_witness_tick: state.last_witness_tick,
             books: state.books,
@@ -286,6 +297,7 @@ impl Simulation {
             next_vehicle_id,
             ferry_survey: Default::default(),
             ferry_queues: Default::default(),
+            command_report: None,
             battles: state.battles,
             next_battle_id,
             treaties,
@@ -293,6 +305,7 @@ impl Simulation {
             milestones_achieved: state.milestones_achieved,
             lineage_peak_pop: state.lineage_peak_pop,
             tribe_peril: HashMap::default(),
+            tribe_chronicle: Default::default(),
             festival_last: HashMap::default(),
             goals: state.goals,
             evening_places: Default::default(),

@@ -9,10 +9,11 @@ import { worldMomentsActive } from '../world-moments'
 import { prayerEffectsActive } from '../prayer-feedback'
 import { LOW_PERF } from '../../../shared/perf'
 import { logger } from '../../../shared/logger'
-import { t as message } from '../../../i18n'
 import { zoomDetailLevel } from '../character-visuals'
 import { TILE } from '../../model/palette'
 import { OCEAN, hex } from '../art-palette'
+import { t } from '../../../i18n'
+import { ft } from '../../../fork/i18n'
 
 /** Past the map the sea stays in its deepest band. */
 const WORLD_EDGE = hex(OCEAN.abyss)
@@ -44,8 +45,8 @@ export function CanvasWorldFallback({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hasDrawn = useRef(false)
-  const cachedDepth = useRef<number[][] | null>(null)
-  const cachedBiomes = useRef<number[][] | null>(null)
+  const cachedDepth = useRef<ArrayLike<number>[] | null>(null)
+  const cachedBiomes = useRef<ArrayLike<number>[] | null>(null)
   const orgCache = useRef<OrgInterpCache>({
     source: null,
     prevSource: null,
@@ -72,7 +73,7 @@ export function CanvasWorldFallback({
       logger.error('2d-world', 'Canvas setup failed', error)
     }
     if (!canvas || !context) {
-      onDrawError(message('map.noCanvas'))
+      onDrawError(ft('map.noCanvas'))
       return
     }
     const ctx = context
@@ -96,8 +97,8 @@ export function CanvasWorldFallback({
       const { world: snapshot, selectedOrgId, overlay, focus, viewFlags } = latest.current
       const w = interp?.current.current ?? snapshot
       if (!w) return
-      if (w.grid.depth_map) cachedDepth.current = w.grid.depth_map as number[][]
-      if (w.grid.biomes) cachedBiomes.current = w.grid.biomes as number[][]
+      if (w.grid.depth_map) cachedDepth.current = w.grid.depth_map as ArrayLike<number>[]
+      if (w.grid.biomes) cachedBiomes.current = w.grid.biomes as ArrayLike<number>[]
 
       const prev = interp?.prev.current
       const serverAt = interp?.currentServerAt.current ?? 0
@@ -219,7 +220,7 @@ export function CanvasWorldFallback({
         stopped = true
         cancelAnimationFrame(raf)
         logger.error('2d-world', 'Canvas drawing failed', error)
-        onDrawError(message('map.drawFailed'))
+        onDrawError(ft('map.drawFailed'))
         return
       }
       lastWorld = w
@@ -242,7 +243,7 @@ export function CanvasWorldFallback({
   return (
     <canvas
       ref={canvasRef}
-      aria-label="World terrain and inhabitants"
+      aria-label={t('common.terrainLabel')}
       style={{ display: 'block', width: '100%', height: '100%' }}
     />
   )

@@ -1,13 +1,16 @@
 pub mod age_stage;
 pub mod courtship;
+pub mod daily_work;
 pub mod family_outings;
 pub mod generations;
 pub mod growth;
 pub mod households;
+pub mod lessons;
 pub mod memory_pressure;
 pub mod newcomers;
 pub mod relations;
 pub mod service;
+pub mod skills;
 pub mod social;
 pub mod spawn;
 pub mod speeches;

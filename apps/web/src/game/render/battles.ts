@@ -4,7 +4,7 @@
 // walking off and not coming back.
 
 import type { BattleInfo } from '../../shared/types'
-import { t, tn, type MessageKey } from '../../i18n'
+import { ft, ftn, type ForkMessageKey } from '../../fork/i18n'
 
 type Ctx = CanvasRenderingContext2D
 
@@ -147,7 +147,7 @@ export function fightName(scale: string): 'siege' | 'war' | 'raid' | 'skirmish' 
   return 'battle'
 }
 
-const FIGHT_WORD: Record<ReturnType<typeof fightName>, MessageKey> = {
+const FIGHT_WORD: Record<ReturnType<typeof fightName>, ForkMessageKey> = {
   siege: 'map.battle.siege',
   war: 'map.battle.war',
   raid: 'map.battle.raid',
@@ -158,8 +158,8 @@ const FIGHT_WORD: Record<ReturnType<typeof fightName>, MessageKey> = {
 /** The plaque's words: "raid · 7 fallen", or "raid" before anyone falls. */
 export function plaqueText(battle: BattleInfo): string {
   const fallen = battle.casualties_a + battle.casualties_d
-  const name = t(FIGHT_WORD[fightName(battle.scale)])
-  return fallen > 0 ? tn('map.battle.fallen', fallen, { name }) : name
+  const name = ft(FIGHT_WORD[fightName(battle.scale)])
+  return fallen > 0 ? ftn('map.battle.fallen', fallen, { name }) : name
 }
 
 function drawBattlePlaque(

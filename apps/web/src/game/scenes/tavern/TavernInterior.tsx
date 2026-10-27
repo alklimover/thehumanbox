@@ -1,9 +1,9 @@
 import { personName } from '../../../shared/personName'
-import { t } from '../../../i18n'
-import { roleLabel } from '../shared/role-label'
 import { useCallback, useMemo } from 'react'
 import type { SceneContext } from '../core/types'
 import { useUIStore } from '../../../state/store'
+import { t } from '../../../i18n'
+import { roleWord } from '../shared/occupant-words'
 import { RoomCanvas, type RoomPalette } from '../shared/RoomCanvas'
 import { drawTavernFurniture } from './furniture'
 
@@ -67,17 +67,19 @@ export function TavernInterior({ ctx, onExit, onFocusOrg }: Props) {
   return (
     <div className="scene-shell">
       <div className="scene-head">
-        <button className="scene-back" onClick={onExit} aria-label={t('map.scene.backAria')}>
-          {t('map.scene.back')}
+        <button className="scene-back" onClick={onExit} aria-label={t('common.backToMap')}>
+          ← {t('common.backToMap')}
         </button>
         <div className="scene-title-wrap">
           <div className="scene-title">{title}</div>
           <div className="scene-subtitle">{subtitle}</div>
         </div>
         <div className="scene-meta">
-          {occupants.length === 0 ? t('map.tavern.empty') : t('map.tavern.inside', { n: occupants.length })}
+          {occupants.length === 0
+            ? t('panels.scene.emptyTavern')
+            : t('panels.scene.drinkingCount', { count: occupants.length })}
           {' · '}
-          {isDay ? t('map.scene.day') : t('map.scene.night')}
+          {isDay ? `☀ ${t('panels.scene.day')}` : `☾ ${t('panels.scene.night')}`}
         </div>
       </div>
 
@@ -100,7 +102,7 @@ export function TavernInterior({ ctx, onExit, onFocusOrg }: Props) {
               className={'scene-occupant-chip' + (o.org.id === selectedOrgId ? ' active' : '')}
               onClick={() => onFocusOrg(o.org.id)}
             >
-              <span className="scene-occupant-role">{roleLabel(o.role)}</span>
+              <span className="scene-occupant-role">{roleWord(o.role)}</span>
               <span className="scene-occupant-name">{personName(o.org)}</span>
               <span className="scene-occupant-act">{o.activity}</span>
             </button>
@@ -113,10 +115,10 @@ export function TavernInterior({ ctx, onExit, onFocusOrg }: Props) {
                 (o.org.id === selectedOrgId ? ' active' : '')
               }
               onClick={() => onFocusOrg(o.org.id)}
-              title={t('map.tavern.nearbyTip')}
+              title={t('panels.scene.tavernAway')}
             >
               <span className="scene-occupant-role">
-                {t('map.scene.nearby', { role: roleLabel(o.role) })}
+                {roleWord(o.role)} · {t('panels.scene.nearby')}
               </span>
               <span className="scene-occupant-name">{personName(o.org)}</span>
               <span className="scene-occupant-act">{o.activity}</span>

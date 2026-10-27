@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../../i18n/locale'
+import { setLocaleForTests } from '../i18n/locale'
 import {
   CATEGORIES,
   DEFAULT_CATEGORIES,
@@ -64,12 +64,12 @@ describe('the chronicle by years', () => {
     expect(groups[0].count).toBe(2)
   })
 
-  it('starts the year in summer, as the game calendar does', () => {
+  it('starts the year in summer, as the game calendar does', async () => {
     expect(seasonOf(0)).toBe('Summer')
     expect(seasonOf(3000)).toBe('Autumn')
     expect(seasonOf(6000)).toBe('Winter')
     expect(seasonOf(9000)).toBe('Spring')
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(seasonOf(YEAR + 6500)).toBe('зима')
   })
 })
@@ -123,8 +123,8 @@ describe('a line as shown', () => {
     ).toBe('Zovu')
   })
 
-  it('is translated at display, with names in Cyrillic', () => {
-    setLocaleForTests('ru')
+  it('is translated at display, with names in Cyrillic', async () => {
+    await setLocaleForTests('ru')
     expect(entryText(entry(1, 1))).toMatch(/^Кефе — новая эпоха: железный век\./)
     expect(entryText(entry(1, 1, { src: 'era', kind: 'era', text: 'bronze', tribes: [] }))).toBe(
       'В мире наступает новая эпоха: бронзовый век.',
@@ -137,9 +137,9 @@ describe('a line as shown', () => {
     expect(sentence('')).toBe('')
   })
 
-  it('tells a small tribe dying out, with how big it once was', () => {
+  it('tells a small tribe dying out, with how big it once was', async () => {
     const died = entry(1, 1, { src: 'server', kind: 'died_out', cat: 'tribes', actor: 'Meleru', text: '' })
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, undefined, 5)).toBe(
       'Племя Мелеру вымерло, а когда-то в нём было 5 человек.',
     )
@@ -149,7 +149,7 @@ describe('a line as shown', () => {
     expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, undefined, 0)).toBe(
       'Племя Мелеру вымерло.',
     )
-    setLocaleForTests('en')
+    await setLocaleForTests('en')
     expect(entryText({ ...died, tribes: [{ id: 'x', name: 'Meleru' }] }, undefined, 1)).toBe(
       'The Meleru died out; at their height they were 1.',
     )
@@ -179,8 +179,8 @@ describe('the filter', () => {
     expect(loadCategories({ getItem: () => '{oops' })).toEqual(DEFAULT_CATEGORIES)
   })
 
-  it('lists the tribes by name, the ones with nobody left last and marked', () => {
-    setLocaleForTests('ru')
+  it('lists the tribes by name, the ones with nobody left last and marked', async () => {
+    await setLocaleForTests('ru')
     const tribes = [tribe('b', 'Zovu', 900), tribe('a', 'Kefe'), tribe('c', 'Daki')]
     expect(tribeOptions(tribes, new Set(['a', 'c']))).toEqual([
       { id: 'c', label: 'Даки', diedOut: false },
@@ -218,8 +218,8 @@ describe('the filter', () => {
     expect(entrySex({ ...crown, sex: 'male' }, () => null)).toBe('male')
   })
 
-  it('makes a dead person’s last memory agree with them', () => {
-    setLocaleForTests('ru')
+  it('makes a dead person’s last memory agree with them', async () => {
+    await setLocaleForTests('ru')
     const gone = entry(1, 1, {
       src: 'headline',
       kind: 'headline',
@@ -232,7 +232,7 @@ describe('the filter', () => {
     expect(entryText({ ...gone, sex: undefined })).toContain('влюбился/ась')
   })
 
-  it('shows a world milestone in English without its id, and in Russian by its name', () => {
+  it('shows a world milestone in English without its id, and in Russian by its name', async () => {
     const milestone = entry(1, 1, {
       src: 'headline',
       kind: 'milestone',
@@ -244,7 +244,7 @@ describe('the filter', () => {
     expect(entryText({ ...milestone, text: 'some_id: not a milestone line' })).toBe(
       'some_id: not a milestone line',
     )
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(sentence(entryText(milestone))).toBe('Пятьсот человек — народ разросся')
   })
 

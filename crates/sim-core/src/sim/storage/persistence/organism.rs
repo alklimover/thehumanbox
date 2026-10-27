@@ -156,6 +156,14 @@ pub(crate) struct OrgSave {
     pub(super) specialty: Option<String>,
     #[serde(default)]
     pub(super) practice: std::collections::BTreeMap<String, f32>,
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub(super) skills: std::collections::BTreeMap<String, f32>,
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub(super) work_feelings: std::collections::BTreeMap<String, f32>,
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub(super) work_spots: std::collections::BTreeMap<String, [f32; 3]>,
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub(super) lessons: std::collections::BTreeMap<String, f32>,
     #[serde(default)]
     pub(super) religion_id: Option<String>,
     #[serde(default)]
@@ -208,6 +216,9 @@ pub(crate) struct AnimalSave {
     pub(super) keeper: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) pen: Option<(i32, i32)>,
+    /// A wolf the player summoned; old saves have none, so they are all wild.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) summoned: bool,
 }
 
 fn is_zero_tick(t: &u64) -> bool {
@@ -329,6 +340,10 @@ pub(super) fn org_to_save(o: &Organism) -> OrgSave {
         piety: o.piety,
         specialty: o.specialty.clone(),
         practice: o.practice.clone(),
+        skills: o.skills.to_map(),
+        work_feelings: o.skills.feelings_map(),
+        work_spots: o.skills.spots_map(),
+        lessons: o.lessons.to_map(),
         religion_id: o.religion_id.clone(),
         degrees: o.degrees.clone(),
         tools: o.tools.clone(),
@@ -474,6 +489,10 @@ pub(super) fn org_from_save(s: OrgSave, save_version: u32) -> Organism {
         o.piety = s.piety;
         o.specialty = s.specialty;
         o.practice = s.practice;
+        o.skills = crate::organism::skills::Skills::from_map(&s.skills);
+        o.skills.set_feelings_from_map(&s.work_feelings);
+        o.skills.set_spots_from_map(&s.work_spots);
+        o.lessons = crate::organism::lessons::Lessons::from_map(&s.lessons);
         o.religion_id = s.religion_id;
         o.degrees = s.degrees;
         o.tools = s.tools;
@@ -591,6 +610,7 @@ pub(super) fn animal_to_save(a: &Animal) -> AnimalSave {
         born_tick: a.born_tick,
         keeper: a.keeper.clone(),
         pen: a.pen,
+        summoned: a.summoned,
     }
 }
 
@@ -605,5 +625,6 @@ pub(super) fn animal_from_save(s: AnimalSave) -> Animal {
     a.born_tick = s.born_tick;
     a.keeper = s.keeper;
     a.pen = s.pen;
+    a.summoned = s.summoned;
     a
 }

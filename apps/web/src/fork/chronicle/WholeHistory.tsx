@@ -2,10 +2,10 @@
 // world has written, kept by the desktop simulation (see ./model and ./api).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { calendarAt } from '../../game/model/calendar'
-import { fmtNumber, t, tn } from '../../i18n'
-import { displayName } from '../../i18n/names'
-import { simLabel } from '../../i18n/sim'
-import { sexByName, type Sex } from '../../i18n/simtext'
+import { ft, ftn, fmtNumber } from '../i18n'
+import { displayName } from '../i18n/names'
+import { simLabel } from '../i18n/sim'
+import { sexByName, type Sex } from '../i18n/simtext'
 import type { WorldState } from '../../shared/types'
 import { useWorldStore } from '../../state/worldStore'
 import { fetchChroniclePage, fetchChronicleTribes } from './api'
@@ -219,7 +219,7 @@ export function WholeHistory() {
   return (
     <div className="fch">
       <div className="fch-filters">
-        <div className="fch-chips" role="group" aria-label={t('chronicle.tab')}>
+        <div className="fch-chips" role="group" aria-label={ft('chronicle.tab')}>
           {CATEGORIES.map((c) => (
             <button
               key={c}
@@ -228,14 +228,14 @@ export function WholeHistory() {
               aria-pressed={categories.includes(c)}
               onClick={() => toggle(c)}
             >
-              <span style={{ color: CATEGORY_COLOR[c] }}>{CATEGORY_ICON[c]}</span> {t(CATEGORY_LABEL[c])}
+              <span style={{ color: CATEGORY_COLOR[c] }}>{CATEGORY_ICON[c]}</span> {ft(CATEGORY_LABEL[c])}
             </button>
           ))}
         </div>
         <label className="fch-tribe">
-          {t('chronicle.tribe')}{' '}
+          {ft('chronicle.tribe')}{' '}
           <select value={lineage ?? ''} onChange={(e) => setLineage(e.target.value || null)}>
-            <option value="">{t('chronicle.tribe.all')}</option>
+            <option value="">{ft('chronicle.tribe.all')}</option>
             {options.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.label}
@@ -253,19 +253,19 @@ export function WholeHistory() {
         }}
       >
         {state.loading ? (
-          <div className="fch-note">{t('chronicle.loading')}</div>
+          <div className="fch-note">{ft('chronicle.loading')}</div>
         ) : state.error ? (
-          <div className="fch-note">{t('chronicle.unavailable', { error: state.error })}</div>
+          <div className="fch-note">{ft('chronicle.unavailable', { error: state.error })}</div>
         ) : groups.length === 0 ? (
-          <div className="fch-note">{t('chronicle.empty')}</div>
+          <div className="fch-note">{ft('chronicle.empty')}</div>
         ) : (
           groups.map((g) => (
             <section key={g.year} className="fch-year">
               <div className="fch-year-head">
                 <span>
                   {g.era
-                    ? t('chronicle.yearEra', { year: g.year + 1, era: simLabel('era', g.era) })
-                    : t('chronicle.year', { year: g.year + 1 })}
+                    ? ft('chronicle.yearEra', { year: g.year + 1, era: simLabel('era', g.era) })
+                    : ft('chronicle.year', { year: g.year + 1 })}
                 </span>
                 <span className="fch-year-count">{fmtNumber(g.count)}</span>
               </div>
@@ -297,13 +297,13 @@ export function WholeHistory() {
             </section>
           ))
         )}
-        {state.more && !state.loading && <div className="fch-note">⟳ {t('chronicle.loadingMore')}</div>}
+        {state.more && !state.loading && <div className="fch-note">⟳ {ft('chronicle.loadingMore')}</div>}
       </div>
       {!state.loading && !state.error && (
         <div className="fch-foot">
-          {tn('chronicle.total', state.total)}
+          {ftn('chronicle.total', state.total)}
           {state.startedTick
-            ? ` · ${t('chronicle.since', { year: calendarAt(state.startedTick).year })}`
+            ? ` · ${ft('chronicle.since', { year: calendarAt(state.startedTick).year })}`
             : ''}
         </div>
       )}
@@ -343,9 +343,9 @@ function EntryRow({
         {actor && <span className="fch-actor">{shownActor(actor)} </span>}
         {actor ? text : sentence(text)}
         {entry.restored && (
-          <span className="fch-restored" title={t('chronicle.restoredTip')}>
+          <span className="fch-restored" title={ft('chronicle.restoredTip')}>
             {' '}
-            · {t('chronicle.restored')}
+            · {ft('chronicle.restored')}
           </span>
         )}
       </span>
@@ -362,14 +362,14 @@ function GoTo({ tribe, gone }: { tribe: ChronicleTribeLink | null; gone: boolean
         <button
           type="button"
           className="fch-go-btn"
-          title={t('chronicle.goTo', { name: displayName(tribe.name) })}
-          aria-label={t('chronicle.goTo', { name: displayName(tribe.name) })}
+          title={ft('chronicle.goTo', { name: displayName(tribe.name) })}
+          aria-label={ft('chronicle.goTo', { name: displayName(tribe.name) })}
           onClick={() => goToTribe(tribe.id)}
         >
           ▸
         </button>
       ) : (
-        gone && <span className="fch-gone">{t('chronicle.diedOutMark')}</span>
+        gone && <span className="fch-gone">{ft('chronicle.diedOutMark')}</span>
       )}
     </span>
   )
@@ -411,7 +411,7 @@ function PeopleRow({
             type="button"
             className="fch-people-head"
             aria-expanded={open}
-            title={open ? t('chronicle.people.close') : t('chronicle.people.open')}
+            title={open ? ft('chronicle.people.close') : ft('chronicle.people.open')}
             onClick={onFlip}
           >
             <span className="fch-people-mark">{open ? '▾' : '▸'}</span> {groupText(kind, members)}
@@ -425,9 +425,9 @@ function PeopleRow({
             <li key={m.entry.id}>
               {memberText(m, sex)}
               {m.entry.restored && (
-                <span className="fch-restored" title={t('chronicle.restoredTip')}>
+                <span className="fch-restored" title={ft('chronicle.restoredTip')}>
                   {' '}
-                  · {t('chronicle.restored')}
+                  · {ft('chronicle.restored')}
                 </span>
               )}
             </li>

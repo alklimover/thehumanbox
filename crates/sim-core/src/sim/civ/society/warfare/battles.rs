@@ -23,6 +23,48 @@ fn fall_in_battle(
     history.record_death(tick);
 }
 
+/// How close (in tiles) a fighter must be to a battle's place to fight in it: a battle ranges over the land around
+/// it, but someone at home across the island is not in it.
+pub const AT_BATTLE: i32 = 25;
+
+/// Health below which a fighter may leave the battle.
+const WITHDRAW_AT: f32 = 0.25;
+
+/// A fighter just wounded below `WITHDRAW_AT` in this exchange may leave the
+/// fight and make for home, instead of fighting on until they fall: the
+/// fearful often, the bold seldom. Each fighter weighs it once, when the wound
+/// comes; whoever stays fights on. Their side is weaker for every one who
+/// goes, and a side that loses enough of its fighters, dead or gone, breaks.
+fn withdraw_wounded(
+    ids: &mut Vec<String>,
+    organisms: &mut [crate::organism::organism::Organism],
+    health_before: &HashMap<String, f32>,
+    tick: u64,
+    rng: &mut rand_chacha::ChaCha8Rng,
+) -> u32 {
+    use rand::RngExt;
+    let mut left = 0;
+    ids.retain(|id| {
+        let Some(i) = organism_index(organisms, id) else {
+            return true;
+        };
+        let o = &mut organisms[i];
+        let just_wounded = health_before.get(id).is_some_and(|&h| h >= WITHDRAW_AT) && o.health < WITHDRAW_AT;
+        if !o.alive || !just_wounded {
+            return true;
+        }
+        if rng.random::<f32>() >= 0.1 + 0.4 * o.traits.fear {
+            return true;
+        }
+        o.think("wounded, leaving the fight", tick);
+        o.log_life(tick, "battle", "came away wounded from a battle".to_string());
+        o.wander_target = Some((o.home_x as i32, o.home_y as i32));
+        left += 1;
+        false
+    });
+    left
+}
+
 pub fn tick_battles(
     tick: u64,
     rng: &mut rand_chacha::ChaCha8Rng,
@@ -84,14 +126,32 @@ pub fn tick_battles(
             .unwrap_or(0.0);
 
         let base_dmg = 0.06f32;
+        let health_before: HashMap<String, f32> = att_alive
+            .iter()
+            .chain(def_alive.iter())
+            .map(|&i| (organisms[i].id.clone(), organisms[i].health))
+            .collect();
 
         // A combatant can die to fire, illness, or another system between
         // battle ticks. Resolve the empty side below instead of indexing an
         // empty force while trying to manufacture one combat pair.
-        let pairs = att_alive.len().min(def_alive.len());
+        //
+        // Only those at the battle trade blows. A fighter still on the way (or
+        // never set out) is not hurt where they stand: before, someone resting
+        // at home a hundred tiles off "fell in battle".
+        let at_battle = |i: &usize| {
+            let o = &organisms[*i];
+            (o.x as i32 - battle.location.0)
+                .abs()
+                .max((o.y as i32 - battle.location.1).abs())
+                <= AT_BATTLE
+        };
+        let att_here: Vec<usize> = att_alive.iter().copied().filter(at_battle).collect();
+        let def_here: Vec<usize> = def_alive.iter().copied().filter(at_battle).collect();
+        let pairs = att_here.len().min(def_here.len());
         for k in 0..pairs {
-            let ai = att_alive[k];
-            let di = def_alive[k % def_alive.len()];
+            let ai = att_here[k];
+            let di = def_here[k % def_here.len()];
             let att_style = combat_style_for(&organisms[ai], att_era);
             let def_style = combat_style_for(&organisms[di], def_era);
             let a_bonus = soldier_bonus(&organisms[ai]) + att_policy_bonus;
@@ -122,6 +182,9 @@ pub fn tick_battles(
                 battle.casualties_a += 1;
             }
         }
+
+        withdraw_wounded(&mut battle.attacker_orgs, organisms, &health_before, tick, rng);
+        withdraw_wounded(&mut battle.defender_orgs, organisms, &health_before, tick, rng);
 
         let att_now = battle
             .attacker_orgs

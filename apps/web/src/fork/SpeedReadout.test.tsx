@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setLocaleForTests } from '../i18n/locale'
+import { setLocaleForTests } from './i18n/locale'
 import type { DesktopBridge } from '../shared/desktop'
 import { TimeControl } from '../ui/toolbar/TimeControl'
 import type { SimPowerState } from './actual-speed'
@@ -42,20 +42,20 @@ async function render(speed: number, paused = false) {
 
 const value = () => container.querySelector('.time-speed-value')?.textContent
 
-beforeEach(() => {
-  setLocaleForTests('ru')
+beforeEach(async () => {
+  await setLocaleForTests('ru')
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   powerListener = null
 })
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount())
   container.remove()
   delete window.thbDesktop
   vi.unstubAllGlobals()
-  setLocaleForTests('en')
+  await setLocaleForTests('en')
 })
 
 describe('the real speed on the desktop', () => {

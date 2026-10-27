@@ -3,7 +3,7 @@ import { TILE } from '../../../model/palette'
 import { drawTradeNetwork2D } from '../../base-parts/trade-network'
 import { drawCart, drawTrain } from '../../era-traffic'
 import { eraTier } from '../../../model/era-tier'
-import { paintPeopleLabels, type PeopleLabelSource } from '../people/people-labels'
+import { paintPeopleLabels, type HeldLabel, type PeopleLabelSource } from '../people/people-labels'
 import { PeopleNameLayer } from '../people/people-names'
 import { atmosphereTints, precipitating, writePrecipitation, type Tint } from './atmosphere'
 import { atlasId, makeCanvas } from './atlas-host'
@@ -43,6 +43,8 @@ import { paintTornado, tornadoAt } from './tornado'
 import { vegetationSeason } from '../../landscape-style'
 import { terrainSeason } from '../../terrain-season'
 import { paintHud } from './paint-hud'
+import { LabelPresence } from '../../label-presence'
+import type { PlacedLabel } from '../../settlement-labels'
 import { paintFireflies } from './fireflies'
 import { nightLevel, paintStars } from './night-sky'
 import { SpriteRecorder } from './recorder'
@@ -104,6 +106,8 @@ export interface OverlayExtras {
 const GROUND_INTERVAL_MS = 66
 /** Time-driven overlay layers need at most 15 updates per second. */
 const ANIMATED_SECTION_INTERVAL_MS = 66
+/** While a label fades, the labels repaint at this interval (about 60 times a second). */
+const FADE_FRAME_MS = 16
 /** The heat map follows new world data at most this often (a setting change is shown at once). */
 const HEAT_INTERVAL_MS = 500
 
@@ -151,7 +155,9 @@ export class CfOverlayRenderer {
   private heatAt = -Infinity
   private heatPending = false
   private staticKey = ''
-  private outlineFrame = -1
+  /** The structure grid revision and array the outline was last drawn from (see `updateTerritoryBorders`). */
+  private outlineRevision = -2
+  private outlineStructure: unknown = null
   private territoryRef: unknown = null
   private contestedKey = ''
   private groundKey = ''
@@ -166,6 +172,12 @@ export class CfOverlayRenderer {
   private labelsKey = ''
   private labelsPeople: PeopleLabelSource | null = null
   private settlementLabels: ReturnType<typeof paintHud>['labels'] = []
+  /** Opacity of each name and thought between paints, so they fade rather than pop (see `LabelPresence`). */
+  private readonly peopleFade = new LabelPresence<HeldLabel>()
+  private readonly settlementFade = new LabelPresence<PlacedLabel>()
+  /** Whether a label was part-way through a fade at the last paint: such labels repaint every frame until done. */
+  private labelsFading = false
+  private hudFading = false
   /** Tribes that entered a new era, marked on the map for a while. */
   private readonly eraWatch = new EraWatch()
   private readonly dust = new FootstepDust()
@@ -437,18 +449,20 @@ export class CfOverlayRenderer {
     }
     lap('effects')
 
-    const hudKey = `${animatedKey}|${f.viewFlags.grid ? 1 : 0}|${f.viewFlags.hideUI ? 1 : 0}`
+    const hudKey = `${animatedKey}|${f.viewFlags.grid ? 1 : 0}|${f.viewFlags.hideUI ? 1 : 0}|${this.hudFading ? Math.floor(f.t / FADE_FRAME_MS) : ''}`
     if (hudKey !== this.hudKey) {
       this.hudKey = hudKey
       this.hud.begin(gv)
-      this.settlementLabels = paintHud(this.hud.asContext(), f, { grid: f.viewFlags.grid }).labels
+      const hud = paintHud(this.hud.asContext(), f, { grid: f.viewFlags.grid, fade: this.settlementFade })
+      this.settlementLabels = hud.labels
+      this.hudFading = this.settlementFade.fading
       this.hud.end()
     }
     const settlementLabels = this.settlementLabels
 
     // Names, thoughts, work poses and prayer glyphs go above the people; town names claim space first.
     this.names.follow(extras.people)
-    const labelsKey = `${animatedKey}|${extras.selectedId ?? ''}|${f.focus}|${f.viewFlags.names ? 1 : 0}|${f.viewFlags.thoughts ? 1 : 0}|${f.viewFlags.hideUI ? 1 : 0}`
+    const labelsKey = `${animatedKey}|${extras.selectedId ?? ''}|${f.focus}|${f.viewFlags.names ? 1 : 0}|${f.viewFlags.thoughts ? 1 : 0}|${f.viewFlags.hideUI ? 1 : 0}|${this.labelsFading ? Math.floor(f.t / FADE_FRAME_MS) : ''}`
     if (labelsKey !== this.labelsKey || extras.people !== this.labelsPeople) {
       this.labelsKey = labelsKey
       this.labelsPeople = extras.people
@@ -470,8 +484,10 @@ export class CfOverlayRenderer {
           ox: f.ox,
           oy: f.oy,
           poses: this.labels,
+          fade: this.peopleFade,
         })
       }
+      this.labelsFading = this.peopleFade.fading
       this.names.end()
       this.labels.end()
     }
@@ -652,17 +668,28 @@ export class CfOverlayRenderer {
       ctx.fillRect(this.contestedTiles[i] * TILE, this.contestedTiles[i + 1] * TILE, TILE, TILE)
   }
 
-  /** Territory borders and, with the structures view, a thin outline on every built-up tile. */
+  /**
+   * Territory borders and, with the structures view, a thin outline on every built-up tile. The outline
+   * is redrawn when the structure grid changes (its revision, or a new grid array), not on every
+   * simulation frame: the grid is mutated in place and most frames leave it as it was.
+   */
   private updateTerritoryBorders(f: CfFrame): void {
     const { world, viewFlags } = f
     const outline = viewFlags.structures && !!world.grid.structure
     const key = `${viewFlags.territory ? 1 : 0}|${f.focus}|${outline ? 1 : 0}`
+    // Grids that do not count their revisions are read once per frame, as before.
+    const structureRevision = world.grid.structure_revision ?? world.frame_id
     if (key === this.staticKey && world.territory === this.territoryRef) {
-      if (!outline || this.outlineFrame === world.frame_id) return
+      if (
+        !outline ||
+        (this.outlineRevision === structureRevision && this.outlineStructure === world.grid.structure)
+      )
+        return
     }
     this.staticKey = key
     this.territoryRef = world.territory
-    this.outlineFrame = world.frame_id
+    this.outlineRevision = structureRevision
+    this.outlineStructure = world.grid.structure ?? null
     this.groundStatic.begin({ zoom: f.zoom, dpr: f.dpr })
     const ctx = this.groundStatic.asContext()
     if (viewFlags.territory) paintTerritoryBorders(ctx, world, f.focus)

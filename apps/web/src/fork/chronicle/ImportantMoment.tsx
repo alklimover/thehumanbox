@@ -5,9 +5,9 @@
 // copy of the player's choices and of the tribe in focus up to date.
 import { useEffect, useRef, useState } from 'react'
 import { calendarAt } from '../../game/model/calendar'
-import { fmtNumber, t, tn } from '../../i18n'
-import { displayName } from '../../i18n/names'
-import { sexByName } from '../../i18n/simtext'
+import { ft, ftn, fmtNumber } from '../i18n'
+import { displayName } from '../i18n/names'
+import { sexByName } from '../i18n/simtext'
 import { isDesktop } from '../../shared/desktop'
 import { useUIStore } from '../../state/store'
 import { useWorldStore } from '../../state/worldStore'
@@ -16,6 +16,7 @@ import {
   CATEGORY_ICON,
   entryActor,
   entryText,
+  seasonOf,
   sentence,
   shownActor,
   type ChronicleEntry,
@@ -173,12 +174,12 @@ export function MomentCard({
     >
       <div className="fmoment-head">
         <span className="fmoment-title">
-          {alert.action === 'pause' ? t('moment.paused') : t('moment.slowed')}
+          {alert.action === 'pause' ? ft('moment.paused') : ft('moment.slowed')}
         </span>
         <span className="fmoment-date">
-          {t('calendar.yearSeason', { year: date.year, season: date.season })}
+          {ft('calendar.yearSeason', { year: date.year, season: seasonOf(alert.tick) })}
         </span>
-        <button type="button" className="fmoment-x" aria-label={t('common.close')} onClick={onClose}>
+        <button type="button" className="fmoment-x" aria-label={ft('common.close')} onClick={onClose}>
           ✕
         </button>
       </div>
@@ -189,46 +190,46 @@ export function MomentCard({
           {firstInto && (
             <span className="fmoment-first">
               {' '}
-              {t('moment.firstInto', { name: displayName(firstInto.name) })}
+              {ft('moment.firstInto', { name: displayName(firstInto.name) })}
             </span>
           )}
         </span>
       </div>
       {lines.length > 0 && (
         <div className="fmoment-also">
-          <div className="fmoment-also-title">{t('moment.also', { n: alert.also_total })}</div>
+          <div className="fmoment-also-title">{ft('moment.also', { n: alert.also_total })}</div>
           {lines.map((line, i) => (
             <div key={i} className="fmoment-also-row">
               <Icon cat={line.cat} />
               <span>{lineText(line)}</span>
             </div>
           ))}
-          {more > 0 && <div className="fmoment-more">{tn('moment.more', more)}</div>}
+          {more > 0 && <div className="fmoment-more">{ftn('moment.more', more)}</div>}
         </div>
       )}
       <div className="fmoment-actions">
         {alert.focus && (
           <button type="button" className="lang-btn" onClick={onShow}>
-            {t('moment.show')}
+            {ft('moment.show')}
           </button>
         )}
         <button type="button" className="lang-btn primary" onClick={onContinue}>
-          {t('moment.continue', { speed: fmtNumber(alert.prev_speed, { maximumFractionDigits: 2 }) })}
+          {ft('moment.continue', { speed: fmtNumber(alert.prev_speed, { maximumFractionDigits: 2 }) })}
         </button>
         <button type="button" className="lang-btn" onClick={onChronicle}>
-          {t('moment.chronicle')}
+          {ft('moment.chronicle')}
         </button>
       </div>
       <div className="fmoment-foot">
         <label>
           <input type="checkbox" checked={ignored} onChange={(e) => onIgnore(e.target.checked)} />{' '}
-          {t('moment.dontStop', { rule: t(RULE_LABEL[alert.main.rule]) })}
+          {ft('moment.dontStop', { rule: ft(RULE_LABEL[alert.main.rule]) })}
         </label>
         <button
           type="button"
           className="fmoment-gear"
-          title={t('moment.settings')}
-          aria-label={t('moment.settings')}
+          title={ft('moment.settings')}
+          aria-label={ft('moment.settings')}
           onClick={onSettings}
         >
           ⚙

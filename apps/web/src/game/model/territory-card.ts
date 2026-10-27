@@ -1,8 +1,21 @@
 import type { WorldState } from '../../shared/types'
-import { wealthGapOf, wealthGapWord } from './inequality'
+import { t, type MessageKey } from '../../i18n'
+import { eraWord } from '../../shared/era-words'
+import { wealthGapOf } from './inequality'
 import { leadershipOf } from './leadership'
-import { fmtNumber, t, tn, type MessageKey, type PluralKey } from '../../i18n'
-import { cargoLabel, simLabel } from '../../i18n/sim'
+import { coinAmount, heldGood } from '../../fork/i18n/trade'
+import { cargoLabel } from '../../fork/i18n/sim'
+import { displayName } from '../../fork/i18n/names'
+
+/** The town a tribe is known for, by its specialty good. Keys, read with t() where they are shown. */
+const TOWNS = new Map<string, MessageKey>([
+  ['ore', 'model.territory.towns.ore'],
+  ['salt', 'model.territory.towns.salt'],
+  ['clay', 'model.territory.towns.clay'],
+  ['spice', 'model.territory.towns.spice'],
+  ['ochre', 'model.territory.towns.ochre'],
+  ['fur', 'model.territory.towns.fur'],
+])
 
 /** What the hover card says about a tribe whose land the pointer rests on. */
 export interface TerritoryCardFacts {
@@ -26,7 +39,7 @@ export function goodsOfTribe(world: Pick<WorldState, 'land_goods'>, lineage: str
   const parts = Object.entries(held)
     .filter(([, count]) => count > 0)
     .sort(([nameA, countA], [nameB, countB]) => countB - countA || nameA.localeCompare(nameB))
-    .map(([good, count]) => t('model.territory.goodItem', { count, good: simLabel('good', good) }))
+    .map(([good, count]) => heldGood(good, count) ?? `${count} ${good}`)
   return parts.length > 0 ? t('model.territory.holds', { goods: parts.join(', ') }) : null
 }
 
@@ -40,42 +53,8 @@ export function goodsOfTribe(world: Pick<WorldState, 'land_goods'>, lineage: str
 export function specialtyOfTribe(world: Pick<WorldState, 'specialties'>, lineage: string): string | null {
   const good = world.specialties?.[lineage]
   if (!good) return null
-  const town = TOWNS[good]
-  return town ? t(town) : null
-}
-
-const TOWNS: Record<string, MessageKey> = {
-  ore: 'model.territory.town.ore',
-  salt: 'model.territory.town.salt',
-  clay: 'model.territory.town.clay',
-  spice: 'model.territory.town.spice',
-  ochre: 'model.territory.town.ochre',
-  fur: 'model.territory.town.fur',
-}
-
-/** The simulation's currency words (sim/civ/society/economy.rs), counted in the reader's language. */
-const CURRENCIES: Record<string, PluralKey> = {
-  shells: 'model.currency.shells',
-  beads: 'model.currency.beads',
-  coins: 'model.currency.coins',
-  denarii: 'model.currency.denarii',
-  florins: 'model.currency.florins',
-  pounds: 'model.currency.pounds',
-  dollars: 'model.currency.dollars',
-  credits: 'model.currency.credits',
-  tokens: 'model.currency.tokens',
-  ergs: 'model.currency.ergs',
-  creds: 'model.currency.creds',
-  synth: 'model.currency.synth',
-  stars: 'model.currency.stars',
-  essence: 'model.currency.essence',
-}
-
-/** An amount in a tribe's coin ("4 shells"), or the bare number when the coin is not known. */
-function money(n: number, unit: string | undefined): string {
-  if (!unit) return fmtNumber(n)
-  const key = CURRENCIES[unit]
-  return key ? tn(key, n) : t('model.territory.money', { n, unit })
+  const key = TOWNS.get(good)
+  return key ? t(key) : null
 }
 
 export function tradeOfTribe(
@@ -90,29 +69,34 @@ export function tradeOfTribe(
   )
   if (routes.length === 0) return null
   // The coin of the tribe's age ("beads" in the Bronze age, "coins" in the Iron age), when known.
-  const unit = world.lineage_currencies?.[lineage] || undefined
+  const unit = world.lineage_currencies?.[lineage] ? ` ${world.lineage_currencies[lineage]}` : ''
   const goods = routes.reduce((sum, route) => sum + route.volume, 0)
   const caravans = (world.caravans ?? []).filter(
     (caravan) => caravan.sender_lineage === lineage || caravan.receiver_lineage === lineage,
   )
   const inbound = caravans.find((caravan) => caravan.receiver_lineage === lineage)
-  const parts = [tn('model.territory.routes', routes.length)]
+  const parts = [t('model.territory.routes', { count: routes.length })]
   if (routes.some((route) => route.embargoed)) parts.push(t('model.territory.embargoed'))
   else if (routes.some((route) => route.agreement)) parts.push(t('model.territory.agreement'))
   // A first caravan still on the road has delivered nothing yet, so no goods are named.
-  if (goods > 0) parts.push(tn('model.territory.goods', goods))
-  if (caravans.length > 0) parts.push(tn('model.territory.caravans', caravans.length))
-  if (inbound)
+  if (goods > 0) parts.push(t('model.territory.goods', { count: goods }))
+  if (caravans.length > 0) parts.push(t('model.territory.caravans', { count: caravans.length }))
+  if (inbound) {
+    // Fork: Russian names the cargo and declines the coin with the price (fork/i18n/trade).
+    const price = coinAmount(inbound.unit_price, world.lineage_currencies?.[lineage])
     parts.push(
-      t('model.territory.buying', {
-        cargo: cargoLabel(inbound.cargo),
-        price: money(inbound.unit_price, unit),
-      }),
+      price === null
+        ? t('model.territory.buying', { cargo: inbound.cargo, price: inbound.unit_price, unit })
+        : t('model.territory.buying', { cargo: cargoLabel(inbound.cargo), price, unit: '' }),
     )
+  }
   const earned = world.trade_income?.[lineage] ?? 0
-  if (earned > 0) parts.push(t('model.territory.earned', { money: money(earned, unit) }))
+  if (earned > 0) {
+    const amount = coinAmount(earned, world.lineage_currencies?.[lineage])
+    parts.push(t('model.territory.earned', amount === null ? { amount: earned, unit } : { amount, unit: '' }))
+  }
   const bartered = world.trade_barter?.[lineage] ?? 0
-  if (bartered > 0) parts.push(t('model.territory.bartered', { n: bartered }))
+  if (bartered > 0) parts.push(t('model.territory.bartered', { amount: bartered }))
   return parts.join(' · ')
 }
 
@@ -121,8 +105,7 @@ export function eraNameOf(world: Pick<WorldState, 'lineage_eras'>, lineage: stri
   const eras = world.lineage_eras
   if (!eras) return null
   const raw = Array.isArray(eras) ? eras.find((row) => row.lineage_id === lineage)?.era_name : eras[lineage]
-  // Pretty-printed English ("pre stone"); the hover card names it through simLabel('era').
-  return raw ? raw.replace(/[-_]/g, ' ') : null
+  return raw ? eraWord(raw) : null
 }
 
 /** The facts a tribe's territory card shows: name, people alive, who leads it, its era and wealth gap. */
@@ -132,14 +115,13 @@ export function territoryCardFacts(
   contested: boolean,
 ): TerritoryCardFacts {
   const leadership = leadershipOf(world, lineage)
-  const gap = wealthGapOf(world.lineage_inequality, lineage)
   return {
-    name: world.lineage_names?.[lineage] ?? lineage,
+    name: displayName(world.lineage_names?.[lineage]) || lineage,
     people: world.organisms.filter((o) => o.alive && o.lineage_id === lineage).length,
     leader: leadership?.leader?.name ?? null,
     government: leadership?.government ?? null,
     era: eraNameOf(world, lineage),
-    wealthGap: gap ? wealthGapWord(gap) : null,
+    wealthGap: wealthGapOf(world.lineage_inequality, lineage),
     trade:
       [specialtyOfTribe(world, lineage), tradeOfTribe(world, lineage)].filter(Boolean).join(' · ') || null,
     goods: goodsOfTribe(world, lineage),

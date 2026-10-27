@@ -4,10 +4,10 @@
 // faiths, eras and towns; the god gets the tribes and prayers that need a
 // power, and what that power is. Names stay in the nominative: every phrase is
 // built so a tribe's or a person's name needs no case ending.
-import { t, tn } from '../../i18n'
-import { displayName } from '../../i18n/names'
-import { simLabel } from '../../i18n/sim'
-import { simFaithName } from '../../i18n/simtext'
+import { ft, ftn } from '../i18n'
+import { displayName } from '../i18n/names'
+import { simLabel } from '../i18n/sim'
+import { simFaithName } from '../i18n/simtext'
 import { ageInYears, YEAR_TICKS } from '../../game/model/calendar'
 import { familyLines } from '../../game/model/family-lines'
 import { PERIL_HELP, remainingLine, tribeHome } from '../../game/model/tribe-peril'
@@ -23,6 +23,7 @@ import { eraRows } from '../../game/model/era-flourish'
 import { personName } from '../../shared/personName'
 import { SANDBOX_CATEGORIES } from '../../simulation/sandbox'
 import type { GoalStatus, PrayerInfo, WorldState } from '../../shared/types'
+import { t } from '../../i18n'
 
 export type StoryKind =
   | 'war'
@@ -177,12 +178,12 @@ export function warStories(world: World, god = false): Story[] {
         key: `war:${b.id}`,
         kind: 'war' as const,
         icon: '⚔️',
-        title: t('modes.story.war', { a: names(world, b.attackers), b: names(world, b.defenders) }),
+        title: ft('modes.story.war', { a: names(world, b.attackers), b: names(world, b.defenders) }),
         detail: god
-          ? t('modes.story.war.god', { peace: toolLabel('peace'), smite: toolLabel('smite') })
+          ? ft('modes.story.war.god', { peace: toolLabel('peace'), smite: toolLabel('smite') })
           : fallen > 0
-            ? tn('modes.story.war.fallen', fallen)
-            : t('modes.story.war.fresh'),
+            ? ftn('modes.story.war.fallen', fallen)
+            : ft('modes.story.war.fresh'),
         weight: (god ? 60 : 90) + Math.min(fallen, 40) + Math.min(b.initial_a + b.initial_d, 40) / 4,
         at: { x: b.location[0], y: b.location[1] },
         lineage: b.attackers[0],
@@ -210,8 +211,8 @@ export function brinkStories(world: World): Story[] {
       key: `brink:${r.a}:${r.b}`,
       kind: 'brink' as const,
       icon: '😡',
-      title: t('modes.story.brink', { a: tribeName(world, r.a), b: tribeName(world, r.b) }),
-      detail: i === 0 && feuds.length > 1 ? t('modes.story.brink.worst') : t('modes.story.brink.feud'),
+      title: ft('modes.story.brink', { a: tribeName(world, r.a), b: tribeName(world, r.b) }),
+      detail: i === 0 && feuds.length > 1 ? ft('modes.story.brink.worst') : ft('modes.story.brink.feud'),
       weight: 40 + Math.round(-r.attitude * 30),
       at: ha && hb ? { x: (ha.x + hb.x) / 2, y: (ha.y + hb.y) / 2 } : (ha ?? hb),
       lineage: r.a,
@@ -224,13 +225,13 @@ export function brinkStories(world: World): Story[] {
 export function perilStories(world: World, god = false): Story[] {
   return (world.tribes_in_peril ?? []).map((p) => {
     const help = PERIL_HELP[p.cause]
-    const reason = capital(help?.reason ?? '')
+    const reason = capital(help ? t(help.reason) : '')
     return {
       key: `peril:${p.lineage_id}`,
       kind: 'peril' as const,
       icon: '💀',
-      title: t('modes.story.peril', { tribe: displayName(p.tribe), left: remainingLine(p.population) }),
-      detail: god && help ? t('modes.story.peril.help', { reason, action: help.action }) : reason,
+      title: ft('modes.story.peril', { tribe: displayName(p.tribe), left: remainingLine(p.population) }),
+      detail: god && help ? ft('modes.story.peril.help', { reason, action: t(help.action) }) : reason,
       weight: (god ? 100 : 70) + Math.max(0, p.peak - p.population) - p.population,
       at: home(world, p.lineage_id),
       lineage: p.lineage_id,
@@ -261,10 +262,10 @@ export function faithStories(world: World, watch: StoryWatch): Story[] {
         key: `faith:${r.id}`,
         kind: 'faith' as const,
         icon: '🔮',
-        title: t('modes.story.faith', { faith: simFaithName(r.name) }),
+        title: ft('modes.story.faith', { faith: simFaithName(r.name) }),
         detail: lineage
-          ? tn('modes.story.faith.detail', n, { tribe: tribeName(world, lineage) })
-          : tn('modes.story.faith.believers', n),
+          ? ftn('modes.story.faith.detail', n, { tribe: tribeName(world, lineage) })
+          : ftn('modes.story.faith.believers', n),
         weight: 65 + Math.min(n, 30) / 3,
         at: home(world, lineage),
         lineage,
@@ -292,12 +293,12 @@ export function thresholdStories(world: World, god = false): Story[] {
         key: `threshold:${p.lineage_id}:${p.next_era}`,
         kind: 'threshold' as const,
         icon: '📜',
-        title: t('modes.story.threshold', { tribe: tribeName(world, p.lineage_id) }),
+        title: ft('modes.story.threshold', { tribe: tribeName(world, p.lineage_id) }),
         detail: god
-          ? t('modes.story.threshold.god', { inspire: toolLabel('inspire') })
+          ? ft('modes.story.threshold.god', { inspire: toolLabel('inspire') })
           : missing
-            ? t('modes.story.threshold.missing', { era, discovery: simLabel('discovery', missing) })
-            : t('modes.story.threshold.ready', { era }),
+            ? ft('modes.story.threshold.missing', { era, discovery: simLabel('discovery', missing) })
+            : ft('modes.story.threshold.ready', { era }),
         weight: (god ? 20 : 30) + (missing ? 0 : 5),
         at: home(world, p.lineage_id),
         lineage: p.lineage_id,
@@ -329,10 +330,10 @@ export function eraStories(world: World, watch: StoryWatch): Story[] {
       key: `era:${c.lineage}:${c.era}`,
       kind: 'era' as const,
       icon: '🌅',
-      title: t('modes.story.era', { era: simLabel('era', c.era) }),
+      title: ft('modes.story.era', { era: simLabel('era', c.era) }),
       detail: c.prev
-        ? t('modes.story.era.detail', { tribe: tribeName(world, c.lineage), prev: simLabel('era', c.prev) })
-        : t('modes.story.era.tribe', { tribe: tribeName(world, c.lineage) }),
+        ? ft('modes.story.era.detail', { tribe: tribeName(world, c.lineage), prev: simLabel('era', c.prev) })
+        : ft('modes.story.era.tribe', { tribe: tribeName(world, c.lineage) }),
       weight: 60,
       at: home(world, c.lineage),
       lineage: c.lineage,
@@ -353,8 +354,8 @@ export function townStories(world: World, watch: StoryWatch): Story[] {
         key: `town:${s.lineage_id}`,
         kind: 'town' as const,
         icon: '🏘️',
-        title: t(only ? 'modes.story.town.first' : 'modes.story.town.new', { name: displayName(s.name) }),
-        detail: tn('modes.story.town.detail', s.population, { tribe: tribeName(world, s.lineage_id) }),
+        title: ft(only ? 'modes.story.town.first' : 'modes.story.town.new', { name: displayName(s.name) }),
+        detail: ftn('modes.story.town.detail', s.population, { tribe: tribeName(world, s.lineage_id) }),
         weight: rose ? 55 : 12,
         at: { x: s.center[0], y: s.center[1] },
         lineage: s.lineage_id,
@@ -367,16 +368,16 @@ export function townStories(world: World, watch: StoryWatch): Story[] {
 
 export function outbreakStories(world: World, god = false): Story[] {
   return (world.active_outbreaks ?? []).map((o) => {
-    const sick = tn('modes.story.outbreak.sick', o.infected ?? 0)
-    const tribe = o.lineage_id ? t('modes.story.tribe', { tribe: tribeName(world, o.lineage_id) }) : null
+    const sick = ftn('modes.story.outbreak.sick', o.infected ?? 0)
+    const tribe = o.lineage_id ? ft('modes.story.tribe', { tribe: tribeName(world, o.lineage_id) }) : null
     const at = home(world, o.lineage_id)
     return {
       key: `outbreak:${o.kind}:${o.lineage_id ?? ''}`,
       kind: 'outbreak' as const,
       icon: '🦠',
-      title: t('modes.story.outbreak', { disease: simLabel('disease', o.kind) }),
+      title: ft('modes.story.outbreak', { disease: simLabel('disease', o.kind) }),
       detail: god
-        ? t('modes.story.outbreak.god', { cure: toolLabel('cure') })
+        ? ft('modes.story.outbreak.god', { cure: toolLabel('cure') })
         : [sick, tribe].filter(Boolean).join(' · '),
       weight: (god ? 70 : 50) + Math.min(o.infected ?? 0, 30),
       at,
@@ -410,13 +411,13 @@ export function festivalStories(world: World): Story[] {
         tribes.length === 0
           ? ''
           : tribes.length === 1
-            ? t('modes.story.festival.detail', { tribe: tribeName(world, tribes[0]) })
+            ? ft('modes.story.festival.detail', { tribe: tribeName(world, tribes[0]) })
             : tribes.length === 2
-              ? t('modes.story.festival.two', {
+              ? ft('modes.story.festival.two', {
                   a: tribeName(world, tribes[0]),
                   b: tribeName(world, tribes[1]),
                 })
-              : tn('modes.story.festival.many', tribes.length),
+              : ftn('modes.story.festival.many', tribes.length),
       weight: 20 + Math.min(tribes.length, 6),
       at,
       lineage: tribes[0],
@@ -437,11 +438,11 @@ export function fillerStories(world: World): Story[] {
       key: 'elder',
       kind: 'elder',
       icon: '⏳',
-      title: t(eldest.sex === 'female' ? 'modes.story.elder.f' : 'modes.story.elder.m', {
+      title: ft(eldest.sex === 'female' ? 'modes.story.elder.f' : 'modes.story.elder.m', {
         name: personName(eldest),
         age: ageInYears(eldest.age),
       }),
-      detail: t('modes.story.tribe', { tribe: tribeName(world, eldest.lineage_id) }),
+      detail: ft('modes.story.tribe', { tribe: tribeName(world, eldest.lineage_id) }),
       weight: 5,
       at: { x: eldest.x, y: eldest.y },
       lineage: eldest.lineage_id,
@@ -461,8 +462,8 @@ export function fillerStories(world: World): Story[] {
       key: 'family',
       kind: 'family',
       icon: '👪',
-      title: t('modes.story.family', { surname: displayName(best.surname) }),
-      detail: tn('modes.story.family.detail', best.living, { tribe: tribeName(world, best.lineage) }),
+      title: ft('modes.story.family', { surname: displayName(best.surname) }),
+      detail: ftn('modes.story.family.detail', best.living, { tribe: tribeName(world, best.lineage) }),
       weight: 4,
       at: home(world, best.lineage),
       lineage: best.lineage,
@@ -514,9 +515,9 @@ export function prayerStories(world: World): Story[] {
     const left = prayerTimeLeft(p, world.tick)
     const tool = PRAYER_KINDS[p.kind]?.tool
     const parts = [
-      tool ? t('modes.story.prayer.tool', { tool: toolLabel(tool) }) : null,
-      more > 0 ? tn('modes.story.prayer.more', more) : null,
-      left < 0.35 ? t('modes.story.prayer.soon') : more > 0 ? null : t('modes.story.prayer.faith'),
+      tool ? ft('modes.story.prayer.tool', { tool: toolLabel(tool) }) : null,
+      more > 0 ? ftn('modes.story.prayer.more', more) : null,
+      left < 0.35 ? ft('modes.story.prayer.soon') : more > 0 ? null : ft('modes.story.prayer.faith'),
     ]
     const tribe = row.count === 1 ? p.lineage_id : undefined
     return {

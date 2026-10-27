@@ -1,6 +1,14 @@
-import { fmtNumber } from '../../../i18n'
-import { simLabel } from '../../../i18n/sim'
 import type { WorldState } from '../../../shared/types'
+import { formatNumber, t, type MessageKey } from '../../../i18n'
+
+const TRAIT_LABEL: Record<string, MessageKey> = {
+  curiosity: 'dialogs.stats.traits.curiosity',
+  fear: 'dialogs.stats.traits.fear',
+  social_tendency: 'dialogs.stats.traits.socialTendency',
+  resilience: 'dialogs.stats.traits.resilience',
+  aggression: 'dialogs.stats.traits.aggression',
+  memory_strength: 'dialogs.stats.traits.memoryStrength',
+}
 
 export function TraitAverages({ organisms }: { organisms: WorldState['organisms'] }) {
   if (organisms.length === 0) return null
@@ -26,12 +34,12 @@ export function TraitAverages({ organisms }: { organisms: WorldState['organisms'
         const v = (sums[k] ?? 0) / n
         return (
           <div key={k} className="trait-row">
-            <span className="trait-label">{simLabel('attribute', k)}</span>
+            <span className="trait-label">{t(TRAIT_LABEL[k])}</span>
             <div className="trait-bar-wrap">
               <div className="trait-bar" style={{ width: `${Math.round(v * 100)}%` }} />
             </div>
             <span className="trait-val">
-              {fmtNumber(v, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatNumber(v, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         )

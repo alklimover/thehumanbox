@@ -12,10 +12,10 @@ export function HomeButton({ org }: { org: OrganismState }) {
   if (!built) return null
   const inside = isAtHome(org, world)
   return (
-    <Tooltip tip={inside ? t('person.homeInside') : t('person.homeOut')}>
+    <Tooltip tip={inside ? t('person.home.enterTip') : t('person.home.visitTip')}>
       <button
         className="icon-btn"
-        aria-label={t('person.homeAria')}
+        aria-label={t('person.home.lookInside')}
         onClick={() => useSceneStore.getState().enter({ kind: 'home', orgId: org.id })}
       >
         ⌂

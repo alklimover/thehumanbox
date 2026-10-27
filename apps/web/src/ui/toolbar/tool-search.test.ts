@@ -29,8 +29,8 @@ describe('searching in Russian', () => {
   // The tool names are read once when the catalogue loads, so load it afresh in Russian.
   async function russianSearch() {
     vi.resetModules()
-    const locale = await import('../../i18n/locale')
-    locale.setLocaleForTests('ru')
+    const i18n = await import('../../i18n')
+    await i18n.loadLocale('ru')
     const { searchWorldTools: search } = await import('./tool-search')
     return search
   }

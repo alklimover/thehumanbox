@@ -10,15 +10,20 @@ import { getDesktop } from '../../shared/desktop'
 import { canUseFullscreen, toggleElementFullscreen } from '../../shared/fullscreen'
 import { REPO_URL } from '../../shared/links'
 import { trackEvent } from '../../shared/observability'
-import { moonPhaseName } from '../../game/model/calendar'
-import { t, tn } from '../../i18n'
-import { simLabelAsSent } from '../../i18n/sim'
 import { PrayerChip } from '../panels/PrayerChip'
 import { PerilChip } from '../panels/PerilChip'
 import { CalendarTag } from '../panels/CalendarTag'
 import { PopulationChip } from '../panels/PopulationChip'
 import { WeatherChip } from '../panels/WeatherChip'
 import type { WorldActions } from './world-actions'
+import { formatNumber, t } from '../../i18n'
+import { updateCheckMessage } from '../modals/updateCheckMessage'
+import { moonPhaseWord } from '../sim-words'
+import { calendarAt } from '../../game/model/calendar'
+import { simWordFallback } from '../../fork/i18n/sim'
+
+/** Fork: the world's era in the player's language (fork/i18n/sim/era.ts); English keeps the id as sent. */
+const shownEra = (era: string) => simWordFallback('era', era, era)
 
 interface Props {
   world: WorldState | null
@@ -91,20 +96,20 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
           <ToolSprite icon="🌼" size={24} />
           <span>The Human Box</span>
         </h1>
-        <Tooltip tip={tip(t('header.star.title'), t('header.star.body'))}>
+        <Tooltip tip={tip(t('header.starTitle'), t('header.starBody'))}>
           <a
             className="hdr-btn star-link"
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            aria-label={t('header.star.aria')}
+            aria-label={t('header.starAria')}
             onClick={() => trackEvent('star_link_clicked', { source: 'header' })}
           >
             <svg className="github-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.111.82-.261.82-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.51 11.51 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.63-5.37-12-12-12z" />
             </svg>
             <ToolSprite icon="⭐" size={14} />
-            <span className="btn-label">{t('header.star.label')}</span>
+            <span className="btn-label">{t('header.star')}</span>
           </a>
         </Tooltip>
         {nerdStats && (
@@ -122,12 +127,12 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
         {nerdStats && world && (
           <Tooltip
             tip={t('header.tickTip', {
-              tick: world.tick,
-              elapsed: tn('header.daysElapsed', Math.floor(world.tick / 600)),
+              tick: formatNumber(world.tick),
+              days: formatNumber(Math.floor(world.tick / 600)),
             })}
           >
             <span className="tick" style={{ cursor: 'default' }}>
-              {t('header.tick', { tick: world.tick })}
+              {t('header.tick', { tick: formatNumber(world.tick) })}
             </span>
           </Tooltip>
         )}
@@ -139,14 +144,14 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
         {world && <PopulationChip population={livePopulation} sick={sickOrgs} />}
         {world?.cosmos &&
           (() => {
-            const label = moonPhaseName(world.cosmos.moon_phase)
+            const label = moonPhaseWord(world.cosmos.moon_phase)
             return (
               <Tooltip
                 tip={tip(
-                  t('header.moon', { phase: label }),
-                  t('calendar.yearDay', {
-                    year: world.cosmos.year + 1,
-                    day: world.cosmos.day_of_year + 1,
+                  t('header.moonTitle', { phase: label }),
+                  t('header.moonBody', {
+                    year: calendarAt(world.tick).year,
+                    day: calendarAt(world.tick).dayOfSeason,
                   }),
                 )}
               >
@@ -158,14 +163,9 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
             )
           })()}
         {world?.current_era && world.current_era !== 'genesis' && world.current_era !== 'equilibrium' && (
-          <Tooltip
-            tip={tip(
-              t('header.era', { era: simLabelAsSent('era', world.current_era) }),
-              t('header.era.body'),
-            )}
-          >
+          <Tooltip tip={tip(t('header.eraTitle', { era: shownEra(world.current_era) }), t('header.eraBody'))}>
             <span className={clsx('hdr-chip', 'era-badge', `era-${world.current_era}`)}>
-              {simLabelAsSent('era', world.current_era)}
+              {shownEra(world.current_era)}
             </span>
           </Tooltip>
         )}
@@ -173,25 +173,25 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
       </div>
       {world && (
         <div className="header-actions">
-          <Tooltip tip={tip(t('header.stats'), t('header.stats.body'))}>
+          <Tooltip tip={tip(t('header.stats'), t('header.statsBody'))}>
             <button className="hdr-btn" data-tour="stats-btn" onClick={openStats}>
               <ToolSprite icon="📊" size={16} />
               <span className="btn-label">{t('header.stats')}</span>
             </button>
           </Tooltip>
-          <Tooltip tip={tip(t('header.civ'), t('header.civ.body'))}>
+          <Tooltip tip={tip(t('header.civTitle'), t('header.civBody'))}>
             <button className="hdr-btn" data-tour="civ-btn" onClick={openCiv}>
               <ToolSprite icon="👑" size={16} />
-              <span className="btn-label">{t('header.civ.label')}</span>
+              <span className="btn-label">{t('header.civ')}</span>
             </button>
           </Tooltip>
-          <Tooltip tip={tip(t('header.findPeople'), t('header.findPeople.body'))}>
+          <Tooltip tip={tip(t('header.searchTitle'), t('header.searchBody'))}>
             <button className="hdr-btn" data-tour="search-btn" onClick={openOrgSearch}>
               <ToolSprite icon="🔍" size={16} />
-              <span className="btn-label">{t('header.search.label')}</span>
+              <span className="btn-label">{t('header.search')}</span>
             </button>
           </Tooltip>
-          <Tooltip tip={tip(t('header.chronicles'), t('header.chronicles.body'))}>
+          <Tooltip tip={tip(t('header.chronicles'), t('header.chroniclesBody'))}>
             <button className="hdr-btn" data-tour="chronicles-btn" onClick={openChronicles}>
               <ToolSprite icon="📖" size={16} />
               <span className="btn-label">{t('header.chronicles')}</span>
@@ -201,7 +201,7 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
             </button>
           </Tooltip>
           <div className="more-menu" ref={moreRef}>
-            <Tooltip tip={tip(t('header.more'), t('header.more.body'))}>
+            <Tooltip tip={tip(t('header.more'), t('header.moreBody'))}>
               <button
                 className={clsx('hdr-btn', showMore && 'active')}
                 data-tour="more-btn"
@@ -214,12 +214,12 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
             </Tooltip>
             {showMore && <MoreDropdown worldActions={worldActions} />}
           </div>
-          <Tooltip tip={tip(t('header.settings'), t('header.settings.body'))}>
+          <Tooltip tip={tip(t('header.settings'), t('header.settingsBody'))}>
             <button
               className="hdr-btn"
               data-tour="settings-btn"
               onClick={openSettings}
-              aria-label={t('header.settings.aria')}
+              aria-label={t('settings.title')}
             >
               <ToolSprite icon="⚙️" size={16} />
               <span className="btn-label">{t('header.settings')}</span>
@@ -231,42 +231,42 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
         <div className="header-panels">
           <Tooltip
             tip={tip(
-              leftOpen ? t('header.worldPanel.close') : t('header.worldPanel'),
-              t('header.worldPanel.body'),
+              leftOpen ? t('header.closeWorldPanel') : t('header.worldPanel'),
+              t('header.worldPanelBody'),
             )}
           >
             <button
               className={clsx('hdr-btn', 'panel-toggle-btn', 'panel-toggle-left')}
               onClick={toggleLeft}
               aria-pressed={leftOpen}
-              aria-label={leftOpen ? t('header.worldPanel.ariaClose') : t('header.worldPanel.ariaOpen')}
+              aria-label={leftOpen ? t('header.closeWorldPanelAria') : t('header.openWorldPanelAria')}
             >
               <ToolSprite icon="◧" size={16} />
-              <span className="btn-label">{t('header.worldPanel.label')}</span>
+              <span className="btn-label">{t('header.world')}</span>
             </button>
           </Tooltip>
           <Tooltip
             tip={tip(
-              panelOpen ? t('header.peoplePanel.close') : t('header.peoplePanel'),
-              t('header.peoplePanel.body'),
+              panelOpen ? t('header.closePeoplePanel') : t('header.peoplePanel'),
+              t('header.peoplePanelBody'),
             )}
           >
             <button
               className={clsx('hdr-btn', 'panel-toggle-btn')}
               onClick={togglePanel}
               aria-pressed={panelOpen}
-              aria-label={panelOpen ? t('header.peoplePanel.ariaClose') : t('header.peoplePanel.ariaOpen')}
+              aria-label={panelOpen ? t('header.closePeoplePanelAria') : t('header.openPeoplePanelAria')}
             >
               <ToolSprite icon="◨" size={16} />
-              <span className="btn-label">{t('header.peoplePanel.label')}</span>
+              <span className="btn-label">{t('header.people')}</span>
             </button>
           </Tooltip>
           {fullscreenAvailable && (
-            <Tooltip tip={tip(isFullscreen ? t('header.fullscreen.exit') : t('header.fullscreen'))}>
+            <Tooltip tip={tip(isFullscreen ? t('header.exitFullscreen') : t('header.fullscreen'))}>
               <button
                 className={clsx('hdr-btn', 'fullscreen-btn')}
                 onClick={toggleFullscreen}
-                aria-label={isFullscreen ? t('header.fullscreen.ariaExit') : t('header.fullscreen.ariaEnter')}
+                aria-label={isFullscreen ? t('header.exitFullscreenAria') : t('header.enterFullscreenAria')}
               >
                 <ToolSprite icon="⛶" size={16} />
               </button>
@@ -289,38 +289,22 @@ export function AppHeader({ world, connected, sickOrgs, onAnswerPrayer, worldAct
 function MacUpdateControl() {
   const desktop = getDesktop()
   const [checking, setChecking] = useState(false)
-  const [message, setMessage] = useState(() => t('header.update.check'))
+  const [message, setMessage] = useState(() => t('updates.checkTitle'))
 
   if (!desktop || desktop.platform !== 'darwin') return null
 
   async function check() {
     if (!desktop || checking) return
     setChecking(true)
-    setMessage(t('header.update.checking'))
+    setMessage(t('updates.checking'))
     try {
       const result = await desktop.app.checkForUpdates()
-      if (result.status === 'available') {
-        setMessage(
-          result.version
-            ? t('header.update.availableVersion', { version: result.version })
-            : t('header.update.available'),
-        )
-      } else if (result.status === 'downloaded') {
-        setMessage(
-          result.version
-            ? t('header.update.readyVersion', { version: result.version })
-            : t('header.update.ready'),
-        )
-      } else if (result.status === 'up-to-date') {
-        setMessage(t('header.update.upToDate'))
-      } else if (result.status === 'unsupported') {
-        setMessage(t('header.update.unsupported'))
-      } else {
-        setMessage(t('header.update.failed'))
-      }
+      setMessage(updateCheckMessage(result.status === 'unsupported' ? { status: 'unsupported' } : result))
+    } catch {
+      setMessage(t('updates.failed'))
     } finally {
       setChecking(false)
-      window.setTimeout(() => setMessage(t('header.update.check')), 3500)
+      window.setTimeout(() => setMessage(t('updates.checkTitle')), 3500)
     }
   }
 
@@ -331,7 +315,7 @@ function MacUpdateControl() {
         className={clsx('mac-update-btn', checking && 'checking')}
         onClick={check}
         disabled={checking}
-        aria-label={t('header.update.check')}
+        aria-label={t('updates.checkTitle')}
       >
         ↻
       </button>

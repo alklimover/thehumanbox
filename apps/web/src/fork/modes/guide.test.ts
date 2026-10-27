@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { CATALOGS } from '../../i18n/catalog'
-import { setLocaleForTests } from '../../i18n/locale'
+import { CATALOGS } from '../i18n/catalog'
+import { setLocaleForTests } from '../i18n/locale'
 import { guideSteps, PANEL_SELECTOR, resolveGuide } from './guide'
 
 afterEach(() => setLocaleForTests('en'))
@@ -32,7 +32,7 @@ describe('the mode tips', () => {
     }
   })
 
-  it('numbers the steps and stands a step whose target is missing in the middle', () => {
+  it('numbers the steps and stands a step whose target is missing in the middle', async () => {
     const steps = resolveGuide('god', (selector) => selector !== '.prayer-chip')
     expect(steps).toHaveLength(4)
     expect(steps[0]).toEqual({
@@ -42,7 +42,7 @@ describe('the mode tips', () => {
       on: undefined,
     })
     expect(steps[1]).toMatchObject({ selector: PANEL_SELECTOR, title: '2 of 4 · Who needs you', on: 'right' })
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(resolveGuide('observer', () => true)[2]).toMatchObject({
       selector: '.time-control',
       title: '3 из 4 · Быстрее',

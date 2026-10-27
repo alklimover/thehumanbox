@@ -152,6 +152,10 @@ impl Simulation {
             push_event(&mut self.events, self.tick_count, "died", &name, &msg);
         }
 
+        if let Some((lineage, "starvation")) = &noted {
+            self.remember_hungry_winter(lineage);
+        }
+        let leader_lost = noted.is_some() && self.organisms[idx].is_leader;
         if let Some((lineage, cause)) = noted {
             self.note_death(&lineage, cause);
             self.history.record_death(self.tick_count);
@@ -160,6 +164,14 @@ impl Simulation {
             while self.fallen.len() > 96 {
                 self.fallen.pop_front();
             }
+        }
+        if leader_lost {
+            let (lineage, name, x, y) = {
+                let o = &self.organisms[idx];
+                (o.lineage_id.clone(), o.name.clone(), o.x, o.y)
+            };
+            let place = Some((x.round() as i32, y.round() as i32));
+            self.chronicle(&lineage, "leader_died", None, Some(&name), place);
         }
         if let Some(g) = grave {
             if self.grave_queue.len() < 200 {
@@ -287,7 +299,7 @@ impl Simulation {
                     griever_set.insert(i);
                 }
             }
-            let grievers: Vec<usize> = griever_set.into_iter().collect();
+            let grievers: Vec<usize> = griever_set.iter().copied().collect();
 
             let griever_count = grievers.len();
 
@@ -312,7 +324,33 @@ impl Simulation {
                 .collect();
 
             let dead_id = self.organisms[idx].id.clone();
+            let lesson = crate::organism::lessons::Lesson::of_death(&self.organisms[idx].death_cause);
+            // Anyone close enough to see it learns from it, mourner or not: a
+            // stranger from another tribe who watched the drowning is warier too.
+            // Close kin far away hear of it.
+            if let Some(lesson) = lesson {
+                let dead = &self.organisms[idx];
+                let witnesses: Vec<usize> = self
+                    .organisms
+                    .iter()
+                    .enumerate()
+                    .filter(|&(i, o)| {
+                        i != idx
+                            && o.alive
+                            && !griever_set.contains(&i)
+                            && ((o.x as i32 - dx).abs() + (o.y as i32 - dy).abs() <= 12
+                                || crate::sim::agents::lessons::close_kin(o, dead))
+                    })
+                    .map(|(i, _)| i)
+                    .collect();
+                for w in witnesses {
+                    self.take_lesson(w, idx, lesson, (dx, dy));
+                }
+            }
             for gi in &grievers {
+                if let Some(lesson) = lesson {
+                    self.take_lesson(*gi, idx, lesson, (dx, dy));
+                }
                 let ms = self.organisms[*gi].traits.memory_strength;
                 Organism::remember(&mut self.organisms[*gi].danger_memory, dx, dy, 0.65, ms);
                 self.organisms[*gi].fear_level = (self.organisms[*gi].fear_level + 0.22).min(1.0);
@@ -542,15 +580,20 @@ mod death_cause_tests {
     #[test]
     fn deaths_record_their_cause() {
         let mut sim = Simulation::new(42);
-        for _ in 0..4000 {
+        // Run until the first death rather than a fixed time: when it comes
+        // shifts whenever the world's rules change.
+        for _ in 0..20_000 {
             sim.tick();
+            if sim.organisms.iter().any(|o| !o.death_cause.is_empty()) {
+                break;
+            }
         }
         let caused: Vec<&Organism> = sim
             .organisms
             .iter()
             .filter(|o| !o.death_cause.is_empty())
             .collect();
-        assert!(!caused.is_empty(), "someone dies within 4000 ticks");
+        assert!(!caused.is_empty(), "someone dies within 20000 ticks");
         for o in caused {
             assert!(!o.alive, "{} has a cause of death but is alive", o.name);
         }

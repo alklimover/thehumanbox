@@ -1,0 +1,153 @@
+{
+  "starTitle": "Metti una stella su GitHub",
+  "starBody": "The Human Box è gratuito e open source. Una stella aiuta altre persone a trovarlo.",
+  "starAria": "Metti una stella a The Human Box su GitHub",
+  "star": "stella",
+  "live": "LIVE",
+  "connecting": "connessione…",
+  "tickTip": "Tick di simulazione {tick}. 600 tick equivalgono a un giorno nel mondo. Sono passati {days} giorni.",
+  "tick": "tick {tick}",
+  "moonTitle": "luna: {phase}",
+  "moonBody": "Anno {year}, giorno {day}.",
+  "eraTitle": "era: {era}",
+  "eraBody": "Modella le risorse e il comportamento delle persone.",
+  "stats": "statistiche",
+  "statsBody": "Grafici della popolazione, nascite e morti, e crescita delle stirpi nel tempo.",
+  "civTitle": "civiltà",
+  "civ": "civ",
+  "civBody": "Ere, governi, religioni, edifici, libri, arte e titoli.",
+  "searchTitle": "trova persone",
+  "search": "cerca",
+  "searchBody": "Cerca tutti, vivi o morti, per nome, pensiero, stirpe o scoperta.",
+  "chronicles": "cronache",
+  "chroniclesBody": "La storia di questo mondo, scritta a partire da ciò che è accaduto.",
+  "more": "altro",
+  "moreBody": "Trova uno strumento, salva il mondo, imposta i filtri e le opzioni di visualizzazione.",
+  "settings": "impostazioni",
+  "settingsBody": "Lingua, schermo, prestazioni e il tuo mondo.",
+  "worldPanel": "pannello del mondo",
+  "closeWorldPanel": "chiudi pannello del mondo",
+  "worldPanelBody": "Storia, stirpi e registro degli eventi.",
+  "openWorldPanelAria": "Apri pannello del mondo",
+  "closeWorldPanelAria": "Chiudi pannello del mondo",
+  "world": "mondo",
+  "peoplePanel": "pannello delle persone",
+  "closePeoplePanel": "chiudi pannello delle persone",
+  "peoplePanelBody": "Tutti i vivi, oltre ai morti.",
+  "openPeoplePanelAria": "Apri pannello delle persone",
+  "closePeoplePanelAria": "Chiudi pannello delle persone",
+  "people": "persone",
+  "fullscreen": "schermo intero",
+  "exitFullscreen": "esci da schermo intero",
+  "enterFullscreenAria": "Passa a schermo intero",
+  "exitFullscreenAria": "Esci da schermo intero",
+  "save": {
+    "loading": "caricamento del salvataggio locale…",
+    "retrying": "nuovo tentativo sullo spazio locale…",
+    "restored": "mondo ripristinato al tick {tick}",
+    "newWorld": "nuovo mondo locale pronto",
+    "saving": "salvataggio del tick {tick}…",
+    "saved": "salvato in locale · tick {tick}",
+    "savingWorld": "salvataggio del mondo…"
+  },
+  "sandbox": {
+    "seedHint": "clicca sul terreno per fondare una nuova tribù",
+    "guidanceSet": "guida {strategy} impostata",
+    "guidanceFailed": "guida non riuscita",
+    "followNobody": "segui · nessuno a portata",
+    "nameNobody": "nomina · nessuno a portata",
+    "noOnePraying": "nessuno sta pregando",
+    "noTribeBrink": "nessuna tribù è sull’orlo",
+    "taughtSecret": "gli dèi hanno insegnato loro un segreto",
+    "cannotTeach": "non possono ancora essere istruiti di nuovo",
+    "layersCleared": "livelli della mappa cancellati",
+    "toolShown": "{tool} mostrato",
+    "toolHidden": "{tool} nascosto",
+    "toolMapOn": "mappa {tool} attiva",
+    "toolMapOff": "mappa {tool} disattiva",
+    "toolWorking": "{tool}…",
+    "toolApplied": "{tool} applicato",
+    "toolFailed": "{tool} non riuscito",
+    "toolAt": "{tool} → {x}, {y}",
+    "result": {
+      "none_here": "nessuno a portata qui",
+      "none_hurt": "qui nessuno era ferito",
+      "none_sick": "qui nessuno è malato",
+      "none_dead": "qui non c'è nessuno da riportare in vita",
+      "revive_cooldown": "questa tribù è stata risvegliata di recente; gli dèi devono aspettare",
+      "world_full": "non c'è più posto per altre persone",
+      "animal_full": "non c'è più posto per altri animali",
+      "no_room_for_animal": "su questo terreno non c'è spazio per quell'animale",
+      "split_small": "qui ci sono troppo poche persone per staccare una tribù",
+      "blocked": "nessuno può stare su acqua o roccia",
+      "no_government": "quella tribù non ha nessuno che la guidi",
+      "cannot_teach": "non possono ancora essere istruiti di nuovo",
+      "spawned": {
+        "one": "{name} è arrivato",
+        "other": "{count} persone sono arrivate"
+      },
+      "family_arrived": "è arrivata una nuova famiglia",
+      "healed_animals": {
+        "one": "un animale ha ripreso le forze",
+        "other": "{count} animali hanno ripreso le forze"
+      },
+      "healed": {
+        "one": "{name} è stato guarito",
+        "other": "{count} persone guarite"
+      },
+      "revived": "{name} è stato riportato dalla morte",
+      "blessed": {
+        "one": "{name} benedetto",
+        "other": "{count} persone benedette"
+      },
+      "inspired": {
+        "one": "{name} ispirato",
+        "other": "{count} persone ispirate"
+      },
+      "cured": {
+        "one": "{name} guarito",
+        "other": "{count} persone guarite"
+      },
+      "cured_tribe": {
+        "one": "una persona della tribù guarita",
+        "other": "{count} persone della tribù guarite"
+      },
+      "loved": {
+        "one": "{name} si è innamorato",
+        "other": "{count} cuori colmi d'amore"
+      },
+      "paired": {
+        "one": "una coppia riunita",
+        "other": "{count} coppie riunite"
+      },
+      "mutated": "{name} è mutato",
+      "cursed": "{name} maledetto",
+      "taught": "la tribù di {name} ha imparato un segreto",
+      "moved": "{name} spostato",
+      "gifted_food": {
+        "one": "cibo dato a {name}",
+        "other": "cibo dato a {count} persone"
+      },
+      "gifted_tool": {
+        "one": "un attrezzo dato a {name}",
+        "other": "attrezzi dati a {count} persone"
+      },
+      "crowned": "{name} incoronato",
+      "split": {
+        "other": "{count} persone si sono staccate per fondare una tribù"
+      },
+      "tamed": {
+        "one": "una bestia selvatica è diventata un cane fedele",
+        "other": "{count} bestie selvatiche sono diventate cani fedeli"
+      },
+      "guardian": "un cane guardiano si è messo accanto a {name}",
+      "smitten": "un fulmine ha colpito {name}",
+      "struck_beast": "un fulmine ha abbattuto una bestia",
+      "struck_roof": "un fulmine ha spaccato un tetto",
+      "animals": {
+        "one": "è apparso un animale",
+        "other": "sono apparsi {count} animali"
+      }
+    }
+  }
+}

@@ -71,6 +71,8 @@ export type IncomingWorldFrame = Pick<
   difficulty?: WorldState['difficulty']
   lost_tick?: WorldState['lost_tick']
   lineage_homes?: WorldState['lineage_homes']
+  lineage_lore?: WorldState['lineage_lore']
+  tribe_chronicle?: WorldState['tribe_chronicle']
   current_era?: WorldState['current_era']
   featured_org_id?: WorldState['featured_org_id']
   sex_words?: WorldState['sex_words']
@@ -107,6 +109,7 @@ export type IncomingWorldFrame = Pick<
   artworks?: WorldState['artworks']
   lineage_eras?: unknown
   lineage_strategies?: WorldState['lineage_strategies']
+  tribe_work?: WorldState['tribe_work']
   lineage_strategy_history?: WorldState['lineage_strategy_history']
   lineage_era_progress?: WorldState['lineage_era_progress']
   lineage_currencies?: WorldState['lineage_currencies']
@@ -355,6 +358,36 @@ export function loadBinaryFrameDecoder(): Promise<void> {
   return binaryDecoderLoading
 }
 
+/**
+ * A full frame lists each person's discoveries and attributes as indices into one table of names each
+ * (`discovery_names`, `attribute_names`: a tribe shares most of them, so the names were written thousands of
+ * times over). They are turned back into names here,
+ * so everything past the decoder sees the lists of names it always has. An index outside the table is left
+ * out rather than shown as a number.
+ */
+export function expandDiscoveryNames(frame: Record<string, unknown>): void {
+  for (const [field, table] of [
+    ['discoveries', 'discovery_names'],
+    ['attributes', 'attribute_names'],
+  ] as const) {
+    const names = frame[table]
+    if (!Array.isArray(names)) continue
+    delete frame[table]
+    if (!Array.isArray(frame.organisms)) continue
+    for (const org of frame.organisms as Record<string, unknown>[]) {
+      const list = org?.[field]
+      if (!Array.isArray(list)) continue
+      const out: string[] = []
+      for (const entry of list) {
+        if (typeof entry === 'string') out.push(entry)
+        else if (typeof entry === 'number' && typeof names[entry] === 'string')
+          out.push(names[entry] as string)
+      }
+      org[field] = out
+    }
+  }
+}
+
 export function parseWorldFrame(
   raw: ArrayBuffer | Uint8Array | string,
 ): Result<IncomingWorldFrame, ParseError> {
@@ -373,6 +406,7 @@ export function parseWorldFrame(
     return err({ kind: 'schema', issues: ['root is not an object'] })
   }
   const d = decoded as Record<string, unknown>
+  expandDiscoveryNames(d)
   // Boundary validation: walk every field the renderer reads off the
   // frame and surface a real schema error instead of letting a
   // malformed payload blow up deep inside applyGridWire or
@@ -593,6 +627,31 @@ function take2D(existing: number[][] | undefined, h: number, w: number, fill: nu
   return out
 }
 
+/**
+ * A row-major layer of one value per cell as rows. Bytes from a binary frame are copied once (so
+ * the rows don't keep the whole frame buffer alive) and split into typed views, with no number
+ * decoded per cell; `signed` reads them as `i8` (tile ids). A JSON frame's number array is split
+ * into plain rows. Returns undefined for a layer too short for the grid.
+ */
+export function cellRows(
+  layer: ArrayLike<number>,
+  w: number,
+  h: number,
+  signed: boolean,
+): ArrayLike<number>[] | undefined {
+  if (layer.length < w * h) return undefined
+  const rows = new Array<ArrayLike<number>>(h)
+  if (layer instanceof Uint8Array) {
+    const copy = layer.slice(0, w * h)
+    for (let r = 0; r < h; r++) {
+      rows[r] = signed ? new Int8Array(copy.buffer, r * w, w) : copy.subarray(r * w, (r + 1) * w)
+    }
+  } else {
+    for (let r = 0; r < h; r++) rows[r] = Array.prototype.slice.call(layer, r * w, (r + 1) * w) as number[]
+  }
+  return rows
+}
+
 export function applyGridWire(wire: GridWire, cache: GridState | null): GridState {
   const w = wire.width
   const h = wire.height
@@ -685,9 +744,9 @@ export function applyGridWire(wire: GridWire, cache: GridState | null): GridStat
     height: wire.height,
     origin_x: wire.origin_x,
     origin_y: wire.origin_y,
-    tiles: wire.tiles ?? cache?.tiles ?? [],
-    biomes: wire.biomes ?? cache?.biomes,
-    depth_map: wire.depth_map ?? cache?.depth_map,
+    tiles: (wire.tiles && cellRows(wire.tiles, w, h, true)) ?? cache?.tiles ?? [],
+    biomes: (wire.biomes && cellRows(wire.biomes, w, h, false)) ?? cache?.biomes,
+    depth_map: (wire.depth_map && cellRows(wire.depth_map, w, h, false)) ?? cache?.depth_map,
     fire_intensity: fire,
     structure,
     structure_revision,

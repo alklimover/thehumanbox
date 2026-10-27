@@ -1,0 +1,488 @@
+{
+  "right": {
+    "alive": "VIVOS ({count})",
+    "starred": "destacados",
+    "showAll": "Mostrar todos los organismos",
+    "showStarred": "Mostrar solo destacados ({count})",
+    "showMore": "mostrar {count} más · {hidden} ocultos",
+    "dead": "MUERTOS ({count})",
+    "generation": "g{generation} · {age}",
+    "unstar": "Quitar destacado",
+    "gone": "DESAPARECIDOS ({count})",
+    "vanished": "desaparecido del mundo"
+  },
+  "events": {
+    "heading": "EVENTOS",
+    "important": "importantes",
+    "all": "todos",
+    "showImportant": "Mostrando lo que importa. Haz clic para mostrar todo.",
+    "showAll": "Mostrando todo. Haz clic para mostrar solo lo que importa."
+  },
+  "eventRow": {
+    "goThere": "Ir allí"
+  },
+  "headlines": {
+    "label": "titulares recientes del mundo"
+  },
+  "history": {
+    "title": "HISTORIA DEL MUNDO",
+    "births": "nacimientos",
+    "birthsTip": "Total de personas nacidas en este mundo",
+    "oldAge": "vejez",
+    "oldAgeTip": "Muertes por vejez: personas que vivieron una vida completa",
+    "starvation": "hambre",
+    "starvationTip": "Muertes por hambre o sed: falta de comida o de agua",
+    "sickness": "enfermedad",
+    "sicknessTip": "Muertes por enfermedad",
+    "combat": "combate",
+    "combatTip": "Muertes en peleas entre vecinos y en guerras entre tribus",
+    "beasts": "bestias",
+    "beastsTip": "Muertos por lobos, osos y monstruos",
+    "drowned": "ahogados",
+    "drownedTip": "Ahogados en aguas profundas o crecidas",
+    "fire": "fuego",
+    "fireTip": "Muertos por un incendio forestal",
+    "disaster": "desastre",
+    "disasterTip": "Muertos por terremotos, meteoritos, inundaciones, tormentas, volcanes y el rayo de los dioses",
+    "alliances": "alianzas",
+    "alliancesTip": "Alianzas formadas entre tribus",
+    "challenges": "desafíos",
+    "challengesTip": "Desafíos territoriales: una persona se enfrenta a otra",
+    "gifts": "regalos",
+    "giftsTip": "Comida entregada entre personas: parentesco y amistad",
+    "droughts": "sequías",
+    "droughtsTip": "Sequías: temporadas de escasez de agua",
+    "outbreaks": "brotes",
+    "outbreaksTip": "Brotes de enfermedad que se extendieron por la población"
+  },
+  "wildlife": {
+    "title": "FAUNA",
+    "danger": "Caza a las personas cuando tiene hambre",
+    "herds": "Ovejas, vacas, caballos y gallinas",
+    "game": "Caza silvestre para comer: la caza excesiva la reduce",
+    "away": "+{count} fuera",
+    "animals": {
+      "rabbits": "conejos",
+      "deer": "ciervos",
+      "boar": "jabalíes",
+      "birds": "aves",
+      "fish": "peces",
+      "herds": "rebaños",
+      "foxes": "zorros",
+      "cats": "gatos",
+      "penguins": "pingüinos",
+      "camels": "camellos",
+      "frogs": "ranas",
+      "whales": "ballenas",
+      "ducks": "patos",
+      "bees": "abejas",
+      "owls": "búhos",
+      "eagles": "águilas",
+      "snakes": "serpientes",
+      "crocodiles": "cocodrilos",
+      "monkeys": "monos",
+      "wolves": "lobos",
+      "goats": "cabras",
+      "elephants": "elefantes",
+      "lions": "leones",
+      "zebras": "cebras",
+      "polarBears": "osos polares",
+      "kangaroos": "canguros",
+      "bears": "osos"
+    }
+  },
+  "footer": {
+    "era": "era",
+    "eras": {
+      "genesis": "GÉNESIS",
+      "forager": "RECOLECTORA",
+      "fire": "FUEGO",
+      "shelter": "REFUGIO",
+      "tribal": "TRIBAL",
+      "invention": "INVENCIÓN",
+      "cooking": "COCINA",
+      "masonry": "ALBAÑILERÍA",
+      "equilibrium": "EQUILIBRIO"
+    },
+    "day": "día",
+    "night": "noche",
+    "weather": "clima",
+    "droughtTag": "· {label}",
+    "tribes": "tribus"
+  },
+  "weather": {
+    "clear": "despejado",
+    "rain": "lluvia",
+    "rainBody": "Ayuda a que la tierra seca se recupere más rápido.",
+    "storm": "tormenta",
+    "stormBody": "Agota la energía. Los rayos pueden caer.",
+    "snow": "nieve",
+    "fog": "niebla",
+    "wet": "húmedo",
+    "drought": "sequía",
+    "droughtBody": "El agua disminuye y aumentan las muertes por sed."
+  },
+  "silent": {
+    "title": "El mundo ha quedado en silencio",
+    "body": "El último de tu pueblo ha desaparecido. Nada se mueve en las aldeas que construyeron.",
+    "lasted": "duró",
+    "years": {
+      "one": "{count} año",
+      "other": "{count} años"
+    },
+    "mostAlive": "más vivos a la vez",
+    "tribes": "tribus",
+    "furthestAge": "era más avanzada",
+    "prayersAnswered": "oraciones atendidas",
+    "unanswered": "{count} sin atender",
+    "keepWatching": "seguir mirando",
+    "newWorld": "nuevo mundo",
+    "seed": "sembrar nuevas personas"
+  },
+  "rename": {
+    "label": "Nuevo nombre",
+    "save": "guardar",
+    "cancel": "cancelar",
+    "refused": "No se guardó el nombre. Inténtalo de nuevo."
+  },
+  "prayerHint": {
+    "title": "Tu gente está rezando",
+    "body": "Haz clic en un globo de diálogo sobre una tribu para ayudar. Las oraciones atendidas dan fe.",
+    "showMe": "muéstramelo",
+    "dismiss": "Cerrar"
+  },
+  "prayerChip": {
+    "tipTitle": "oraciones",
+    "tipBody": {
+      "one": "Una tribu pide tu ayuda. Responde antes de que pierda la fe.",
+      "other": "{count} tribus piden tu ayuda. Responde antes de que pierdan la fe."
+    },
+    "label": {
+      "one": "{formattedCount} oración",
+      "other": "{formattedCount} oraciones"
+    }
+  },
+  "peril": {
+    "title": "al borde",
+    "tipOne": "La {tribe} está al borde: {remaining}, {reason}.",
+    "tipMany": "{count} tribus están al borde. Haz clic para ir a cada una por turno.",
+    "label": {
+      "one": "{count} tribu al borde",
+      "other": "{count} tribus al borde"
+    }
+  },
+  "population": {
+    "people": "personas",
+    "alive": "{count} vivas.",
+    "milestone": "próximo hito {count}",
+    "sickness": "enfermedad",
+    "sick": {
+      "one": "{count} persona está enferma. Se contagia por contacto cercano.",
+      "other": "{count} personas están enfermas. Se contagia por contacto cercano."
+    }
+  },
+  "calendar": {
+    "year": "A{year}",
+    "yearTitle": "Año {year}, {season}",
+    "dayOfSeason": "Día {day} de 5 en {season}. Un año tiene cuatro estaciones, y las personas envejecen según los años que han vivido.",
+    "throughDay": "{phase}, {percent}% del día transcurrido.",
+    "moon": "luna: {phase}",
+    "moonDate": "Año {year}, día {day}.",
+    "hardWinter": "invierno duro",
+    "hardWinterAhead": "{season} · se acerca un invierno duro",
+    "omen": "se acerca un invierno duro",
+    "hardWinterBody": "Más frío de lo normal. La comida silvestre muere rápido y se extienden las fiebres.",
+    "hardWinterHow": "Las tribus rezarán por comida y curas.",
+    "aheadBody": "Los ancianos temen un invierno duro. La comida silvestre escaseará y se extenderán las fiebres.",
+    "aheadHow": "Planta cultivos y huertos ahora, antes de que llegue el frío.",
+    "tip": {
+      "recovery": "La tierra se recupera. La comida empieza a crecer de nuevo.",
+      "abundance": "La comida abunda.",
+      "decline": "El crecimiento de la comida se frena antes del invierno.",
+      "scarcity": "La comida escasea. El invierno es la estación más dura.",
+      "default": "Afecta al crecimiento de la comida y al riesgo de sequía."
+    },
+    "season": {
+      "spring": "primavera",
+      "summer": "verano",
+      "autumn": "otoño",
+      "winter": "invierno"
+    },
+    "seasonName": {
+      "spring": "Primavera",
+      "summer": "Verano",
+      "autumn": "Otoño",
+      "winter": "Invierno"
+    },
+    "phase": {
+      "dawn": "amanecer",
+      "day": "día",
+      "dusk": "atardecer",
+      "night": "noche"
+    },
+    "phaseTitle": {
+      "dawn": "Amanecer",
+      "day": "Día",
+      "dusk": "Atardecer",
+      "night": "Noche"
+    }
+  },
+  "lineages": {
+    "title": "LINAJES ({count})",
+    "onBrink": "Al borde: {line}, {reason}. Haz clic para ayudarles.",
+    "showAll": "Mostrar todos los linajes",
+    "focus": "Enfocar {name}",
+    "brink": "al borde",
+    "oldest": "Miembro vivo más anciano: {line}",
+    "viewAll": "ver todos ({count})",
+    "faith": "fe {faith}",
+    "faithBlessed": "fe {faith} · bendecido por una oración atendida",
+    "faithDespair": "fe {faith} · desesperado tras una oración sin atender",
+    "eldestDays": "{days} d",
+    "generation": "g{from}",
+    "generationRange": "g{from}-{to}"
+  },
+  "tribe": {
+    "rename": "Renombrar esta tribu",
+    "nameLabel": "Nombre de la tribu",
+    "close": "Cerrar",
+    "regionLabel": "Tribu {name}",
+    "sparkTitle": "{from} → {to} personas recientemente",
+    "growing": "creciendo",
+    "shrinking": "menguando",
+    "steady": "estable",
+    "food": "comida",
+    "water": "agua",
+    "health": "salud",
+    "ledBy": "liderada por",
+    "followLeader": "Seguir al líder",
+    "festival": "{name} está en curso",
+    "people": {
+      "one": "{count} persona",
+      "other": "{count} personas"
+    },
+    "eraAge": "era {era}",
+    "wealth": "riqueza {gap}",
+    "onBrink": "al borde: {line} de {peak}, {reason}",
+    "atWar": "en guerra con {enemies}",
+    "makePeace": "hacer las paces",
+    "granary": "granero: {count} medidas de grano",
+    "bakery": "panadería: {count} hogazas",
+    "pen": "corral: {count} cabezas de ganado",
+    "lostLately": "perdidos recientemente: {losses}",
+    "oldest": "miembro vivo más anciano: {line}",
+    "oldestTitle": "El miembro vivo más anciano de esta tribu",
+    "families": "familias: {list}",
+    "familiesTitle": "Las familias de las personas vivas de esta tribu",
+    "faith": "fe {faith}",
+    "faithTitle": "Oraciones atendidas menos las abandonadas",
+    "faithLostTitle": "Han renunciado a los dioses y casi no rezan. Ayúdales sin que lo pidan para recuperarlos.",
+    "blessed": "bendecida",
+    "lostFaith": "fe perdida",
+    "despairing": "desesperada",
+    "sick": {
+      "one": "{count} enfermo",
+      "other": "{count} enfermos"
+    },
+    "nextAge": "siguiente: era {era}",
+    "inspire": "inspirar",
+    "inspireTitle": "Inspirarlos: acelera su próximo descubrimiento",
+    "teach": "enseñar",
+    "teachTitle": "Enseñarles el siguiente secreto que les falta (una vez por temporada)",
+    "stillToLearn": "aún por aprender: {list}",
+    "needsPeople": "necesita {count} personas más",
+    "praying": "rezando",
+    "help": "ayudar",
+    "lore": {
+      "craftTitle": "En lo que destacan los adultos de esta tribu. Sus hijos crecen con ello.",
+      "winter": "recuerda el invierno del hambre del año {year}",
+      "winterTitle": "Desde entonces guardan comida cada otoño.",
+      "warWeary": "cansados de la guerra tras caer {count} de los suyos en batalla",
+      "warWearyTitle": "A menudo cancelan sus incursiones y hacen la paz con tribus tan cansadas de luchar como ellos.",
+      "craft": {
+        "woodcutting": "conocidos por sus leñadores",
+        "quarrying": "conocidos por sus canteros",
+        "foraging": "conocidos por sus recolectores",
+        "fishing": "conocidos por sus pescadores",
+        "hunting": "conocidos por sus cazadores",
+        "farming": "conocidos por sus agricultores",
+        "building": "conocidos por sus constructores",
+        "crafting": "conocidos por su artesanía",
+        "healing": "conocidos por sus sanadores"
+      }
+    },
+    "history": {
+      "title": "Historia",
+      "empty": "Aún no hay nada registrado",
+      "goTo": "Ir a este lugar",
+      "raid": "en una incursión con {other}",
+      "war": "fue a la guerra con {other}",
+      "era": "entró en la era {era}",
+      "famine": "sufrió una hambruna",
+      "arrival": "un pueblo errante llegó y se asentó aquí",
+      "split": "se separó de {other} para fundar esta tribu",
+      "craft": "llegó a ser conocida por {craft}",
+      "leaderDied": "perdió a su líder {name}",
+      "crafts": {
+        "woodcutting": "la tala",
+        "quarrying": "la cantería",
+        "foraging": "la recolección",
+        "fishing": "la pesca",
+        "hunting": "la caza",
+        "farming": "el cultivo",
+        "building": "la construcción",
+        "crafting": "la artesanía",
+        "healing": "la curación"
+      }
+    },
+    "why": {
+      "title": "Por qué actúan",
+      "guided": "Guiada hacia {strategy}: {done} de {target} hechos",
+      "unguided": "Nadie los guía; actúan por su cuenta",
+      "need": "Lo más urgente: {need}, le faltan {pct} %",
+      "needNone": "Nada urge ahora mismo",
+      "needs": {
+        "food": "comida",
+        "water": "agua",
+        "health": "salud",
+        "shelter": "refugio",
+        "safety": "seguridad",
+        "land": "tierra"
+      },
+      "doing": "Trabajando en: {list}",
+      "idle": "Nadie trabaja ahora mismo",
+      "work": {
+        "woodcutting": "talar árboles",
+        "quarrying": "cantería",
+        "foraging": "recolección",
+        "fishing": "pesca",
+        "hunting": "caza",
+        "farming": "cultivo",
+        "building": "construcción",
+        "crafting": "artesanía",
+        "healing": "curación"
+      },
+      "allied": "aliada con {names}",
+      "rivals": "enfrentada con {names}",
+      "neutral": "neutral hacia {names}",
+      "stanceNone": "No conocen a ningún vecino",
+      "next": "A punto de intentar: {step}",
+      "step": {
+        "food": "recolectar y cazar comida",
+        "water": "ir a buscar agua",
+        "health": "cuidar a los enfermos",
+        "shelter": "levantar más casas",
+        "safety": "armarse y vigilar su tierra",
+        "land": "reclamar más tierra",
+        "campaign": "seguir la campaña de {strategy}",
+        "learn": "aprender {secret} para la próxima era",
+        "carryOn": "seguir como están"
+      }
+    },
+    "guide": {
+      "known": "{known} de {required} secretos conocidos",
+      "worldPeople": "el mundo tiene {have} de las {need} personas que necesita esta era (faltan {short})",
+      "ready": "listo: la era llega en la próxima revisión del mundo"
+    }
+  },
+  "scene": {
+    "out": "fuera",
+    "nearby": "cerca",
+    "shopNearby": "Cerca",
+    "homeOut": "Ahora mismo fuera",
+    "villageAway": "En la aldea, pero no en la plaza",
+    "tavernAway": "Cerca, pero no en la taberna",
+    "templeAway": "Cerca, pero no en el templo",
+    "noOneHome": "nadie en casa",
+    "insideCount": "{count} dentro",
+    "emptySquare": "plaza vacía",
+    "inSquareCount": "{count} en la plaza",
+    "emptyTavern": "taberna vacía",
+    "shopClosed": "tienda cerrada",
+    "noOneInPrayer": "nadie rezando",
+    "drinkingCount": "{count} bebiendo",
+    "inPrayerCount": "{count} rezando",
+    "atWorkCount": "{count} trabajando",
+    "day": "día",
+    "night": "noche",
+    "role": {
+      "host": "anfitrión",
+      "partner": "pareja",
+      "child": "hijo",
+      "kin": "pariente",
+      "guest": "invitado",
+      "stranger": "desconocido",
+      "patron": "cliente habitual",
+      "worshipper": "devoto",
+      "brewer": "cervecero",
+      "priest": "sacerdote"
+    },
+    "tavern": {
+      "title": "Taberna de {name}",
+      "nearbyCount": "{count} cerca",
+      "time": {
+        "busyLunch": "mucha gente a la hora de comer",
+        "quietDay": "horas tranquilas del día",
+        "rowdyEvening": "noche animada",
+        "lateNight": "clientela de madrugada"
+      },
+      "brewers": {
+        "one": "{count} cervecero",
+        "other": "{count} cerveceros"
+      },
+      "shelf": "{count} en la estantería"
+    },
+    "activity": {
+      "atHome": "en casa",
+      "idling": "holgazaneando",
+      "visiting": "de visita",
+      "working": {
+        "forge": "trabajando en la forja",
+        "bakery": "trabajando en la panadería",
+        "mill": "trabajando en el molino"
+      },
+      "serving": "sirviendo",
+      "drinking": "bebiendo",
+      "lookingIn": "mirando desde la puerta",
+      "praying": "rezando",
+      "reflecting": "reflexionando",
+      "observing": "observando"
+    },
+    "home": {
+      "title": "Casa de {name}",
+      "fallback": "Un hogar",
+      "chosenPieces": {
+        "one": "{count} pieza elegida",
+        "other": "{count} piezas elegidas"
+      },
+      "era": {
+        "preStone": "Un refugio desnudo contra el viento",
+        "stone": "Una cabaña de muros de piedra",
+        "bronze": "Una casa de madera y paja",
+        "iron": "Una casita de la Edad del Hierro",
+        "classical": "Una casa de tejas de barro",
+        "medieval": "Una casita de entramado de madera",
+        "renaissance": "Una vivienda de dos plantas",
+        "industrial": "Una casa adosada de ladrillo",
+        "modern": "Una casa",
+        "information": "Un pequeño apartamento"
+      }
+    },
+    "temple": {
+      "kind": {
+        "animism": "un santuario de piedra a los espíritus",
+        "polytheism": "un templo de muchos dioses",
+        "monotheism": "una casa consagrada al único dios",
+        "philosophical": "una sala de contemplación",
+        "secular": "un salón cívico del recuerdo",
+        "fallback": "un lugar de culto"
+      },
+      "adherents": {
+        "one": "{count} fiel",
+        "other": "{count} fieles"
+      },
+      "atAltar": "{count} ante el altar",
+      "nearbyCount": "{count} cerca"
+    }
+  }
+}

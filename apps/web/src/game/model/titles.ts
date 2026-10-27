@@ -3,22 +3,21 @@
 // and the trade a person has taken up), so a title is never a separate fact.
 
 import { t, type MessageKey } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
+import { simWordFallback } from '../../fork/i18n/sim'
 
-/** A trade's title for a man and for a woman (Russian says «охотник» and «охотница»). */
-const TRADE_TITLES: Record<string, [MessageKey, MessageKey]> = {
-  healer: ['model.title.healer', 'model.titleFemale.healer'],
-  doctor: ['model.title.doctor', 'model.titleFemale.doctor'],
-  hunter: ['model.title.hunter', 'model.titleFemale.hunter'],
-  farmer: ['model.title.farmer', 'model.titleFemale.farmer'],
-  builder: ['model.title.builder', 'model.titleFemale.builder'],
-  soldier: ['model.title.soldier', 'model.titleFemale.soldier'],
-  priest: ['model.title.priest', 'model.titleFemale.priest'],
-  scholar: ['model.title.scholar', 'model.titleFemale.scholar'],
-  baker: ['model.title.baker', 'model.titleFemale.baker'],
-  miner: ['model.title.miner', 'model.titleFemale.miner'],
-  merchant: ['model.title.merchant', 'model.titleFemale.merchant'],
-  artist: ['model.title.artist', 'model.titleFemale.artist'],
+const TRADE_TITLES: Record<string, MessageKey | undefined> = {
+  healer: 'model.titles.trade.healer',
+  doctor: 'model.titles.trade.doctor',
+  hunter: 'model.titles.trade.hunter',
+  farmer: 'model.titles.trade.farmer',
+  builder: 'model.titles.trade.builder',
+  soldier: 'model.titles.trade.soldier',
+  priest: 'model.titles.trade.priest',
+  scholar: 'model.titles.trade.scholar',
+  baker: 'model.titles.trade.baker',
+  miner: 'model.titles.trade.miner',
+  merchant: 'model.titles.trade.merchant',
+  artist: 'model.titles.trade.artist',
 }
 
 /** The titles for a living person, in the order they are shown. The dead keep no title. */
@@ -27,20 +26,17 @@ export function personTitles(org: {
   is_elder: boolean
   is_leader?: boolean
   specialty?: string
-  sex?: string
 }): string[] {
   if (!org.alive) return []
   const titles: string[] = []
-  if (org.is_leader) titles.push(t('model.title.chief'))
-  if (org.is_elder) titles.push(t('model.title.elder'))
+  if (org.is_leader) titles.push(t('model.titles.chief'))
+  if (org.is_elder) titles.push(t('model.titles.elder'))
   if (org.specialty) {
     const trade = org.specialty.toLowerCase()
-    const keys = TRADE_TITLES[trade]
-    if (keys) titles.push(t(keys[org.sex === 'female' ? 1 : 0]))
-    else {
-      const name = simLabel('specialty', trade)
-      titles.push(name.charAt(0).toUpperCase() + name.slice(1))
-    }
+    const key = TRADE_TITLES[trade]
+    titles.push(
+      key ? t(key) : simWordFallback('specialty', trade, trade.charAt(0).toUpperCase() + trade.slice(1)),
+    )
   }
   return titles
 }

@@ -174,6 +174,13 @@ impl<'a> ActionCtx<'a> {
         let Some((i, _)) = prey else {
             return 0;
         };
+        // Game hunted here before is quicker to bolt.
+        let (ax, ay) = (self.sim.animals[i].x, self.sim.animals[i].y);
+        let wary = self.sim.game_wariness(ax, ay);
+        if wary > 0.0 && self.chance(crate::sim::simulation::wary_game::ESCAPE_AT_FULL * wary) {
+            return 0;
+        }
+        self.sim.spook_game(ax, ay, self.idx);
         let food = match self.sim.animals[i].kind {
             AnimalKind::Deer | AnimalKind::Boar => 3,
             _ => 1,
@@ -202,6 +209,7 @@ impl<'a> ActionCtx<'a> {
     }
 
     pub fn craft(&mut self, what: &str, base: f32) -> f32 {
+        self.practised(crate::organism::skills::Skill::Crafting, true);
         let tick = self.tick;
         let nm = self.sim.organisms[self.idx].name.clone();
         if self.sim.organisms[self.idx].discover(what) {
@@ -245,6 +253,24 @@ impl<'a> ActionCtx<'a> {
             return false;
         }
         self.org_mut().add_land_good(good, 1) > 0
+    }
+
+    /// A skilled attempt at base odds `base_p`: practice raises the odds, and
+    /// the attempt teaches the worker and any kin or friends watching. Returns
+    /// whether it worked and the extra units a practised hand gets out of it.
+    pub fn attempt(&mut self, skill: crate::organism::skills::Skill, base_p: f32) -> (bool, u8) {
+        let level = self.org().skills.level(skill);
+        let ok = self.chance(crate::organism::skills::success_chance(base_p, level));
+        (ok, self.practised(skill, ok))
+    }
+
+    /// Record an attempt at `skill` whose outcome the action decided itself.
+    /// Returns the extra units a practised hand gets from a success.
+    pub fn practised(&mut self, skill: crate::organism::skills::Skill, succeeded: bool) -> u8 {
+        let near = std::mem::take(&mut self.near);
+        let extra = self.sim.practise_skill(self.idx, skill, succeeded, &near);
+        self.near = near;
+        extra
     }
 
     pub fn chance(&mut self, p: f32) -> bool {
@@ -418,6 +444,7 @@ impl<'a> ActionCtx<'a> {
         if !spec.discovery.is_empty() {
             self.discover(spec.discovery, spec.event_msg);
         }
+        self.practised(crate::organism::skills::Skill::Building, true);
         spec.reward
     }
 }

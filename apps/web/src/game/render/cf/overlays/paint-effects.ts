@@ -2,8 +2,8 @@ import { lineageColor } from '../../../../shared/constants'
 import { motionTime } from '../../../../shared/motion'
 import { TILE } from '../../../model/palette'
 import { strategyBeaconPositions } from '../../../model/strategy-visuals'
-import { t } from '../../../../i18n'
-import { simLabel } from '../../../../i18n/sim'
+import { ft } from '../../../../fork/i18n'
+import { simLabel } from '../../../../fork/i18n/sim'
 import { zoomDetailLevel } from '../../character-visuals'
 import { battleAge, drawBattle } from '../../battles'
 import { drawFestival } from '../../festivals'
@@ -25,7 +25,7 @@ const EXTENT_MARGIN = TILE * 24
 
 /** Days left on a tribe's course, as the beacon shows them ("3d"): the count `strategyTimeLabel` gives. */
 function strategyDays(ticksRemaining: number): string {
-  return t('map.strategy.days', { n: Math.max(1, Math.ceil(ticksRemaining / 600)) })
+  return ft('map.strategy.days', { n: Math.max(1, Math.ceil(ticksRemaining / 600)) })
 }
 
 /** Strategy beacons, smog, era traffic, battles, festivals and wards (the old `draw_effects`). */

@@ -1,30 +1,18 @@
 import type { OrganismState, TribePeril } from '../../shared/types'
 import { useUIStore } from '../../state/store'
-import type { LineageFacts } from '../../game/model/lineage-facts'
+import { factsLine, type LineageFacts } from '../../game/model/lineage-facts'
 import { PERIL_HELP, remainingLine, visibleLineages } from '../../game/model/tribe-peril'
 import { lineageColor, lineageWord } from '../../shared/constants'
 import { Modal } from './Modal'
-import { t } from '../../i18n'
-import { displayName } from '../../i18n/names'
-import { simLabelAsSent } from '../../i18n/sim'
+import { shownGeneration } from '../../game/model/generations'
+import { formatNumber, t } from '../../i18n'
+import { displayName } from '../../fork/i18n/names'
 
 interface LineageInfo {
   count: number
   minGen: number
   maxGen: number
   orgs: OrganismState[]
-}
-
-/** "industrial age · empire · ✧-10", leaving out what is not known. The facts are the simulation's ids (ModalRouter). */
-function factsLine(f: LineageFacts | undefined): string {
-  if (!f) return ''
-  return [
-    f.era ? t('lineages.era', { era: simLabelAsSent('era', f.era) }) : '',
-    f.government ? simLabelAsSent('government', f.government) : '',
-    f.faith !== undefined ? `✧${f.faith}` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ')
 }
 
 interface Props {
@@ -46,10 +34,12 @@ export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, 
   )
 
   return (
-    <Modal open onClose={onClose} className="lang-modal" title={t('lineages.title')} hideTitle>
+    <Modal open onClose={onClose} className="lang-modal" title={t('dialogs.lineages.title')} hideTitle>
       <div className="lang-modal-header">
-        <span className="lang-modal-title">{t('lineages.heading', { n: Object.keys(lineages).length })}</span>
-        <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
+        <span className="lang-modal-title">
+          {t('dialogs.lineages.heading', { count: formatNumber(Object.keys(lineages).length) })}
+        </span>
+        <button aria-label={t('dialogs.lineages.close')} className="close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
@@ -74,9 +64,9 @@ export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, 
               className={'lineage-row all-lineages-row' + (cause ? ' peril' : '')}
               title={
                 cause
-                  ? t('lineages.brink', {
+                  ? t('dialogs.lineages.onBrink', {
                       remaining: remainingLine(info.count),
-                      reason: PERIL_HELP[cause].reason,
+                      reason: t(PERIL_HELP[cause].reason),
                     })
                   : undefined
               }
@@ -88,16 +78,18 @@ export function AllLineagesModal({ lineages, lineageWords, lineageNames, peril, 
                 {info.count}
               </span>
               <span className="lineage-gen">
-                {t('lineages.gen', {
-                  gen: `${info.minGen}${info.maxGen > info.minGen ? `–${info.maxGen}` : ''}`,
-                })}
+                {t('dialogs.lineages.generation', { gen: shownGeneration(info.minGen) })}
+                {info.maxGen > info.minGen
+                  ? t('dialogs.lineages.generationRange', { gen: shownGeneration(info.maxGen) })
+                  : ''}
               </span>
               <span className="lineage-strat">
                 {displayName(
                   lineageWords?.[lid]?.home ||
                     lineageWords?.[lid]?.food ||
                     lineageWord(info.orgs, 'home') ||
-                    lineageWord(info.orgs, 'food'),
+                    lineageWord(info.orgs, 'food') ||
+                    '',
                 )}
               </span>
               <span className="lineage-facts">{factsLine(facts?.[lid])}</span>

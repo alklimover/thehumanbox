@@ -8,6 +8,77 @@ fn lookahead_uses_the_same_safe_tick_bounds_as_the_runtime() {
     assert_eq!(lookahead_ticks_for_values(Some("-5"), Some("100")), 0.0);
 }
 
+#[test]
+fn full_payload_carries_each_living_tribes_history_with_its_place() {
+    let mut sim = Simulation::new(42);
+    let lid = sim
+        .organisms
+        .iter()
+        .find(|o| o.alive)
+        .expect("founder exists")
+        .lineage_id
+        .clone();
+    sim.chronicle(&lid, "famine", None, None, Some((12, 34)));
+    sim.chronicle("a tribe that died out", "war", Some(&lid), None, None);
+
+    let payload = sim.state_json();
+    let rows = payload["tribe_chronicle"][lid.as_str()]
+        .as_array()
+        .expect("the living tribe has a history");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["kind"], "famine");
+    assert_eq!(rows[0]["x"], 12);
+    assert_eq!(rows[0]["y"], 34);
+    assert!(
+        payload["tribe_chronicle"].get("a tribe that died out").is_none(),
+        "a tribe that has died out is not sent"
+    );
+}
+
+#[test]
+fn tribe_work_counts_only_stints_still_running_by_trade() {
+    use crate::organism::skills::Skill;
+    use crate::sim::agents::daily_work::WorkPlan;
+
+    let mut sim = Simulation::new(42);
+    sim.tick_count = 100;
+    let lid = sim
+        .organisms
+        .iter()
+        .find(|o| o.alive)
+        .expect("founder exists")
+        .lineage_id
+        .clone();
+    let plan = |skill, until| WorkPlan {
+        skill,
+        spot: (0, 0),
+        until,
+        harvest: false,
+        misses: 0,
+    };
+    let mut members = sim
+        .organisms
+        .iter_mut()
+        .filter(|o| o.alive && o.lineage_id == lid);
+    let first = members.next().expect("a member");
+    first.work = Some(plan(Skill::Fishing, 400));
+    let second = members.next().expect("a second member");
+    second.work = Some(plan(Skill::Fishing, 400));
+    let third = members.next().expect("a third member");
+    third.work = Some(plan(Skill::Woodcutting, 400));
+    let fourth = members.next().expect("a fourth member");
+    fourth.work = Some(plan(Skill::Hunting, 50));
+
+    let payload = sim.state_json_incremental();
+    let work = &payload["tribe_work"][lid.as_str()];
+    assert_eq!(work["fishing"], 2);
+    assert_eq!(work["woodcutting"], 1);
+    assert!(
+        work.get("hunting").is_none(),
+        "a stint that ran out is not counted"
+    );
+}
+
 /// Lock the delta payload's top-level shape. The client wire
 /// round-trip test in client/src/simulation/wire.roundtrip.test.ts
 /// expects these exact keys; if a refactor here removes one
@@ -64,6 +135,39 @@ fn full_frame_sends_lineage_words_instead_of_per_organism_vocabularies() {
         .expect("lineage word summaries");
     assert!(!words.is_empty());
     assert!(words.values().all(serde_json::Value::is_object));
+}
+
+#[test]
+fn a_full_frame_lists_discoveries_once_and_each_person_by_index() {
+    let mut sim = Simulation::new(42);
+    for org in sim.organisms.iter_mut().take(3) {
+        org.discoveries.insert("fire".to_string());
+        org.discoveries.insert("pottery".to_string());
+    }
+    let payload = sim.state_json();
+    let names: Vec<&str> = payload["discovery_names"]
+        .as_array()
+        .expect("a discovery table")
+        .iter()
+        .map(|n| n.as_str().unwrap())
+        .collect();
+    let mut seen = std::collections::BTreeSet::new();
+    assert!(names.iter().all(|n| seen.insert(*n)), "each name once: {names:?}");
+    for (org, model) in payload["organisms"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(&sim.organisms)
+    {
+        let back: Vec<&str> = org["discoveries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|i| names[i.as_u64().unwrap() as usize])
+            .collect();
+        let expected: Vec<&str> = model.discoveries.iter().map(|name| &**name).collect();
+        assert_eq!(back, expected, "{}", model.id);
+    }
 }
 
 /// A client that patches the layer it holds with each hot frame's `structure_delta` must end up
@@ -663,4 +767,34 @@ fn typed_frame_serialises_like_the_value_frame() {
         assert_eq!(typed.into_value(), value, "round {round}");
     }
     assert_eq!(kinds.len(), 2, "both hot-array and full-organism frames occur");
+}
+
+/// A fast-forward emits a frame every few ticks, so the stream may never land on a multiple of 60:
+/// the static layers (and tiles) still arrive once 60 ticks have passed since the last frame that
+/// carried them, and a deep full in between does not reset that count.
+#[test]
+fn static_layers_arrive_every_sixty_ticks_whatever_the_emit_cadence() {
+    let mut sim = Simulation::new(42);
+    let mut carried = Vec::new();
+    for round in 1..=60u64 {
+        for _ in 0..7 {
+            sim.tick();
+        }
+        if round == 20 {
+            let deep = sim.state_json();
+            assert!(
+                deep["grid"].get("tiles").is_some(),
+                "a deep full carries the tiles"
+            );
+        }
+        let frame = sim.state_json_incremental();
+        let grid = &frame["grid"];
+        if grid.get("trails").is_some() {
+            assert!(grid.get("tiles").is_some(), "tiles ride with the static layers");
+            assert!(grid.get("fertility_dense").is_some());
+            carried.push(sim.tick_count);
+        }
+    }
+    // 420 ticks emitted every 7: one multiple of 60 lands (420), but the layers come every 63.
+    assert_eq!(carried, vec![63, 126, 189, 252, 315, 378]);
 }

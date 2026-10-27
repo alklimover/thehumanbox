@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
-import { t } from '../../../i18n'
-import { simLabel } from '../../../i18n/sim'
 import type { WorldState } from '../../../shared/types'
+import { formatNumber, t } from '../../../i18n'
+import { discoveryWord } from '../../sim-words'
 
 export function DiscoveryRollup({ organisms }: { organisms: WorldState['organisms'] }) {
   const [showAll, setShowAll] = useState(false)
@@ -14,26 +14,33 @@ export function DiscoveryRollup({ organisms }: { organisms: WorldState['organism
   }, [organisms])
 
   if (rows.length === 0) {
-    return <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>{t('stats.noDiscoveries')}</div>
+    return (
+      <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>{t('dialogs.stats.noDiscoveries')}</div>
+    )
   }
   const visible = showAll ? rows : rows.slice(0, TOP_N)
   return (
     <div className="disc-rollup">
       <div className="disc-summary">
         <span>
-          {t('stats.discoveries.summary', { distinct: totalDistinct, top: Math.min(TOP_N, totalDistinct) })}
+          {t('dialogs.stats.distinctShown', {
+            total: formatNumber(totalDistinct),
+            shown: formatNumber(Math.min(TOP_N, totalDistinct)),
+          })}
         </span>
         {totalDistinct > TOP_N && (
           <button className="disc-toggle" onClick={() => setShowAll((s) => !s)}>
-            {showAll ? t('stats.discoveries.collapse') : t('stats.discoveries.showAll', { n: totalDistinct })}
+            {showAll
+              ? t('dialogs.stats.collapse')
+              : t('dialogs.civ.history.showAll', { count: formatNumber(totalDistinct) })}
           </button>
         )}
       </div>
       <div className="disc-list">
         {visible.map(([name, count]) => (
           <div key={name} className="disc-row">
-            <span className="disc-name">{simLabel('discovery', name)}</span>
-            <span className="disc-count">{count}</span>
+            <span className="disc-name">{discoveryWord(name)}</span>
+            <span className="disc-count">{formatNumber(count)}</span>
             <span className="disc-pct">{Math.round((count / organisms.length) * 100)}%</span>
           </div>
         ))}

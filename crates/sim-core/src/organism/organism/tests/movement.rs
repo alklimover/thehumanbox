@@ -136,6 +136,106 @@ fn hydrated_wader_in_shallows_keeps_going_instead_of_turning_back() {
 }
 
 #[test]
+fn someone_stuck_in_the_shallows_gets_out_even_mid_crossing_and_afraid_of_the_spot() {
+    // The drowning trap: a half-done wading route, the water underfoot remembered
+    // as dangerous, and too long in the water. They must head for land.
+    let mut rng = StdRng::seed_from_u64(0);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(2);
+    for x in 0..=30 {
+        grid.set(x, 10, Tile::Grass);
+    }
+    for x in 10..=14 {
+        grid.set(x, 10, Tile::Water);
+        grid.depth[WorldGrid::idx(x, 10)] = 0.05;
+    }
+
+    let mut org = Organism::new(
+        "id".into(),
+        "Wader".into(),
+        12.0,
+        10.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.hydration = 0.96;
+    org.energy = 0.6;
+    org.health = 0.97;
+    org.water_ticks = 20;
+    org.danger_memory.insert((12, 10), 0.9);
+    {
+        let mut route = org.route.borrow_mut();
+        route.goal = (25, 10);
+        route.steps = (13..=25).map(|x| (x, 10)).collect();
+        route.next = 0;
+    }
+
+    let (action, thought) = org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        &mut rng,
+        false,
+        "",
+        &[],
+    );
+    assert_eq!(thought.as_deref(), Some("swimming ashore"));
+    assert!(action < 8, "a step, not standing still: {action}");
+}
+
+#[test]
+fn a_danger_underfoot_is_not_fled_toward() {
+    let mut rng = StdRng::seed_from_u64(3);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 0..=30 {
+        for y in 0..=20 {
+            grid.set(x, y, Tile::Sand);
+        }
+    }
+    let mut org = Organism::new(
+        "id".into(),
+        "Walker".into(),
+        10.0,
+        10.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.hydration = 0.9;
+    org.energy = 0.9;
+    org.health = 1.0;
+    org.danger_memory.insert((10, 10), 0.9);
+    let (_, thought) = org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        &mut rng,
+        false,
+        "",
+        &[],
+    );
+    assert_ne!(
+        thought.as_deref(),
+        Some("avoiding danger"),
+        "fled from the tile it stands on"
+    );
+}
+
+#[test]
 fn movement_toward_land_avoids_deep_water_step() {
     let mut rng = StdRng::seed_from_u64(0);
     let traits = Traits::random(&mut rng);
@@ -522,4 +622,81 @@ fn toolmakers_fetch_stone_from_nearby_rock() {
         ) == (29, Some("quarrying stone".to_string()))
     });
     assert!(quarried, "next to rock they quarry");
+}
+
+/// The cell-by-cell search the row scan replaced, kept here as the reference.
+fn nearest_cell_by_cell(grid: &WorldGrid, at: (i32, i32), tile: Tile, radius: i32) -> Option<(i32, i32)> {
+    let mut best_dist = radius + 1;
+    let mut best = None;
+    for dx in -radius..=radius {
+        for dy in -radius..=radius {
+            if grid.get(at.0 + dx, at.1 + dy) == tile {
+                let dist = dx.abs() + dy.abs();
+                if dist < best_dist {
+                    best_dist = dist;
+                    best = Some((at.0 + dx, at.1 + dy));
+                }
+            }
+        }
+    }
+    best
+}
+
+#[test]
+fn the_row_scan_finds_the_same_tile_as_the_cell_by_cell_search() {
+    use rand::RngExt;
+    let mut rng = StdRng::seed_from_u64(21);
+    let mut grid = WorldGrid::new(4);
+    let (w, h) = (
+        crate::world::grid::WIDTH as i32,
+        crate::world::grid::HEIGHT as i32,
+    );
+    for x in 0..w {
+        for y in 0..h {
+            let t = match rng.random_range(0..10) {
+                0 => Tile::Food,
+                1 => Tile::Water,
+                2 => Tile::Fire,
+                _ => Tile::Grass,
+            };
+            grid.set(x, y, t);
+        }
+    }
+    let traits = Traits::random(&mut rng);
+    let mut org = Organism::new(
+        "scan".into(),
+        "Scan".into(),
+        0.0,
+        0.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    // Corners and edges as well as the open map.
+    let mut spots = vec![
+        (0, 0),
+        (w - 1, h - 1),
+        (0, h - 1),
+        (w - 1, 0),
+        (3, 200),
+        (w - 2, 5),
+    ];
+    for _ in 0..400 {
+        spots.push((rng.random_range(0..w), rng.random_range(0..h)));
+    }
+    for (x, y) in spots {
+        org.x = x as f32;
+        org.y = y as f32;
+        for tile in [Tile::Food, Tile::Water, Tile::Fire, Tile::Rock] {
+            for radius in [1, 4, 8, 24] {
+                assert_eq!(
+                    org.nearest_visible(&grid, tile, radius),
+                    nearest_cell_by_cell(&grid, (x, y), tile, radius),
+                    "{tile:?} r{radius} at ({x},{y})"
+                );
+            }
+        }
+    }
 }

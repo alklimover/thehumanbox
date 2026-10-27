@@ -1,0 +1,150 @@
+{
+  "starTitle": "在 GitHub 上点星",
+  "starBody": "The Human Box 免费且开源。点个星可以帮助更多人找到它。",
+  "starAria": "在 GitHub 上为 The Human Box 点星",
+  "star": "星标",
+  "live": "在线",
+  "connecting": "连接中…",
+  "tickTip": "模拟 tick {tick}。600 个 tick 是世界中的一天。已过去 {days} 天。",
+  "tick": "tick {tick}",
+  "moonTitle": "月相：{phase}",
+  "moonBody": "第 {year} 年，第 {day} 天。",
+  "eraTitle": "时代：{era}",
+  "eraBody": "决定资源以及人们的行为方式。",
+  "stats": "统计",
+  "statsBody": "人口图表、出生与死亡，以及血脉随时间的增长。",
+  "civTitle": "文明",
+  "civ": "文明",
+  "civBody": "时代、政体、宗教、建筑、书籍、艺术和头条。",
+  "searchTitle": "查找人物",
+  "search": "搜索",
+  "searchBody": "按姓名、想法、血脉或发现搜索所有人，无论生死。",
+  "chronicles": "编年史",
+  "chroniclesBody": "根据已发生的事情记录这个世界的历史。",
+  "more": "更多",
+  "moreBody": "查找工具、保存世界、设置筛选条件和查看选项。",
+  "settings": "设置",
+  "settingsBody": "语言、显示、性能和你的世界。",
+  "worldPanel": "世界面板",
+  "closeWorldPanel": "关闭世界面板",
+  "worldPanelBody": "历史、血脉和事件日志。",
+  "openWorldPanelAria": "打开世界面板",
+  "closeWorldPanelAria": "关闭世界面板",
+  "world": "世界",
+  "peoplePanel": "人物面板",
+  "closePeoplePanel": "关闭人物面板",
+  "peoplePanelBody": "所有在世的人以及逝者。",
+  "openPeoplePanelAria": "打开人物面板",
+  "closePeoplePanelAria": "关闭人物面板",
+  "people": "人物",
+  "fullscreen": "全屏",
+  "exitFullscreen": "退出全屏",
+  "enterFullscreenAria": "进入全屏",
+  "exitFullscreenAria": "退出全屏",
+  "save": {
+    "loading": "正在加载本地存档…",
+    "retrying": "正在重试本地存储…",
+    "restored": "已在第 {tick} 时刻恢复世界",
+    "newWorld": "新的本地世界已就绪",
+    "saving": "正在保存第 {tick} 时刻…",
+    "saved": "已保存到本地 · 第 {tick} 时刻",
+    "savingWorld": "正在保存世界…"
+  },
+  "sandbox": {
+    "seedHint": "点击土地以建立新部落",
+    "guidanceSet": "{strategy}指引已设定",
+    "guidanceFailed": "指引设定失败",
+    "followNobody": "跟随 · 附近没有人",
+    "nameNobody": "命名 · 附近没有人",
+    "noOnePraying": "没有人在祈祷",
+    "noTribeBrink": "没有部落处于危急边缘",
+    "taughtSecret": "神明教给了他们一个秘密",
+    "cannotTeach": "暂时还不能再次教导",
+    "layersCleared": "已清除地图图层",
+    "toolShown": "已显示{tool}",
+    "toolHidden": "已隐藏{tool}",
+    "toolMapOn": "{tool}地图已开启",
+    "toolMapOff": "{tool}地图已关闭",
+    "toolWorking": "{tool}…",
+    "toolApplied": "已应用{tool}",
+    "toolFailed": "{tool}失败",
+    "toolAt": "{tool} → {x}, {y}",
+    "result": {
+      "none_here": "这里的范围内没有人",
+      "none_hurt": "这里没有人受伤",
+      "none_sick": "这里没有人生病",
+      "none_dead": "这里没有可以复活的人",
+      "revive_cooldown": "这个部落最近刚被复活过，神明需要等待",
+      "world_full": "没有地方容纳更多人了",
+      "animal_full": "没有地方容纳更多动物了",
+      "no_room_for_animal": "这片地上没有地方容纳那种动物",
+      "split_small": "这里的人太少，无法分出一个部落",
+      "blocked": "没有人能站在水或岩石上",
+      "no_government": "这个部落没有人来领导",
+      "cannot_teach": "他们暂时还不能再次学习",
+      "spawned": {
+        "one": "{name}来到了这里",
+        "other": "{count}人来到了这里"
+      },
+      "family_arrived": "一个新家庭来到了这里",
+      "healed_animals": { "one": "恢复了一只动物的体力", "other": "恢复了{count}只动物的体力" },
+      "healed": {
+        "one": "治愈了{name}",
+        "other": "治愈了{count}人"
+      },
+      "revived": "{name}从死亡中复活了",
+      "blessed": {
+        "one": "祝福了{name}",
+        "other": "祝福了{count}人"
+      },
+      "inspired": {
+        "one": "启发了{name}",
+        "other": "启发了{count}人"
+      },
+      "cured": {
+        "one": "治好了{name}",
+        "other": "治好了{count}人"
+      },
+      "cured_tribe": {
+        "one": "治好了部落中的一个人",
+        "other": "治好了部落中的{count}人"
+      },
+      "loved": {
+        "one": "{name}坠入了爱河",
+        "other": "{count}颗心充满了爱"
+      },
+      "paired": {
+        "one": "促成了一对伴侣",
+        "other": "促成了{count}对伴侣"
+      },
+      "mutated": "{name}发生了变异",
+      "cursed": "诅咒了{name}",
+      "taught": "{name}的部落学会了一个秘密",
+      "moved": "移动了{name}",
+      "gifted_food": {
+        "one": "送给{name}食物",
+        "other": "送给{count}人食物"
+      },
+      "gifted_tool": {
+        "one": "送给{name}一件工具",
+        "other": "送给{count}人工具"
+      },
+      "crowned": "拥立{name}为王",
+      "split": {
+        "other": "{count}人分离出去，建立了一个新部落"
+      },
+      "tamed": {
+        "one": "一头野兽成为了忠诚的狗",
+        "other": "{count}头野兽成为了忠诚的狗"
+      },
+      "guardian": "一只守护犬来到了{name}身边",
+      "smitten": "雷电击中了{name}",
+      "struck_beast": "雷电击倒了一头野兽",
+      "struck_roof": "雷电劈裂了一座屋顶",
+      "animals": {
+        "one": "出现了一只动物",
+        "other": "出现了{count}只动物"
+      }
+    }
+  }
+}

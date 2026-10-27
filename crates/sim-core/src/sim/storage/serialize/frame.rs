@@ -1,6 +1,9 @@
 use super::*;
 use crate::sim::agriculture::plough_for;
 
+/// How often (in ticks) a stream frame carries the static grid layers.
+const STATIC_LAYER_TICKS: u64 = 60;
+
 impl Simulation {
     pub(super) fn state_frame_inner(
         &mut self,
@@ -89,14 +92,26 @@ impl Simulation {
             self.slow_compute_tick = self.tick_count;
         }
 
-        let include_tiles = include_cold || self.tick_count.is_multiple_of(60) || self.tick_count <= 1;
-        let include_static = include_cold || self.tick_count.is_multiple_of(60) || self.tick_count <= 1;
+        // The static layers ride the stream every `STATIC_LAYER_TICKS`, counted from the last frame
+        // that carried them: a fast-forward emits a frame every few ticks and could step over an
+        // exact multiple for a long while. The deep full a joiner is handed (`include_cold`) is not
+        // on the stream, so it leaves the stream's bookkeeping alone.
+        let static_due = self.tick_count <= 1
+            || self.tick_count.saturating_sub(self.serialized_static_tick) >= STATIC_LAYER_TICKS;
+        let include_static = include_cold || static_due;
+        if static_due && !include_cold {
+            self.serialized_static_tick = self.tick_count;
+        }
+        // Tiles flip somewhere (food, fire, flood) between nearly every pair of static frames, so
+        // they ride along with the static layers rather than being diffed.
+        let include_tiles = include_static;
+        let (vp_w, vp_h) = (crate::world::grid::VP_W, crate::world::grid::VP_H);
         let include_terrain = include_cold;
         let mut grid_json = self.grid.to_json_viewport(
             vp_cx,
             vp_cy,
-            crate::world::grid::VP_W,
-            crate::world::grid::VP_H,
+            vp_w,
+            vp_h,
             include_tiles,
             include_static,
             include_terrain,
@@ -374,6 +389,8 @@ impl Simulation {
                 "lineage_strategy_history".to_string(),
                 lineage_strategy_history_payload(self),
             );
+            // What each tribe's people are working at, so its card can say what it is doing (read only).
+            obj.insert("tribe_work".to_string(), lineage_work_payload(self));
             // Routes are small and caravans visibly move every tick, so they
             // belong in hot/delta frames rather than the once-per-cold-snapshot
             // economy payload. The private dispatch_state used for delayed
@@ -495,6 +512,9 @@ impl Simulation {
                     "lineage_names".to_string(),
                     serde_json::to_value(&self.lineage_names).unwrap(),
                 );
+                obj.insert("lineage_lore".to_string(), lineage_lore(self));
+                // Each living tribe's own history, for its card (see `simulation/tribe_chronicle.rs`).
+                obj.insert("tribe_chronicle".to_string(), tribe_chronicle_payload(self));
                 obj.insert(
                     "lineage_centroid_history".to_string(),
                     serde_json::to_value(&self.lineage_centroid_history).unwrap(),
@@ -960,4 +980,30 @@ fn lineage_words(
             (lineage.to_string(), serde_json::Value::Object(words))
         })
         .collect()
+}
+
+/// What each tribe has learned as a people: the craft it is known for, the
+/// hungry winter it remembers and the war dead it mourns. Only tribes with
+/// something to tell are listed.
+fn lineage_lore(sim: &Simulation) -> serde_json::Value {
+    use crate::sim::civ::society::hard_winters::REMEMBERED;
+    let mut lore = serde_json::Map::new();
+    for (lineage, skill) in &sim.lineage_crafts {
+        lore.insert(lineage.clone(), json!({ "craft": skill.name() }));
+    }
+    for (lineage, memory) in &sim.lineage_winter_memory {
+        if memory.strength < REMEMBERED {
+            continue;
+        }
+        let entry = lore.entry(lineage.clone()).or_insert_with(|| json!({}));
+        entry["hungry_winter"] = json!(memory.year + 1);
+    }
+    for (lineage, war) in &sim.lineage_war_weariness {
+        if war.weariness < crate::sim::civ::society::war_weariness::WEARY {
+            continue;
+        }
+        let entry = lore.entry(lineage.clone()).or_insert_with(|| json!({}));
+        entry["war_weary"] = json!(war.fallen);
+    }
+    serde_json::Value::Object(lore)
 }

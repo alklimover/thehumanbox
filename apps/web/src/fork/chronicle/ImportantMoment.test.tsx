@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setLocaleForTests } from '../../i18n/locale'
+import { setLocaleForTests } from '../i18n/locale'
 import type { DesktopBridge } from '../../shared/desktop'
 import { useUIStore } from '../../state/store'
 import { ImportantMoment } from './ImportantMoment'
@@ -99,8 +99,8 @@ async function second() {
 
 const card = () => container.querySelector('.fmoment')
 
-beforeEach(() => {
-  setLocaleForTests('ru')
+beforeEach(async () => {
+  await setLocaleForTests('ru')
   vi.useFakeTimers({ shouldAdvanceTime: true })
   const data = new Map<string, string>()
   Object.defineProperty(window, 'localStorage', {
@@ -125,13 +125,13 @@ beforeEach(() => {
   root = createRoot(container)
 })
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount())
   container.remove()
   delete window.thbDesktop
   vi.useRealTimers()
   vi.unstubAllGlobals()
-  setLocaleForTests('en')
+  await setLocaleForTests('en')
 })
 
 describe('the important-moment card', () => {

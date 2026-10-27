@@ -1,0 +1,21 @@
+{
+  "close": "Schließen",
+  "open": "Öffnen",
+  "retry": "Erneut versuchen",
+  "loading": "Lädt…",
+  "export": "Exportieren",
+  "restore": "Wiederherstellen…",
+  "delete": "Löschen…",
+  "move": "Verschieben",
+  "checking": "Wird geprüft…",
+  "backToMap": "Zurück zur Karte",
+  "zoomIn": "Vergrößern",
+  "zoomOut": "Verkleinern",
+  "fitWorld": "Ganze Welt zeigen",
+  "centreOnSelected": "Auf Auswahl zentrieren",
+  "worldMapLabel": "Interaktive Weltkarte",
+  "terrainLabel": "Weltgelände und Bewohner",
+  "boundaryTitle": "Die Welt hat gestockt",
+  "boundaryBody": "In der Darstellung ist etwas Unerwartetes passiert. Lade neu, um dich wieder mit der laufenden Simulation zu verbinden.",
+  "boundaryReload": "Neu laden"
+}

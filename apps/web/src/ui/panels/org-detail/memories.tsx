@@ -1,20 +1,9 @@
 import { lineageColor } from '../../../shared/constants'
+import { personName } from '../../../shared/personName'
 import type { OrganismState, OrgDetail } from '../../../shared/types'
-import { t, tn, type MessageKey } from '../../../i18n'
-import { sexByName, sexOf, simText } from '../../../i18n/simtext'
-import { displayName } from '../../../i18n/names'
-
-/** The word for each kind of memory the simulation keeps. */
-const MEMORY_KIND: Record<string, MessageKey> = {
-  core: 'person.memoryKind.core',
-  episode: 'person.memoryKind.episode',
-  fact: 'person.memoryKind.fact',
-  bond: 'person.memoryKind.bond',
-  place: 'person.memoryKind.place',
-  dream: 'person.memoryKind.dream',
-}
-
-const kindName = (kind: string) => (MEMORY_KIND[kind] ? t(MEMORY_KIND[kind]) : kind)
+import { formatNumber, t } from '../../../i18n'
+import { sexByName, sexOf, simText } from '../../../fork/i18n/simtext'
+import { memoryKind } from '../../../fork/i18n/life-words'
 
 export function BondsRememberedSection({
   detail,
@@ -29,7 +18,7 @@ export function BondsRememberedSection({
     <>
       {detail?.memories && detail.memories.filter((m) => m.kind === 'bond').length > 0 && (
         <>
-          <div className="org-detail-section">{t('person.bonds.title')}</div>
+          <div className="org-detail-section">{t('person.memories.bonds')}</div>
           <div className="thought-history">
             {detail.memories
               .filter((m) => m.kind === 'bond')
@@ -43,7 +32,7 @@ export function BondsRememberedSection({
                       className="thought-tick"
                       style={{ color: '#e09ab0', fontWeight: 600, minWidth: 50 }}
                     >
-                      {t('person.bonds.bond')}
+                      {t('person.memories.bond')}
                     </span>
                     <span className="thought-text" style={{ color: emo, flex: 1 }}>
                       {simText('memory', m.text, { sex: sexOf(detail), sexOf: sexByName(organisms) })}
@@ -61,7 +50,7 @@ export function BondsRememberedSection({
                             cursor: 'pointer',
                           }}
                         >
-                          ↪ {displayName(relatedOrg.name)}
+                          ↪ {personName(relatedOrg)}
                         </button>
                       )}
                     </span>
@@ -88,7 +77,7 @@ export function MemoriesSection({
     <>
       {detail?.memories && detail.memories.length > 0 && (
         <>
-          <div className="org-detail-section">{t('person.memories.title')}</div>
+          <div className="org-detail-section">{t('person.memories.whatTheyRemember')}</div>
           <div className="thought-history">
             {detail.memories.map((m, i) => {
               const kindColor: Record<string, string> = {
@@ -121,13 +110,19 @@ export function MemoriesSection({
                       minWidth: 56,
                     }}
                     title={
-                      t('person.memories.kindTip', {
-                        kind: kindName(m.kind),
-                        pct: (m.salience * 100).toFixed(0),
-                      }) + (m.recalls > 0 ? tn('person.memories.recalled', m.recalls) : '')
+                      m.recalls > 0
+                        ? t('person.memories.salienceRecalled', {
+                            kind: memoryKind(m.kind),
+                            percent: (m.salience * 100).toFixed(0),
+                            count: formatNumber(m.recalls),
+                          })
+                        : t('person.memories.salience', {
+                            kind: memoryKind(m.kind),
+                            percent: (m.salience * 100).toFixed(0),
+                          })
                     }
                   >
-                    {kindName(m.kind)}
+                    {memoryKind(m.kind)}
                   </span>
                   <span className="thought-text" style={{ color: emoColor, flex: 1 }}>
                     {simText('memory', m.text, { sex: sexOf(detail), sexOf: sexByName(organisms) })}
@@ -144,15 +139,15 @@ export function MemoriesSection({
                           borderRadius: 3,
                           cursor: 'pointer',
                         }}
-                        title={t('person.memories.goTo', { name: displayName(relatedOrg.name) })}
+                        title={t('person.memories.goTo', { name: personName(relatedOrg) })}
                       >
-                        ↪ {displayName(relatedOrg.name)}
+                        ↪ {personName(relatedOrg)}
                       </button>
                     )}
                   </span>
                   <span
                     style={{ color: '#444', fontFamily: 'monospace', fontSize: 9, marginLeft: 6 }}
-                    title={t('person.memories.salience', { pct: (m.salience * 100).toFixed(0) })}
+                    title={t('person.memories.salienceOnly', { percent: (m.salience * 100).toFixed(0) })}
                   >
                     {'▮'.repeat(bars)}
                   </span>

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../../i18n/locale'
+import { setLocaleForTests } from '../i18n/locale'
 import { YEAR_TICKS } from '../../game/model/calendar'
 import type { BattleInfo, OrganismState, WorldState } from '../../shared/types'
 import {
@@ -73,7 +73,7 @@ function battle(id: string, extra: Partial<BattleInfo> = {}): BattleInfo {
 afterEach(() => setLocaleForTests('en'))
 
 describe('the observer’s stories', () => {
-  it('a war going on, with its dead, where it is fought', () => {
+  it('a war going on, with its dead, where it is fought', async () => {
     const [war, ...rest] = warStories(world({ battles: [battle('w1'), battle('w0', { ended: true })] }))
     expect(rest).toEqual([])
     expect(war).toMatchObject({
@@ -85,7 +85,7 @@ describe('the observer’s stories', () => {
       lineage: 'a',
       action: { kind: 'show' },
     })
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     const ru = warStories(
       world({ battles: [battle('w1'), battle('w2', { casualties_a: 1, casualties_d: 0 })] }),
     )
@@ -139,7 +139,7 @@ describe('the observer’s stories', () => {
     expect(help.action).toEqual({ kind: 'tool', tool: 'harvest' })
   })
 
-  it('a faith is new when it appears after the world was loaded, or its founding is still in the events', () => {
+  it('a faith is new when it appears after the world was loaded, or its founding is still in the events', async () => {
     const watch = new StoryWatch()
     const old = { id: 'r1', name: 'Sun Path', founder_lineage: 'd', adherents: 30 }
     watch.update(world({ religions: [old] }))
@@ -171,7 +171,7 @@ describe('the observer’s stories', () => {
     loaded.update(told)
     expect(faithStories(told, loaded).map((s) => s.key)).toEqual(['faith:r1'])
 
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     const ruLater = world({ tick: 50_300, religions: [old, fresh] })
     const ruFresh = new StoryWatch()
     ruFresh.update(world({ religions: [old] }))
@@ -186,7 +186,7 @@ describe('the observer’s stories', () => {
     expect(faithStories(one, ruWatch)[0].detail).toBe('Основало племя Фебово · 1 верующий')
   })
 
-  it('a tribe with the people for its next era and at most one discovery to go', () => {
+  it('a tribe with the people for its next era and at most one discovery to go', async () => {
     const progress = (lineage_id: string, missing: string[], pop_ready = true) => ({
       lineage_id,
       era_name: 'stone',
@@ -213,11 +213,11 @@ describe('the observer’s stories', () => {
       ['Timovo: on the threshold of a new era', 'Ahead: bronze. Still to discover: smelting'],
       ['Sedua: on the threshold of a new era', 'Ahead: bronze, any day now'],
     ])
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(thresholdStories(w)[0].detail).toBe('Впереди бронзовый век. Осталось открыть: плавка металла')
   })
 
-  it('a new era, seen to change or told by the events, one per tribe', () => {
+  it('a new era, seen to change or told by the events, one per tribe', async () => {
     const watch = new StoryWatch()
     const before = world({ lineage_eras: { a: 'stone', b: 'stone' } })
     watch.update(before)
@@ -245,7 +245,7 @@ describe('the observer’s stories', () => {
       ['era:b:stone', 'The Sedua tribe'],
       ['era:a:bronze', 'The Timovo tribe · before: stone'],
     ])
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(eraStories(now, watch)[1].title).toBe('Новая эпоха: бронзовый век')
   })
 
@@ -276,18 +276,18 @@ describe('the observer’s stories', () => {
     expect(townStories(two, loaded)).toEqual([])
   })
 
-  it('an epidemic, and for the god the cure', () => {
+  it('an epidemic, and for the god the cure', async () => {
     const w = world({ active_outbreaks: [{ kind: 'plague', infected: 5, lineage_id: 'a' }] })
     expect(outbreakStories(w)[0]).toMatchObject({
       title: 'Epidemic: plague',
       detail: '5 are sick · the Timovo tribe',
     })
     expect(outbreakStories(w, true)[0].action).toEqual({ kind: 'tool', tool: 'cure' })
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(outbreakStories(w)[0]).toMatchObject({ title: 'Эпидемия: мор', detail: 'Болеют 5 · племя Тимово' })
   })
 
-  it('a festival is one row however many tribes hold it', () => {
+  it('a festival is one row however many tribes hold it', async () => {
     const fest = (name: string, lineage_id: string | undefined, x?: number) => ({
       name,
       lineage_id,
@@ -314,7 +314,7 @@ describe('the observer’s stories', () => {
       festivals: [fest('Spring Festival', 'a'), fest('Spring Festival', 'b'), fest('Spring Festival', 'c')],
     })
     expect(festivalStories(three)[0]).toMatchObject({ detail: 'Celebrated by 3 tribes', tribes: [] })
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(festivalStories(w).map((s) => [s.title, s.detail])).toEqual([
       ['Весенний праздник', 'Празднуют Тимово и Седуа'],
       ['Праздник урожая', 'Празднует племя Зерогу'],
@@ -322,7 +322,7 @@ describe('the observer’s stories', () => {
     expect(festivalStories(three)[0].detail).toBe('Празднуют 3 племени')
   })
 
-  it('the oldest person and the largest family', () => {
+  it('the oldest person and the largest family', async () => {
     const w = world({
       organisms: [
         person('p1', 'a', 1, 1, { age: 30 * YEAR_TICKS, sex: 'female', name: 'Mira', surname: 'Lupif' }),
@@ -340,7 +340,7 @@ describe('the observer’s stories', () => {
       title: 'The largest family: Lupif',
       detail: '2 people · the Timovo tribe',
     })
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(fillerStories(w)[0].title).toBe('Старейшая в мире — Мира, 30 лет')
   })
 
@@ -352,7 +352,7 @@ describe('the observer’s stories', () => {
 })
 
 describe('the god’s stories', () => {
-  it('prayers, the one about to lapse marked; rain asked by many is one row', () => {
+  it('prayers, the one about to lapse marked; rain asked by many is one row', async () => {
     const prayer = (id: number, kind: string, lineage_id: string, expires: number) => ({
       id,
       kind,
@@ -378,11 +378,11 @@ describe('the god’s stories', () => {
     expect(stories[0].action).toEqual({ kind: 'prayer', prayer: w.prayers![0] })
     expect(stories[0].weight).toBeGreaterThan(stories[1].weight)
     // The powers' labels are read when the module loads, so only the phrase around one changes here.
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(prayerStories(w)[0].detail).toBe('Поможет «harvest». Молитва скоро угаснет')
   })
 
-  it('a tribe praying for several things is one row, its most urgent prayer', () => {
+  it('a tribe praying for several things is one row, its most urgent prayer', async () => {
     const prayer = (id: number, kind: string, lineage_id: string, expires: number) => ({
       id,
       kind,
@@ -421,7 +421,7 @@ describe('the god’s stories', () => {
       title: 'Timovo pray for clean water',
       detail: '“spring” will help. 1 more prayer',
     })
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(prayerStories(w)[0].detail).toBe('Поможет «harvest». Ещё 2 молитвы. Молитва скоро угаснет')
     expect(prayerStories(answered)[0].detail).toBe('Поможет «spring». Ещё 1 молитва')
   })

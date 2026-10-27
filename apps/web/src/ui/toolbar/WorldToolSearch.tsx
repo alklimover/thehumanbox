@@ -1,9 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { t, tn } from '../../i18n'
 import { ToolSprite } from './ToolSprite'
 import type { SandboxTool } from '../../simulation/sandbox'
 import { searchWorldTools } from './tool-search'
+import { toolName } from './tool-tips'
+import { t, formatNumber } from '../../i18n'
 import './world-tool-search.css'
 
 type ToolResult = ReturnType<typeof searchWorldTools>[number]
@@ -26,9 +27,9 @@ const ToolResults = memo(function ToolResults({
             <ToolSprite icon={tool.icon} />
           </span>
           <span>
-            <strong>{tool.label}</strong>
+            <strong>{toolName(tool)}</strong>
             <small>
-              {category} · {tool.mode === 'point' ? t('tools.search.point') : t('tools.search.instant')}
+              {category} · {tool.mode === 'point' ? t('dock.search.placeOnMap') : t('dock.search.applyNow')}
             </small>
           </span>
           <span aria-hidden="true">→</span>
@@ -97,21 +98,23 @@ export function WorldToolSearch({
     >
       <header>
         <div>
-          <span>{t('tools.search.kicker')}</span>
-          <h2 id="tool-search-title">{t('tools.search.title')}</h2>
+          <span>{t('dock.search.kicker')}</span>
+          <h2 id="tool-search-title">{t('dock.search.title')}</h2>
         </div>
-        <button onClick={close} aria-label={t('tools.search.close')}>
+        <button onClick={close} aria-label={t('dock.search.close')}>
           ×
         </button>
       </header>
       <input
         ref={input}
         type="search"
-        placeholder={t('tools.search.placeholder')}
-        aria-label={t('tools.search.input')}
+        placeholder={t('dock.search.placeholder')}
+        aria-label={t('dock.search.inputAria')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
+          // An Enter that commits a composed word (Japanese, Chinese, Korean input) is not a pick.
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return
           if (e.key === 'Enter' && query.trim() && results.length === 1) {
             e.preventDefault()
             pick(results[0].tool)
@@ -119,10 +122,10 @@ export function WorldToolSearch({
         }}
       />
       <p className="tool-search-count" role="status">
-        {tn(query ? 'tools.search.found' : 'tools.search.available', results.length)}
+        {t(query ? 'dock.search.found' : 'dock.search.available', { count: formatNumber(results.length) })}
       </p>
       <ToolResults results={results} onPick={pick} />
-      {!results.length && <p className="tool-search-empty">{t('tools.search.empty')}</p>}
+      {!results.length && <p className="tool-search-empty">{t('dock.search.empty')}</p>}
     </dialog>,
     document.body,
   )

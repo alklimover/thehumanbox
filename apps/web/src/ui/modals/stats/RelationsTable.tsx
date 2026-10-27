@@ -1,14 +1,9 @@
 import { useMemo } from 'react'
 import type { TribalRelation } from '../../../shared/types'
 import { lineageColor } from '../../../shared/constants'
-import { t, type MessageKey } from '../../../i18n'
-import { displayName } from '../../../i18n/names'
-
-const STATUS_KEYS: Record<TribalRelation['status'], MessageKey> = {
-  ally: 'stats.relation.ally',
-  neutral: 'stats.relation.neutral',
-  rivals: 'stats.relation.rivals',
-}
+import { t } from '../../../i18n'
+import { knownTribeName } from '../../../state/worldStore'
+import { relationWord } from '../../sim-words'
 
 export function RelationsTable({
   relations,
@@ -28,7 +23,7 @@ export function RelationsTable({
   const sorted = [...relations].sort((a, b) => Math.abs(b.attitude) - Math.abs(a.attitude))
 
   if (sorted.length === 0) {
-    return <div className="stats-rel-empty">{t('stats.noRelations')}</div>
+    return <div className="stats-rel-empty">{t('dialogs.stats.noContacts')}</div>
   }
 
   return (
@@ -39,20 +34,18 @@ export function RelationsTable({
         return (
           <div key={i} className="stats-rel-row">
             <span className="stats-rel-name" style={{ color: lineageColor(r.a) }}>
-              {displayName(lineageNames[r.a]) || r.a}
+              {knownTribeName(lineageNames, r.a) ?? r.a.slice(0, 6)}
             </span>
             <span className="stats-rel-muted">↔</span>
             <span className="stats-rel-name" style={{ color: lineageColor(r.b) }}>
-              {displayName(lineageNames[r.b]) || r.b}
+              {knownTribeName(lineageNames, r.b) ?? r.b.slice(0, 6)}
             </span>
             <div className="stats-rel-bar-wrap">
               <div className="stats-rel-bar" style={{ width: barW, background: barColor }} />
             </div>
-            <span className={`stats-rel-status status-${r.status}`}>
-              {STATUS_KEYS[r.status] ? t(STATUS_KEYS[r.status]) : r.status}
-            </span>
+            <span className={`stats-rel-status status-${r.status}`}>{relationWord(r.status)}</span>
             <span className="stats-rel-muted">
-              {t('stats.relation.sizes', { a: sizeMap[r.a] ?? '?', b: sizeMap[r.b] ?? '?' })}
+              {t('dialogs.stats.versus', { a: sizeMap[r.a] ?? 0, b: sizeMap[r.b] ?? 0 })}
             </span>
           </div>
         )

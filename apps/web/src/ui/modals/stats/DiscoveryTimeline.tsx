@@ -1,7 +1,7 @@
-import { t } from '../../../i18n'
 import type { WorldState } from '../../../shared/types'
-import { DAY_LENGTH } from './constants'
-import { simActor, simText } from '../../../i18n/simtext'
+import { eventDate } from '../../event-date'
+import { t } from '../../../i18n'
+import { simActor, simText } from '../../../fork/i18n/simtext'
 
 export function DiscoveryTimeline({ events }: { events: WorldState['events'] }) {
   const milestones = events
@@ -15,14 +15,16 @@ export function DiscoveryTimeline({ events }: { events: WorldState['events'] }) 
     .slice(-20)
 
   if (milestones.length === 0) {
-    return <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>{t('stats.noDiscoveries')}</div>
+    return (
+      <div style={{ color: '#333', fontSize: 11, padding: '8px 0' }}>{t('dialogs.stats.noDiscoveries')}</div>
+    )
   }
 
   return (
     <div className="stats-timeline">
       {milestones.map((e, i) => (
         <div key={i} className="stats-timeline-row">
-          <span className="stats-tick">{t('stats.day', { n: Math.floor(e.tick / DAY_LENGTH) })}</span>
+          <span className="stats-tick">{eventDate(e.tick)}</span>
           <span className="stats-actor">{simActor(e.actor)}</span>
           <span className="stats-detail">{simText('event', e.detail)}</span>
         </div>

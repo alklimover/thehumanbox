@@ -69,7 +69,11 @@ test('File > Restart simulation brings the window back when no window is open', 
       if (id === './app-icon') return { appIconPath: () => '/tmp/icon.png' }
       if (id === 'node:path') return path
       if (id === './i18n') return require(path.join(__dirname, 'i18n'))
+      if (id === './fork-shell') return require(path.join(__dirname, 'fork-shell'))
+      if (id === './fork-ipc') return { registerForkIpc: () => {} }
       if (id === './renderer-load') return require(path.join(__dirname, 'renderer-load'))
+      if (id === './i18n') return require(path.join(__dirname, 'i18n'))
+      if (id === './app-menu') return require(path.join(__dirname, 'app-menu'))
       return {}
     },
   })

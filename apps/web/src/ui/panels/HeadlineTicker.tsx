@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { t } from '../../i18n'
 import type { WorldState } from '../../shared/types'
-import { simText } from '../../i18n/simtext'
+import { t } from '../../i18n'
+import { simText } from '../../fork/i18n/simtext'
 
 interface Props {
   world: WorldState | null
@@ -20,7 +20,7 @@ export function HeadlineTicker({ world, enabled = true }: Props) {
   const repeated = [...lines, ...lines]
 
   return (
-    <div className="headline-ticker" role="marquee" aria-label={t('ticker.aria')}>
+    <div className="headline-ticker" role="marquee" aria-label={t('panels.headlines.label')}>
       <div className="headline-ticker-track">
         {repeated.map((line, i) => (
           <span key={i} className="headline-ticker-item">

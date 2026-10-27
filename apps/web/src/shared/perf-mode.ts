@@ -1,5 +1,5 @@
-import { reloadAppSafely } from '../simulation/worldSource'
 import { t } from '../i18n'
+import { reloadAppSafely } from '../simulation/worldSource'
 
 /** Whether the player chose low-performance mode (see LOW_PERF in perf.ts). */
 export function readLowPerf(): boolean {
@@ -29,6 +29,6 @@ export function toggleLowPerf() {
         /* keep the current renderer mode if storage became unavailable */
       }
     },
-    failureMessage: t('settings.lowPerf.failed'),
+    failureMessage: t('dialogs.worldNotice.checkpointPerfMode'),
   })
 }

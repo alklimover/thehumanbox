@@ -40,7 +40,9 @@ mod separation;
 mod strategy;
 mod territory;
 mod tick;
+mod tribe_chronicle;
 mod types;
+pub(crate) mod wary_game;
 mod world;
 
 pub use residents::Residents;
@@ -59,6 +61,8 @@ pub struct Simulation {
     pub physics: PhysicsEngine,
     pub organisms: Vec<Organism>,
     pub animals: Vec<Animal>,
+    /// How wary the game in each patch of land has grown of hunters (see `wary_game`).
+    pub game_wariness: crate::hashing::FxHashMap<(i32, i32), f32>,
     /// Where predators made kills, and what is left of the prey (see `carcasses`).
     pub carcasses: Vec<Carcass>,
     pub tick_count: u64,
@@ -102,6 +106,14 @@ pub struct Simulation {
     pub lineage_generations_reached: HashMap<String, u32>,
     /// Unrest building in each tribe whose wealth gap is stark (civ/society/unrest.rs).
     pub lineage_unrest: HashMap<String, f32>,
+    /// The hungry winter each tribe remembers (see `civ::society::hard_winters`).
+    pub lineage_winter_memory: HashMap<String, crate::sim::civ::society::hard_winters::WinterMemory>,
+    /// How weary of war each tribe is, and how many of its people have fallen.
+    pub lineage_war_weariness: HashMap<String, crate::sim::civ::society::war_weariness::WarWeariness>,
+    /// The craft each tribe is known for (see `civ::society::tribe_crafts`). Runtime only, worked out daily.
+    pub lineage_crafts: HashMap<String, crate::organism::skills::Skill>,
+    /// Whether `lineage_crafts` has been worked out since the world was made or loaded. Runtime only.
+    pub lineage_crafts_ready: bool,
     /// Thefts, killings and punishments in each tribe (civ/society/crime.rs).
     pub lineage_crime: HashMap<String, crate::sim::civ::society::crime::CrimeTally>,
     pub(crate) lineage_aggregates: HashMap<String, LineageAggregate>,
@@ -116,6 +128,8 @@ pub struct Simulation {
     pub next_festival_id: u32,
     pub action_counts: HashMap<&'static str, u64>,
     pub decision_counts: HashMap<&'static str, u64>,
+    /// Times someone learned a skill by watching kin or a friend work. Runtime only, for reports.
+    pub lessons_watched: u64,
     pub workshop_hits: HashMap<&'static str, (u64, u64)>,
     pub last_witness_tick: u64,
     pub books: Vec<super::language_tech::Book>,
@@ -126,6 +140,8 @@ pub struct Simulation {
     pub next_vehicle_id: u32,
     /// The last land survey for ferries (see `tech/ferry.rs`); rebuilt every few hundred ticks, not saved.
     pub(crate) ferry_survey: crate::sim::tech::ferry::FerrySurvey,
+    /// What the command in progress reported about itself (see `command/outcome.rs`). Runtime only.
+    pub(crate) command_report: Option<crate::sim::command::outcome::Report>,
     /// The people queued at each ferry pier, and the passengers aboard (see `tech/ferry.rs`); not saved.
     pub(crate) ferry_queues: crate::sim::tech::ferry::FerryQueues,
     pub battles: Vec<super::warfare::Battle>,
@@ -137,6 +153,8 @@ pub struct Simulation {
     /// Tribes the world has warned are on the brink (runtime; re-detected
     /// within one check after a load).
     pub(crate) tribe_peril: HashMap<String, super::civ::peril::Peril>,
+    /// Each tribe's own history for its card (runtime, display only: not in the save).
+    pub(crate) tribe_chronicle: tribe_chronicle::TribeChronicle,
     /// When each tribe last began a festival (runtime).
     pub(crate) festival_last: HashMap<String, u64>,
     /// The player's goals, difficulty and whether the world is lost (saved).
@@ -207,6 +225,9 @@ pub struct Simulation {
     /// The structure layer the last stream frame described, so a hot frame can send only what
     /// changed.
     pub(crate) serialized_structure: Option<StructureBase>,
+    /// The tick of the last stream frame that carried the static grid layers (trails, fertility,
+    /// hazard, roads), so they go out every `STATIC_LAYER_TICKS` whatever the emit cadence.
+    pub(crate) serialized_static_tick: u64,
     pub(crate) active_structure_tiles: HashSet<(i32, i32)>,
     pub(crate) field_fortifications: Vec<super::warfare::FieldFortification>,
     pub(crate) settlement_tiers: HashMap<String, u8>,
@@ -245,6 +266,7 @@ impl Simulation {
             physics,
             organisms: Vec::new(),
             animals: Vec::new(),
+            game_wariness: Default::default(),
             carcasses: Vec::new(),
             tick_count: 0,
             population_limit: DEFAULT_MAX_POPULATION,
@@ -272,6 +294,10 @@ impl Simulation {
             lineage_eras: HashMap::default(),
             lineage_generations_reached: HashMap::default(),
             lineage_unrest: HashMap::default(),
+            lineage_winter_memory: HashMap::default(),
+            lineage_war_weariness: HashMap::default(),
+            lineage_crafts: HashMap::default(),
+            lineage_crafts_ready: false,
             lineage_crime: HashMap::default(),
             lineage_aggregates: HashMap::default(),
             buildings: Default::default(),
@@ -285,6 +311,7 @@ impl Simulation {
             next_festival_id: 1,
             action_counts: HashMap::default(),
             decision_counts: HashMap::default(),
+            lessons_watched: 0,
             workshop_hits: HashMap::default(),
             last_witness_tick: 0,
             books: Vec::new(),
@@ -295,6 +322,7 @@ impl Simulation {
             next_vehicle_id: 1,
             ferry_survey: Default::default(),
             ferry_queues: Default::default(),
+            command_report: None,
             battles: Vec::new(),
             next_battle_id: 1,
             treaties: Vec::new(),
@@ -302,6 +330,7 @@ impl Simulation {
             milestones_achieved: HashSet::default(),
             lineage_peak_pop: HashMap::default(),
             tribe_peril: HashMap::default(),
+            tribe_chronicle: Default::default(),
             festival_last: HashMap::default(),
             goals: Default::default(),
             evening_places: Default::default(),
@@ -343,6 +372,7 @@ impl Simulation {
             planting_revision: 0,
             serialized_planting_revision: 0,
             serialized_structure: None,
+            serialized_static_tick: 0,
             active_structure_tiles: HashSet::default(),
             field_fortifications: Vec::new(),
             settlement_tiers: HashMap::default(),

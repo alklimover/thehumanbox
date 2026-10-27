@@ -1,7 +1,7 @@
 // Fork: "Don't miss what matters" in the desktop settings' world tab: whether
 // the world stops for what matters, how often at most, and what each kind of
 // line does. The card (ImportantMoment.tsx) sends the choices to the simulation.
-import { t } from '../../i18n'
+import { ft } from '../i18n'
 import { isDesktop } from '../../shared/desktop'
 import { ACTIONS, DEBOUNCE_CHOICES, RULES, RULE_LABEL, useWatchSettings, type WatchAction } from './watch'
 import './important-moment.css'
@@ -25,7 +25,7 @@ export function WatchSection() {
   if (!isDesktop()) return null
   return (
     <section className="settings-section fork-watch">
-      <h3 className="settings-section-title">{t('watch.title')}</h3>
+      <h3 className="settings-section-title">{ft('watch.title')}</h3>
       <div className="fwatch-row">
         <label>
           <input
@@ -33,11 +33,11 @@ export function WatchSection() {
             checked={settings.enabled}
             onChange={(e) => set({ enabled: e.target.checked })}
           />
-          {t('watch.enabled')}
+          {ft('watch.enabled')}
         </label>
       </div>
       <div className={'fwatch-row' + (settings.enabled ? '' : ' fwatch-off')}>
-        <span>{t('watch.debounce')}</span>
+        <span>{ft('watch.debounce')}</span>
         {DEBOUNCE_CHOICES.map((secs) => (
           <label key={secs}>
             <input
@@ -47,7 +47,7 @@ export function WatchSection() {
               disabled={!settings.enabled}
               onChange={() => set({ debounceSecs: secs })}
             />
-            {t(DEBOUNCE_LABEL[secs])}
+            {ft(DEBOUNCE_LABEL[secs])}
           </label>
         ))}
       </div>
@@ -56,20 +56,20 @@ export function WatchSection() {
           <tr>
             <th />
             {ACTIONS.map((action) => (
-              <th key={action}>{t(ACTION_LABEL[action])}</th>
+              <th key={action}>{ft(ACTION_LABEL[action])}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {RULES.map(([rule]) => (
             <tr key={rule}>
-              <td>{t(RULE_LABEL[rule])}</td>
+              <td>{ft(RULE_LABEL[rule])}</td>
               {ACTIONS.map((action) => (
                 <td key={action} className="fwatch-pick">
                   <input
                     type="radio"
                     name={`fwatch-${rule}`}
-                    aria-label={`${t(RULE_LABEL[rule])}: ${t(ACTION_LABEL[action])}`}
+                    aria-label={`${ft(RULE_LABEL[rule])}: ${ft(ACTION_LABEL[action])}`}
                     checked={settings.rules[rule] === action}
                     disabled={!settings.enabled}
                     onChange={() => set({ rules: { [rule]: action } })}
@@ -80,10 +80,10 @@ export function WatchSection() {
           ))}
         </tbody>
       </table>
-      <div className="settings-note">{t('watch.note')}</div>
+      <div className="settings-note">{ft('watch.note')}</div>
       <div className="fwatch-row">
         <button type="button" className="lang-btn" onClick={reset}>
-          {t('watch.reset')}
+          {ft('watch.reset')}
         </button>
       </div>
     </section>

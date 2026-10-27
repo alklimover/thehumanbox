@@ -3,36 +3,33 @@ import './index.css'
 import './styles/fork.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './ui/ErrorBoundary'
-import { initAnalytics } from './shared/observability'
+import { initAnalytics, refreshAnalyticsContext } from './shared/observability'
 import { reloadAppSafely } from './simulation/worldSource'
 import { isDesktopStartupPending } from './shared/desktopStartup'
-import { applyDocumentLocale, t } from './i18n'
-import { reportLocaleToDesktop } from './i18n/desktop-locale'
-import './i18n/dev'
+import { getLocale, initI18n } from './i18n'
+import { startI18nCheckIfWanted } from './fork/i18n/dev'
 import { installBootStages } from './fork/boot-stages'
 
 initAnalytics()
-applyDocumentLocale()
-reportLocaleToDesktop()
-localizeSplash()
 
-/** index.html carries the Russian loading screen; put it in the chosen language before it is noticed. */
-function localizeSplash() {
-  const set = (id: string, text: string) => {
-    const el = document.getElementById(id)
-    if (el) el.textContent = text
-  }
-  document.getElementById('thb-splash')?.setAttribute('aria-label', t('splash.label'))
-  set('thb-progress-text', t('splash.waking'))
-  set('thb-splash-slow', t('splash.slow'))
-  set('thb-splash-reload', t('common.reload'))
-}
-
-createRoot(document.getElementById('root')!).render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>,
-)
+// The chosen language loads before the first render; it never blocks for long
+// and falls back to English.
+void initI18n()
+  .then(() => {
+    refreshAnalyticsContext()
+    // Fork: the check for English left on the Russian screen (fork/i18n/dev).
+    startI18nCheckIfWanted()
+    // The desktop shell's menus, tray and dialogs follow the language the game
+    // shows. A failed report only leaves the shell in its last language.
+    window.thbDesktop?.app?.setLocale?.(getLocale())?.catch(() => {})
+  })
+  .finally(() => {
+    createRoot(document.getElementById('root')!).render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>,
+    )
+  })
 
 function hideSplash() {
   const splash = document.getElementById('thb-splash')
@@ -66,13 +63,16 @@ window.addEventListener('thb-snapshot-progress', (e: Event) => {
   if (!bar || !text || !wrap) return
 
   const kb = (n: number) => (n / 1024).toFixed(0)
+  // The word comes from the splash table in index.html, so it matches the language the splash shows.
+  const word =
+    (window as Window & { thbSplash?: { downloading?: string } }).thbSplash?.downloading ?? 'downloading'
   if (detail.total) {
     wrap.classList.remove('indeterminate')
     const pct = Math.min(100, Math.round((detail.loaded / detail.total) * 100))
     bar.style.width = pct + '%'
-    text.textContent = t('splash.downloadingOf', { loaded: kb(detail.loaded), total: kb(detail.total) })
+    text.textContent = `${word} · ${kb(detail.loaded)} / ${kb(detail.total)} kb`
   } else {
-    text.textContent = t('splash.downloading', { loaded: kb(detail.loaded) })
+    text.textContent = `${word} · ${kb(detail.loaded)} kb`
   }
 })
 installBootStages()

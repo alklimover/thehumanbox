@@ -5,9 +5,10 @@
 // the frames. The desktop shell also says when it has moved the sim to the
 // efficiency cores (apps/desktop/main/fork-power.ts).
 import { useEffect, useState } from 'react'
-import { fmtNumber, t, type MessageKey } from '../i18n'
+import { fmtNumber, type ForkMessageKey } from './i18n'
 import { API_BASE } from '../shared/config'
 import { getDesktop, isDesktop } from '../shared/desktop'
+import { ft } from './i18n'
 
 export type SimPowerReason = 'thermal' | 'low-power' | 'battery'
 
@@ -65,7 +66,7 @@ export function parsePowerState(raw: unknown): SimPowerState | null {
 /** The sentence on why the sim is on the efficiency cores, or undefined when it is not. */
 export function powerNote(power: SimPowerState | null): string | undefined {
   if (!power?.managed || power.mode !== 'efficiency' || !power.reason) return undefined
-  return t(`speed.power.${power.reason}` as MessageKey)
+  return ft(`speed.power.${power.reason}` as ForkMessageKey)
 }
 
 /** The time control's tooltip line with the power note after it. */

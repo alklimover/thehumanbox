@@ -20,9 +20,9 @@ import { Tooltip } from './Tooltip'
 
 /** A word beside the odd speeds in the list; the rest speak for themselves. */
 function speedNote(mult: number): string | undefined {
-  if (mult < 1) return t('tools.time.slow')
-  if (mult === 1) return t('tools.time.normal')
-  if (mult >= 500) return t('tools.time.flatOut')
+  if (mult < 1) return t('dock.time.slowNote')
+  if (mult === 1) return t('dock.time.normalNote')
+  if (mult >= 500) return t('dock.time.flatOutNote')
   return undefined
 }
 
@@ -41,6 +41,8 @@ function useAchievedSpeed(paused: boolean): number | null {
   useEffect(() => {
     if (paused) {
       samples.current = []
+      // The speed from before the pause says nothing about the run after it: forget it.
+      setSpeed(null)
       return
     }
     const now = performance.now()
@@ -97,7 +99,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
   const togglePause = () =>
     onPick({
       id: paused ? 'play' : 'pause',
-      label: paused ? t('tools.label.play') : t('tools.label.pause'),
+      label: paused ? t('dock.time.play') : t('dock.time.pause'),
       icon: paused ? '▶️' : '⏸️',
       mode: 'instant',
       time: { control: paused ? 'resume' : 'pause' },
@@ -119,7 +121,9 @@ export function TimeControl({ paused, speed, onPick }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  // The list closes on a click anywhere else, or on Escape.
+  // The list closes on a click anywhere else, or on Escape. Escape is taken on the document, ahead of the
+  // window, where the app's own Escape (which disarms the held tool) listens: a key that closes the list
+  // must not also disarm the tool.
   useEffect(() => {
     if (!listOpen) return
     const onDown = (event: PointerEvent) => {
@@ -131,15 +135,18 @@ export function TimeControl({ paused, speed, onPick }: Props) {
       setListOpen(false)
     }
     document.addEventListener('pointerdown', onDown)
-    window.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('pointerdown', onDown)
-      window.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', onKey)
     }
   }, [listOpen])
 
   const lagNote = lagging
-    ? t('tools.time.lagging', { asked: formatSpeed(speed), actual: formatActualSpeed(achieved ?? 0) })
+    ? t('dock.time.lag', {
+        asked: formatSpeed(speed),
+        actual: formatActualSpeed(achieved ?? 0),
+      })
     : undefined
 
   return (
@@ -147,9 +154,9 @@ export function TimeControl({ paused, speed, onPick }: Props) {
       <Tooltip
         tip={
           <Tip
-            title={paused ? t('tools.time.resume') : t('tools.time.pause')}
-            body={paused ? t('tools.time.stopped') : t('tools.time.running', { speed: formatSpeed(speed) })}
-            how={t('tools.time.space')}
+            title={paused ? t('dock.time.resume') : t('dock.time.pause')}
+            body={paused ? t('dock.time.resumeTip') : t('dock.time.pauseTip', { speed: formatSpeed(speed) })}
+            how="space"
           />
         }
       >
@@ -157,7 +164,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
           type="button"
           className="time-pause"
           onClick={togglePause}
-          aria-label={paused ? t('tools.time.resumeSim') : t('tools.time.pauseSim')}
+          aria-label={paused ? t('dock.time.resumeAria') : t('dock.time.pauseAria')}
         >
           <ToolSprite icon={paused ? '▶️' : '⏸️'} size={18} />
         </button>
@@ -167,10 +174,10 @@ export function TimeControl({ paused, speed, onPick }: Props) {
           <Tip
             title={
               slower === null
-                ? t('tools.time.slower')
-                : t('tools.time.slowerTo', { speed: formatSpeed(slower) })
+                ? t('dock.time.slower')
+                : t('dock.time.slowerTo', { speed: formatSpeed(slower) })
             }
-            body={slower === null ? t('tools.time.slowest') : undefined}
+            body={slower === null ? t('dock.time.slowest') : undefined}
             how={SLOWER_KEY}
           />
         }
@@ -178,7 +185,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
         <button
           type="button"
           className="time-step"
-          aria-label={t('tools.time.slower')}
+          aria-label={t('dock.time.slower')}
           aria-keyshortcuts={SLOWER_KEY}
           disabled={slower === null}
           onClick={() => step(-1)}
@@ -191,17 +198,17 @@ export function TimeControl({ paused, speed, onPick }: Props) {
           <Tip
             title={
               paused
-                ? t('tools.time.pausedAt', { speed: formatSpeed(speed) })
-                : t('tools.time.speed', { speed: formatSpeed(speed) })
+                ? t('dock.time.pausedAt', { speed: formatSpeed(speed) })
+                : t('dock.time.speedAt', { speed: formatSpeed(speed) })
             }
-            body={withPowerNote(lagNote, power) ?? t('tools.time.chooseAny')}
+            body={withPowerNote(lagNote, power) ?? t('dock.time.chooseAny')}
           />
         }
       >
         <button
           type="button"
           className="time-speed-value"
-          aria-label={t('tools.time.speedChoose', { speed: formatSpeed(speed) })}
+          aria-label={t('dock.time.speedAria', { speed: formatSpeed(speed) })}
           aria-haspopup="menu"
           aria-expanded={listOpen}
           onClick={() => setListOpen((open) => !open)}
@@ -215,10 +222,10 @@ export function TimeControl({ paused, speed, onPick }: Props) {
           <Tip
             title={
               faster === null
-                ? t('tools.time.faster')
-                : t('tools.time.fasterTo', { speed: formatSpeed(faster) })
+                ? t('dock.time.faster')
+                : t('dock.time.fasterTo', { speed: formatSpeed(faster) })
             }
-            body={faster === null ? t('tools.time.fastest') : undefined}
+            body={faster === null ? t('dock.time.fastest') : undefined}
             how={FASTER_KEY}
           />
         }
@@ -226,7 +233,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
         <button
           type="button"
           className="time-step"
-          aria-label={t('tools.time.faster')}
+          aria-label={t('dock.time.faster')}
           aria-keyshortcuts={FASTER_KEY}
           disabled={faster === null}
           onClick={() => step(1)}
@@ -235,7 +242,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
         </button>
       </Tooltip>
       {listOpen && (
-        <div className="time-speed-list" role="menu" aria-label={t('tools.time.speeds')}>
+        <div className="time-speed-list" role="menu" aria-label={t('dock.time.speedsAria')}>
           {speedTools().map((tool) => {
             const mult = tool.time?.mult ?? 1
             const on = Math.abs(mult - speed) < 1e-6
@@ -246,7 +253,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
                 type="button"
                 role="menuitemradio"
                 aria-checked={on}
-                aria-label={t('tools.time.speedItem', { speed: formatSpeed(mult) })}
+                aria-label={t('dock.time.speedItemAria', { speed: formatSpeed(mult) })}
                 className={clsx(on && 'active')}
                 onClick={() => {
                   onPick(tool)

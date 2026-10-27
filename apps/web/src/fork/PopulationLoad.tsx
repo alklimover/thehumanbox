@@ -3,7 +3,7 @@
 // the estimate for the chosen size under it. The model is population-load.ts;
 // the machine is measured by the desktop shell (main/fork-device.ts).
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
-import { fmtNumber, t, tn, type MessageKey } from '../i18n'
+import { ft, ftn, fmtNumber, type ForkMessageKey } from './i18n'
 import type { DesktopBridge } from '../shared/desktop'
 import {
   type DeviceProfile,
@@ -52,6 +52,8 @@ export interface PopulationLoadSliderProps {
   step: number
   /** The desktop's tick interval: one tick every this many ms at 1x. */
   tickMs: number
+  /** While a save or restart is in flight the cap cannot change (as upstream's slider). */
+  disabled?: boolean
 }
 
 export function PopulationLoadSlider({
@@ -62,6 +64,7 @@ export function PopulationLoadSlider({
   max,
   step,
   tickMs,
+  disabled,
 }: PopulationLoadSliderProps) {
   const { profile, measuring, remeasure } = useDeviceProfile(desktop)
   const known = profile !== null || !desktop?.forkDevice
@@ -75,11 +78,11 @@ export function PopulationLoadSlider({
     '--fork-load-thumb': known ? LOAD_COLORS[estimate.level] : '#927047',
   } as CSSProperties
 
-  const levelKey = `load.level.${estimate.level}` as MessageKey
+  const levelKey = `load.level.${estimate.level}` as ForkMessageKey
   const speed =
     estimate.comfortableSpeed >= 1
-      ? t('load.speed', { speed: fmtNumber(estimate.comfortableSpeed, { maximumFractionDigits: 1 }) })
-      : t('load.speedNone')
+      ? ft('load.speed', { speed: fmtNumber(estimate.comfortableSpeed, { maximumFractionDigits: 1 }) })
+      : ft('load.speedNone')
 
   return (
     <div className="fork-load">
@@ -90,16 +93,17 @@ export function PopulationLoadSlider({
         max={max}
         step={step}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
         style={rangeStyle}
       />
       {known ? (
         <div className="fork-load-estimate">
           <span className="fork-load-level" style={{ color: LOAD_COLORS[estimate.level] }}>
-            {t(levelKey)}
+            {ft(levelKey)}
           </span>
           {' · '}
-          {t('load.facts', {
+          {ft('load.facts', {
             gb: fmtNumber(estimate.memoryMb / 1024, { maximumFractionDigits: 1 }),
             cpu: fmtNumber(Math.round(estimate.cpuShare * 100)),
           })}
@@ -107,23 +111,25 @@ export function PopulationLoadSlider({
           {speed}
         </div>
       ) : (
-        <div className="settings-note">{t('load.measuring')}</div>
+        <div className="settings-note">{ft('load.measuring')}</div>
       )}
       {profile && (
         <div className="settings-note fork-load-device">
-          {t('load.device', {
+          {ft('load.device', {
             chip: profile.chip,
             gb: fmtNumber(Math.round(profile.totalMemBytes / GB)),
           })}
           {' · '}
-          {optimal === null ? t('load.optimalNone') : tn('load.optimal', optimal, { n: fmtNumber(optimal) })}
-          {profile.benchMsPerTick === null && <> · {t('load.unmeasured')}</>}{' '}
+          {optimal === null
+            ? ft('load.optimalNone')
+            : ftn('load.optimal', optimal, { n: fmtNumber(optimal) })}
+          {profile.benchMsPerTick === null && <> · {ft('load.unmeasured')}</>}{' '}
           <button type="button" className="fork-load-remeasure" onClick={remeasure} disabled={measuring}>
-            {measuring ? t('load.measuring') : t('load.remeasure')}
+            {measuring ? ft('load.measuring') : ft('load.remeasure')}
           </button>
         </div>
       )}
-      <div className="settings-note">{t('load.hint')}</div>
+      <div className="settings-note">{ft('load.hint')}</div>
     </div>
   )
 }

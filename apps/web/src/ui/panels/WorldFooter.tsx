@@ -1,19 +1,31 @@
 import { useMemo } from 'react'
-import { t, type MessageKey } from '../../i18n'
-import { simLabelAsSent } from '../../i18n/sim'
 import type { WorldState } from '../../shared/types'
-
-const WEATHER_WORD: Record<string, MessageKey> = {
-  clear: 'weather.kind.clear',
-  rain: 'weather.kind.rain',
-  storm: 'weather.kind.storm',
-  snow: 'weather.kind.snow',
-  fog: 'weather.kind.fog',
-  wet: 'weather.kind.wet',
-}
+import { t, type MessageKey } from '../../i18n'
+import { simWordFallback } from '../../fork/i18n/sim'
 
 interface Props {
   world: WorldState
+}
+
+const ERA_KEY: Record<string, MessageKey> = {
+  genesis: 'panels.footer.eras.genesis',
+  forager: 'panels.footer.eras.forager',
+  fire: 'panels.footer.eras.fire',
+  shelter: 'panels.footer.eras.shelter',
+  tribal: 'panels.footer.eras.tribal',
+  invention: 'panels.footer.eras.invention',
+  cooking: 'panels.footer.eras.cooking',
+  masonry: 'panels.footer.eras.masonry',
+  equilibrium: 'panels.footer.eras.equilibrium',
+}
+
+const WEATHER_KEY: Record<string, MessageKey> = {
+  clear: 'panels.weather.clear',
+  rain: 'panels.weather.rain',
+  storm: 'panels.weather.storm',
+  snow: 'panels.weather.snow',
+  fog: 'panels.weather.fog',
+  wet: 'panels.weather.wet',
 }
 
 export function WorldFooter({ world }: Props) {
@@ -29,17 +41,25 @@ export function WorldFooter({ world }: Props) {
     return { ally, rivals, neutral }
   }, [world.tribal_relations])
 
-  const era = world.current_era ? simLabelAsSent('era', world.current_era).toUpperCase() : '-'
+  const eraKey = world.current_era ? ERA_KEY[world.current_era] : undefined
+  const era = world.current_era
+    ? eraKey
+      ? t(eraKey)
+      : simWordFallback('era', world.current_era, world.current_era).toUpperCase()
+    : '-'
   const dayPct = Math.round((world.day_progress ?? 0) * 100)
-  const phase = world.is_day ? t('footer.day') : t('footer.night')
+  const phase = world.is_day ? t('panels.footer.day') : t('panels.footer.night')
   const weatherKind = world.weather?.kind ?? 'clear'
-  const weatherWord = WEATHER_WORD[weatherKind] ? t(WEATHER_WORD[weatherKind]) : weatherKind
-  const droughtTag = world.drought ? t('footer.drought') : ''
+  const weatherKey = WEATHER_KEY[weatherKind]
+  const weather = weatherKey ? t(weatherKey) : weatherKind
+  const droughtTag = world.drought
+    ? t('panels.footer.droughtTag', { label: t('panels.weather.drought') })
+    : ''
 
   return (
     <div className="world-footer">
       <div className="footer-row">
-        <span className="footer-label">{t('footer.era')}</span>
+        <span className="footer-label">{t('panels.footer.era')}</span>
         <span className="footer-value era-tag">{era}</span>
       </div>
       <div className="footer-row">
@@ -49,14 +69,14 @@ export function WorldFooter({ world }: Props) {
         </div>
       </div>
       <div className="footer-row">
-        <span className="footer-label">{t('footer.weather')}</span>
+        <span className="footer-label">{t('panels.footer.weather')}</span>
         <span className="footer-value">
-          {weatherWord}
+          {weather}
           {droughtTag}
         </span>
       </div>
       <div className="footer-row">
-        <span className="footer-label">{t('footer.tribes')}</span>
+        <span className="footer-label">{t('panels.footer.tribes')}</span>
         <span className="footer-value mood">
           <span className="mood-ally">{moodCounts.ally}♥</span>
           <span className="mood-neutral">{moodCounts.neutral}·</span>

@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Game, World, Camera2D } from 'xipjs'
 import type { PrayerInfo, WorldState } from '../../shared/types'
-import { t } from '../../i18n'
 import type { InterpRefs } from '../../simulation/useSimulation'
 import { useUIStore } from '../../state/store'
 import { useCameraFocus } from '../../state/camera-focus'
+import { t } from '../../i18n'
 import { buildTerritoryIndex } from '../model/territory'
 import { TILE } from '../model/palette'
 import { CanvasCameraController } from './CanvasCameraController'
@@ -12,6 +12,7 @@ import { World2DErrorBoundary } from './World2DErrorBoundary'
 import { WorldMapHud } from './WorldMapHud'
 import { MapControls } from './MapControls'
 import { TerritoryHoverCard } from './hover/TerritoryHoverCard'
+import { ThingHoverCard } from './hover/ThingHoverCard'
 import { installBenchHooks } from './bench-hooks'
 import { SandboxBursts } from './SandboxBursts'
 import { SkyOverlay } from './SkyOverlay'
@@ -188,11 +189,12 @@ export function WorldView({
       ref={containerRef}
       className="map2d-world"
       tabIndex={0}
-      aria-label={t('map.aria')}
+      aria-label={t('common.worldMapLabel')}
       style={{
         flex: 1,
         minWidth: 0,
         overflow: 'hidden',
+        // Fork: a prayer bubble under the pointer can be clicked even with a tool armed (fork/prayer-click).
         cursor: overPrayer ? 'pointer' : sandboxArmed ? 'crosshair' : 'grab',
         position: 'relative',
         // touch-action: none stops the browser from claiming
@@ -285,6 +287,7 @@ export function WorldView({
                   followOrgId={followOrgId}
                   followTarget={followTarget}
                   onTap={handleTap}
+                  toolArmed={sandboxArmed}
                 />
               </World>
             </Game>
@@ -314,6 +317,7 @@ export function WorldView({
               containerEl={containerRef.current}
               cameraStateRef={cameraStateRef}
               followTarget={followTarget}
+              toolArmed={sandboxArmed}
             />
           </>
         ))}
@@ -338,7 +342,7 @@ export function WorldView({
               setRendererKey((key) => key + 1)
             }}
           >
-            {t('map.retry')}
+            Retry renderer
           </button>
         </div>
       )}
@@ -356,6 +360,16 @@ export function WorldView({
       )}
       {mapReady && !viewFlags.hideUI && (
         <TerritoryHoverCard
+          world={world}
+          cameraRef={cameraStateRef}
+          viewport={dims}
+          container={containerRef.current}
+          enabled={!sandboxArmed}
+          territoryIndex={territoryIndex}
+        />
+      )}
+      {mapReady && !viewFlags.hideUI && (
+        <ThingHoverCard
           world={world}
           cameraRef={cameraStateRef}
           viewport={dims}

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../../i18n/locale'
+import { setLocaleForTests } from '../i18n/locale'
 import type { ChronicleEntry } from './model'
 import { causeOfDeath, collapsePeople, groupText, memberText, personLine, personText } from './people'
 
@@ -89,8 +89,8 @@ describe('a season of people in one row', () => {
 })
 
 describe('the people rows in Russian', () => {
-  it('says a death that is only its cause with the person’s sex', () => {
-    setLocaleForTests('ru')
+  it('says a death that is only its cause with the person’s sex', async () => {
+    await setLocaleForTests('ru')
     const he = gone(5, 'Goku', 'died of drowning at age 351')
     const she = gone(5, 'Lida', 'died of drowning at age 40', 'female')
     const old = gone(5, 'Eno', 'died of old age at 80')
@@ -105,8 +105,8 @@ describe('the people rows in Russian', () => {
     expect(text(love)).toBe('Не стало Кела. В памяти осталось: «влюбилась в Дули»')
   })
 
-  it('counts the season’s dead in the right plural, by cause when every death has one', () => {
-    setLocaleForTests('ru')
+  it('counts the season’s dead in the right plural, by cause when every death has one', async () => {
+    await setLocaleForTests('ru')
     const members = (memories: string[]) =>
       memories.map((m, i) => {
         const entry = gone(5, `Na${'bcdefghijklmnopqrstuvwxyz'[i]}`, m)
@@ -132,8 +132,8 @@ describe('the people rows in Russian', () => {
     )
   })
 
-  it('names each one when the row opens', () => {
-    setLocaleForTests('ru')
+  it('names each one when the row opens', async () => {
+    await setLocaleForTests('ru')
     const member = (e: ChronicleEntry) => memberText({ entry: e, line: personLine(e)! }, nobody)
     expect(member(gone(5, 'Lida', 'died of drowning at age 40', 'female'))).toBe('Лида (утонула)')
     expect(member(elder(5, 'Biko', 'we held a festival — drums until dawn'))).toBe(
@@ -142,8 +142,8 @@ describe('the people rows in Russian', () => {
     expect(member(headline(5, 'Duli became an elder among the people'))).toBe('Дули')
   })
 
-  it('tells a deed of someone gone from the world without guessing their sex', () => {
-    setLocaleForTests('ru')
+  it('tells a deed of someone gone from the world without guessing their sex', async () => {
+    await setLocaleForTests('ru')
     const heard = gone(5, 'Zoliwo', 'heard that Jujo built a navigation cairn', 'female')
     const line = personLine(heard)!
     expect(memberText({ entry: heard, line }, nobody)).toBe(

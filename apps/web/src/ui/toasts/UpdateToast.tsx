@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { t } from '../../i18n'
 import { useVersionCheck } from '../../shared/hooks/useVersionCheck'
 import { reloadAppSafely } from '../../simulation/worldSource'
+import { t } from '../../i18n'
 
 export function UpdateToast() {
   const { newVersionAvailable } = useVersionCheck()
@@ -16,7 +16,7 @@ export function UpdateToast() {
       () =>
         reloadAppSafely({
           onFailure: () => setReloading(false),
-          failureMessage: t('toast.update.failed'),
+          failureMessage: t('dialogs.toast.checkpointFailed'),
         }),
       80,
     )
@@ -28,17 +28,17 @@ export function UpdateToast() {
         ⤴
       </div>
       <div className="update-toast__body">
-        <div className="update-toast__title">{t('toast.update.title')}</div>
-        <div className="update-toast__sub">{t('toast.update.sub')}</div>
+        <div className="update-toast__title">{t('dialogs.toast.newVersion')}</div>
+        <div className="update-toast__sub">{t('dialogs.toast.newVersionSub')}</div>
       </div>
       <button type="button" className="update-toast__cta" onClick={reload} disabled={reloading} autoFocus>
-        {reloading ? t('toast.update.refreshing') : t('toast.update.refresh')}
+        {reloading ? t('dialogs.toast.refreshing') : t('dialogs.toast.refresh')}
       </button>
       <button
         type="button"
         className="update-toast__close"
         onClick={() => setDismissed(true)}
-        aria-label={t('toast.dismiss')}
+        aria-label={t('dialogs.toast.dismiss')}
       >
         ×
       </button>

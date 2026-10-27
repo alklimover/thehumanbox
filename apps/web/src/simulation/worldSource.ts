@@ -1,5 +1,5 @@
-import { showNotice } from '../shared/confirm'
 import { t } from '../i18n'
+import { showNotice } from '../shared/confirm'
 
 export type WorldSource = 'native' | 'wasm'
 export type PlayerWorldKind = 'local'
@@ -115,14 +115,24 @@ export function reloadAppSafely(options: AppReloadOptions = {}): boolean {
   if (options.requireLocalWorld) {
     options.onFailure?.()
     void showNotice(
-      t('errors.stillLoading.title'),
-      options.unavailableMessage ?? t('errors.stillLoading.body'),
+      t('dialogs.worldNotice.worldLoading'),
+      options.unavailableMessage ?? t('dialogs.worldNotice.loadingRefresh'),
     )
     return false
   }
 
   window.location.reload()
   return true
+}
+
+/** Makes `seed` this browser's world seed: a recovery can bring back a world made with another seed. */
+export function setOwnWorldSeed(seed: string): void {
+  if (!/^\d+$/.test(seed)) return
+  try {
+    window.localStorage.setItem(SEED_KEY, seed)
+  } catch {
+    /* noop */
+  }
 }
 
 export function getOwnWorldSeed(): string {
@@ -147,7 +157,7 @@ export function getOwnWorldSeed(): string {
 export function requestOwnWorldReset(): boolean {
   const snapshot = readLocalWorldRequestSnapshot()
   if (!snapshot) {
-    void showNotice(t('errors.storage.title'), t('errors.storage.notReset'))
+    void showNotice(t('dialogs.worldNotice.storageUnavailable'), t('dialogs.worldNotice.notReset'))
     return false
   }
   try {
@@ -156,15 +166,15 @@ export function requestOwnWorldReset(): boolean {
     window.localStorage.removeItem(SEED_KEY)
   } catch {
     restoreLocalWorldRequestSnapshot(snapshot)
-    void showNotice(t('errors.storage.title'), t('errors.storage.notReset'))
+    void showNotice(t('dialogs.worldNotice.storageUnavailable'), t('dialogs.worldNotice.notReset'))
     return false
   }
   return reloadAppSafely({
     operation: 'reset',
     onFailure: () => restoreLocalWorldRequestSnapshot(snapshot),
-    failureMessage: t('errors.checkpoint.reset'),
+    failureMessage: t('dialogs.worldNotice.checkpointReset'),
     requireLocalWorld: true,
-    unavailableMessage: t('errors.stillLoading.reset'),
+    unavailableMessage: t('dialogs.worldNotice.loadingReset'),
   })
 }
 
@@ -186,12 +196,12 @@ export function clearOwnWorldResetRequest() {
 
 export function requestOwnWorldRecovery(recoveryId: string): boolean {
   if (!recoveryId.startsWith(`${OWN_WORLD_ID}:recovery:`)) {
-    void showNotice(t('errors.badRecovery.title'), t('errors.badRecovery.body'))
+    void showNotice(t('dialogs.worldNotice.badSaveTitle'), t('dialogs.worldNotice.badSaveBody'))
     return false
   }
   const snapshot = readLocalWorldRequestSnapshot()
   if (!snapshot) {
-    void showNotice(t('errors.storage.title'), t('errors.storage.notRestored'))
+    void showNotice(t('dialogs.worldNotice.storageUnavailable'), t('dialogs.worldNotice.notRecovered'))
     return false
   }
   try {
@@ -199,15 +209,15 @@ export function requestOwnWorldRecovery(recoveryId: string): boolean {
     window.localStorage.removeItem(RESET_KEY)
   } catch {
     restoreLocalWorldRequestSnapshot(snapshot)
-    void showNotice(t('errors.storage.title'), t('errors.storage.notRestored'))
+    void showNotice(t('dialogs.worldNotice.storageUnavailable'), t('dialogs.worldNotice.notRecovered'))
     return false
   }
   return reloadAppSafely({
     operation: 'recovery',
     onFailure: () => restoreLocalWorldRequestSnapshot(snapshot),
-    failureMessage: t('errors.checkpoint.restore'),
+    failureMessage: t('dialogs.worldNotice.checkpointRestore'),
     requireLocalWorld: true,
-    unavailableMessage: t('errors.stillLoading.restore'),
+    unavailableMessage: t('dialogs.worldNotice.loadingRestore'),
   })
 }
 

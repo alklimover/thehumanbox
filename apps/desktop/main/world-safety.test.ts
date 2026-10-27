@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import {
   existsSync,
   mkdtempSync,
@@ -19,9 +20,11 @@ import {
   assertExportOutsideDataRoot,
   assertNoLegacyWorldAtMigrationTarget,
   atomicReplaceFile,
+  atomicWriteNewFileAsync,
   beginSaveFolderMigration,
   chooseAvailableWorldHash,
   copyWorldsToStaging,
+  copyWorldsToStagingInWorker,
   downloadAndValidateWorldSave,
   finishCommittedMigrationForActiveRoot,
   finishSaveFolderMigration,
@@ -38,6 +41,7 @@ import {
   recoverInterruptedWorldReset,
   restoreParkedLiveWorld,
   rootsOverlap,
+  SUPPORTED_SAVE_SCHEMA_VERSION,
   validateWorldSaveBytes,
   validateWorldSaveBytesInWorker,
   verifySaveFolderMigrationCopy,
@@ -90,17 +94,61 @@ test("validates the required native world-save shape", () => {
   assert.equal(result.tickText, "123");
 });
 
-test("validates a save in a worker without blocking the main event loop", async () => {
-  const bytes = validSave();
-  let settled = false;
-  const validation = validateWorldSaveBytesInWorker(bytes).then((result) => {
-    settled = true;
-    return result;
-  });
+// save-validation.ts reads Worker from the worker_threads module at call time,
+// so a test can stand in for it here without changing production code.
+const workerThreads = require("node:worker_threads") as { Worker: unknown };
 
-  await new Promise<void>((resolve) => setImmediate(resolve));
-  assert.equal(settled, false);
-  const result = await validation;
+test("validation runs in the validation worker and reports only through its message", async () => {
+  // The old version of this test asserted that the promise was still pending
+  // after one setImmediate. Whether a real worker has replied by then depends on
+  // thread start-up time, so it failed at random. Here the reply is held until
+  // the test sends it, so the outcome does not depend on timing.
+  const bytes = validSave();
+  const RealWorker = workerThreads.Worker;
+  const started: Array<{ file: string; data: unknown }> = [];
+  const holder: { worker?: EventEmitter } = {};
+  class HeldWorker extends EventEmitter {
+    constructor(file: string, options: { workerData: unknown }) {
+      super();
+      started.push({ file, data: options.workerData });
+      holder.worker = this;
+    }
+  }
+  workerThreads.Worker = HeldWorker;
+  try {
+    let settled = false;
+    const validation = validateWorldSaveBytesInWorker(bytes).then((result) => {
+      settled = true;
+      return result;
+    });
+    assert.equal(started.length, 1);
+    assert.ok(started[0].file.endsWith("save-validation-worker.js"), started[0].file);
+    assert.equal(started[0].data, bytes);
+
+    for (let turn = 0; turn < 10; turn += 1) {
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
+    assert.equal(settled, false, "the result must not appear before the worker replies");
+
+    holder.worker!.emit("message", {
+      version: 6,
+      tick: 123,
+      seed: 99,
+      tickText: "123",
+      seedText: "99",
+    });
+    const result = await validation;
+    assert.equal(result.tickText, "123");
+    assert.equal(result.seedText, "99");
+    assert.deepEqual(result.bytes, bytes);
+  } finally {
+    workerThreads.Worker = RealWorker;
+  }
+});
+
+test("a real validation worker returns the save's fields and bytes", async () => {
+  const bytes = validSave();
+  const result = await validateWorldSaveBytesInWorker(bytes);
   assert.equal(result.tickText, "123");
   assert.equal(result.seedText, "99");
   assert.deepEqual(result.bytes, bytes);
@@ -200,7 +248,7 @@ test("startup handshake rejects a silently minted replacement world", () => {
 
 test("rejects incompatible or incomplete saves before import", () => {
   assert.throws(
-    () => validateWorldSaveBytes(validSave({ version: 7 })),
+    () => validateWorldSaveBytes(validSave({ version: SUPPORTED_SAVE_SCHEMA_VERSION + 1 })),
     /newer/,
   );
   assert.doesNotThrow(() => validateWorldSaveBytes(validSave({ version: 4 })));
@@ -262,6 +310,92 @@ test("stages a save-folder copy without changing the source", () => {
       readFileSync(path.join(source, "worlds", "abc", "world.save"), "utf8"),
       "safe",
     );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Counts how many times the event loop ran while `work` was pending. Work that
+// holds the main thread never lets it turn, so the count stays at zero.
+async function eventLoopTurnsWhile<T>(work: Promise<T>): Promise<{ value: T; turns: number }> {
+  let settled = false;
+  work.then(
+    () => {
+      settled = true;
+    },
+    () => {
+      settled = true;
+    },
+  );
+  let turns = 0;
+  while (!settled) {
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    if (!settled) turns += 1;
+  }
+  return { value: await work, turns };
+}
+
+test("the save copy runs off the main thread, so the window keeps turning while a world copies", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "thb-copy-worker-test-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "target");
+  const save = Buffer.alloc(24 * 1024 * 1024, 7);
+  try {
+    mkdirSync(path.join(source, "worlds", "abc"), { recursive: true });
+    writeFileSync(path.join(source, "worlds", "_live"), "abc");
+    writeFileSync(path.join(source, "worlds", "abc", "world.save"), save);
+    const { value: staging, turns } = await eventLoopTurnsWhile(
+      copyWorldsToStagingInWorker(source, target, "worker-token"),
+    );
+    assert.ok(turns > 0, "the copy held the event loop until it finished");
+    assert.equal(staging, path.join(target, ".thehumanbox-migration-worker-token"));
+    assert.ok(readFileSync(path.join(staging, "worlds", "abc", "world.save")).equals(save));
+    assert.equal(readFileSync(path.join(staging, "worlds", "_live"), "utf8"), "abc");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a save-folder copy refused by the worker rejects with the same reason", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "thb-copy-worker-refuse-"));
+  const source = path.join(root, "source");
+  const target = path.join(root, "target");
+  try {
+    mkdirSync(path.join(source, "worlds", "abc"), { recursive: true });
+    writeFileSync(path.join(source, "worlds", "_live"), "abc");
+    writeFileSync(path.join(source, "worlds", "abc", "world.save"), "safe");
+    mkdirSync(path.join(target, "worlds"), { recursive: true });
+    await assert.rejects(
+      copyWorldsToStagingInWorker(source, target, "refused-token"),
+      /choose an empty folder/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("an exported save is written without holding the event loop, and its bytes are exact", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "thb-export-async-test-"));
+  const file = path.join(root, "exports", "world.save");
+  const data = Buffer.alloc(24 * 1024 * 1024);
+  for (let i = 0; i < data.length; i += 4096) data.fill(i & 0xff, i, i + 4096);
+  try {
+    const { turns } = await eventLoopTurnsWhile(atomicWriteNewFileAsync(file, data));
+    assert.ok(turns > 0, "the export write held the event loop");
+    assert.ok(readFileSync(file).equals(data));
+    assert.deepEqual(readdirSync(path.dirname(file)), ["world.save"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a failed export write names the blocked path and leaves no partial file", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "thb-export-async-fail-"));
+  const blocker = path.join(root, "not-a-folder");
+  writeFileSync(blocker, "in the way");
+  try {
+    await assert.rejects(atomicWriteNewFileAsync(path.join(blocker, "world.save"), Buffer.from("x")));
+    assert.deepEqual(readdirSync(root), ["not-a-folder"]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -376,6 +510,30 @@ test("only empty or previously identified custom folders can become migration ta
     assert.equal(
       readFileSync(path.join(unrelated, "family-photos.txt"), "utf8"),
       "keep me",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a folder that holds only operating-system metadata can become a save folder", () => {
+  // Finder writes .DS_Store into folders it has shown, and Explorer writes
+  // Thumbs.db and desktop.ini, so a folder the player just created can look used.
+  const root = mkdtempSync(path.join(tmpdir(), "thb-os-metadata-test-"));
+  const folder = path.join(root, "Saves");
+  try {
+    mkdirSync(folder);
+    writeFileSync(path.join(folder, ".DS_Store"), "finder");
+    writeFileSync(path.join(folder, "Thumbs.db"), "explorer");
+    writeFileSync(path.join(folder, "desktop.ini"), "shell");
+
+    assert.doesNotThrow(() => assertEmptyOrIdentifiedDataRoot(folder));
+    assert.equal(readFileSync(path.join(folder, ".DS_Store"), "utf8"), "finder");
+
+    writeFileSync(path.join(folder, "family-photos.txt"), "keep me");
+    assert.throws(
+      () => assertEmptyOrIdentifiedDataRoot(folder),
+      /not empty/,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

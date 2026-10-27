@@ -12,8 +12,9 @@ import {
   type Eldest,
 } from '../../game/model/tribe-eldest'
 import type { PerilCause } from '../../shared/types'
-import { t } from '../../i18n'
-import { displayName } from '../../i18n/names'
+import { shownGeneration } from '../../game/model/generations'
+import { formatNumber, t } from '../../i18n'
+import { displayName } from '../../fork/i18n/names'
 
 interface LineageRow {
   id: string
@@ -113,14 +114,14 @@ function LineagesListImpl() {
 
   return (
     <>
-      <div className="section-title">{t('panel.lineages.title', { n: rows.length })}</div>
+      <div className="section-title">{t('panels.lineages.title', { count: formatNumber(rows.length) })}</div>
       <div className="lineage-list">
         {shown.map((r) => {
           const active = focus === `lineage:${r.id}`
           const brink = r.peril
-            ? t('panel.lineages.brink', {
-                remaining: remainingLine(r.count),
-                reason: PERIL_HELP[r.peril].reason,
+            ? t('panels.lineages.onBrink', {
+                line: remainingLine(r.count),
+                reason: t(PERIL_HELP[r.peril].reason),
               })
             : null
           return (
@@ -131,39 +132,44 @@ function LineagesListImpl() {
               onClick={() => setFocus(active ? 'all' : `lineage:${r.id}`)}
               aria-pressed={active}
               title={
-                active ? t('panel.lineages.showAll') : (brink ?? t('panel.lineages.focus', { name: r.name }))
+                active
+                  ? t('panels.lineages.showAll')
+                  : (brink ?? t('panels.lineages.focus', { name: r.name }))
               }
             >
               <span className="lineage-dot" style={{ background: lineageColor(r.id) }} />
               <span className="lineage-id">{r.name}</span>
               <span className="lineage-count">
                 {r.peril && (
-                  <span className="lineage-peril" aria-label={t('peril.title')}>
+                  <span className="lineage-peril" aria-label={t('panels.lineages.brink')}>
                     ⚠
                   </span>
                 )}
-                {r.count}
+                {formatNumber(r.count)}
               </span>
               <FaithMark stamp={faith[r.id]} />
               {r.eldest && (
                 <span
                   className="lineage-eldest"
-                  title={t('panel.lineages.eldestTip', { line: eldestLine(r.eldest) })}
+                  title={t('panels.lineages.oldest', { line: eldestLine(r.eldest) })}
                 >
-                  {t('panel.lineages.eldestDays', { days: r.eldest.days })}
+                  ⌛{t('panels.lineages.eldestDays', { days: r.eldest.days })}
                 </span>
               )}
               <span className="lineage-gen">
                 {r.maxGen > r.minGen
-                  ? t('panel.lineages.genRange', { min: r.minGen, max: r.maxGen })
-                  : t('panel.lineages.gen', { gen: r.minGen })}
+                  ? t('panels.lineages.generationRange', {
+                      from: shownGeneration(r.minGen),
+                      to: shownGeneration(r.maxGen),
+                    })
+                  : t('panels.lineages.generation', { from: shownGeneration(r.minGen) })}
               </span>
             </button>
           )
         })}
         {rows.length > shown.length && (
           <button className="view-all-btn" onClick={openAllLineages}>
-            {t('panel.lineages.viewAll', { n: rows.length })}
+            {t('panels.lineages.viewAll', { count: formatNumber(rows.length) })}
           </button>
         )}
       </div>
@@ -178,10 +184,10 @@ function FaithMark({ stamp }: { stamp: string | undefined }) {
   const blessed = stamp.endsWith('+')
   const despairing = stamp.endsWith('-')
   const tip = blessed
-    ? t('panel.lineages.faithBlessed', { n })
+    ? t('panels.lineages.faithBlessed', { faith: n })
     : despairing
-      ? t('panel.lineages.faithDespairing', { n })
-      : t('panel.lineages.faith', { n })
+      ? t('panels.lineages.faithDespair', { faith: n })
+      : t('panels.lineages.faith', { faith: n })
   return (
     <span
       className={

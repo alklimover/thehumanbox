@@ -6,11 +6,13 @@ import {
   defaultDataRoot,
   effectiveDataRoot,
   loadSettings,
+  normalizeSettings,
   prepareDataRoot,
   saveSettings,
   Settings,
   worldsRoot,
 } from "./settings";
+import { t } from "./i18n";
 import {
   activeSim,
   checkpointActiveSim,
@@ -21,23 +23,20 @@ import {
 } from "./sim-process";
 import { acquireDataRootLock, type DataRootLock } from "./data-lock";
 import { loadRenderer } from "./renderer-load";
-import { tr } from "./i18n";
-import { registerForkDevice } from "./fork-device";
-import { registerForkPower } from "./fork-power";
-import { registerForkWorlds } from "./fork-worlds";
+import { registerForkIpc } from "./fork-ipc";
 import {
   RESTART_SIMULATION_OPERATION,
   runExclusiveDesktopOperation,
 } from "./exclusive-operation";
 import {
-  atomicWriteNewFile,
+  atomicWriteNewFileAsync,
   assertEmptyOrIdentifiedDataRoot,
   assertExportOutsideDataRoot,
   assertSameLoadedWorld,
   assertNoLegacyWorldAtMigrationTarget,
   assertNoUnmigratedLegacyWorld,
   beginSaveFolderMigration,
-  copyWorldsToStaging,
+  copyWorldsToStagingInWorker,
   finishSaveFolderMigration,
   hasRecoverableSaveFolderMigration,
   inspectSaveFolderMigrationSourceInWorker,
@@ -49,6 +48,7 @@ import {
   rootsOverlap,
   restoreParkedLiveWorld,
   syncDirectoryBestEffort,
+  syncDirectoryBestEffortAsync,
   validateWorldSaveBytes,
   validateWorldSaveBytesInWorker,
   verifySaveFolderMigrationCopyInWorker,
@@ -67,18 +67,18 @@ function exclusiveIpcHandler<TArgs extends unknown[], TResult>(
     runExclusiveDesktopOperation(name, () => handler(...args));
 }
 
-function replaceFileForTransaction(
+async function replaceFileForTransaction(
   target: string,
-  data: string | Uint8Array,
+  data: Uint8Array,
   token: string,
-): ReplacedFile {
+): Promise<ReplacedFile> {
   const prepared = `${target}.next-${token}`;
   const backup = fs.existsSync(target) ? `${target}.rollback-${token}` : null;
-  atomicWriteNewFile(prepared, data);
+  await atomicWriteNewFileAsync(prepared, data);
   try {
     if (backup) fs.renameSync(target, backup);
     fs.renameSync(prepared, target);
-    syncDirectoryBestEffort(path.dirname(target));
+    await syncDirectoryBestEffortAsync(path.dirname(target));
     return { target, backup };
   } catch (error) {
     try {
@@ -92,7 +92,7 @@ function replaceFileForTransaction(
   }
 }
 
-function finishReplacedFile(replaced: ReplacedFile): void {
+async function finishReplacedFile(replaced: ReplacedFile): Promise<void> {
   if (replaced.backup) {
     try {
       fs.unlinkSync(replaced.backup);
@@ -100,7 +100,21 @@ function finishReplacedFile(replaced: ReplacedFile): void {
       /* noop */
     }
   }
-  syncDirectoryBestEffort(path.dirname(replaced.target));
+  await syncDirectoryBestEffortAsync(path.dirname(replaced.target));
+}
+
+/**
+ * The renderer's request to move the save folder: `{ targetDir }`, where null
+ * means the default folder. Anything else that is not a non-empty string is a
+ * request with no folder in it, and says so rather than failing inside path code.
+ */
+function saveFolderRequest(payload: unknown): string | null {
+  const targetDir = (payload as { targetDir?: unknown } | null | undefined)?.targetDir;
+  if (targetDir === null) return null;
+  if (typeof targetDir !== "string" || targetDir.trim() === "") {
+    throw new Error("choose a save folder, or the default folder, before moving the worlds");
+  }
+  return targetDir;
 }
 
 function activeWorld(settings: Settings): {
@@ -203,15 +217,17 @@ export function registerIpc(
   getWindow: () => BrowserWindow | null,
 ): void {
   ipc.handle("settings:get", () => loadSettings());
-  registerForkWorlds(ipc, getWindow);
-  registerForkDevice(ipc);
-  registerForkPower(ipc);
+  registerForkIpc(ipc, getWindow);
 
   ipc.handle(
     "settings:set",
     exclusiveIpcHandler(
       "update desktop settings",
-      async (_e, next: Settings) => {
+      async (_e, payload: unknown) => {
+        // The payload comes from the renderer. Normalizing it first rejects a
+        // non-object or a malformed save folder before it is compared or
+        // written, and fills any missing field with its default.
+        const next = normalizeSettings(payload);
         const current = loadSettings();
         if (
           path.resolve(effectiveDataRoot(current)) !==
@@ -221,7 +237,9 @@ export function registerIpc(
             "use the save-folder migration control to change where worlds are stored",
           );
         }
-        saveSettings(next);
+        // The language is set by app:setLocale, never by the settings form,
+        // so keep the stored one whatever the renderer sent.
+        saveSettings({ ...next, locale: current.locale });
         return loadSettings();
       },
     ),
@@ -262,11 +280,12 @@ export function registerIpc(
     "world:migrateDataRoot",
     exclusiveIpcHandler(
       "move the save folder",
-      async (_e, payload: { targetDir: string | null }) => {
+      async (_e, payload: unknown) => {
+        const requestedDir = saveFolderRequest(payload);
         const priorSettings = loadSettings();
         const sourceRoot = prepareDataRoot(priorSettings);
         const requestedTarget =
-          payload.targetDir === null ? defaultDataRoot() : payload.targetDir;
+          requestedDir === null ? defaultDataRoot() : requestedDir;
         if (!path.isAbsolute(requestedTarget))
           throw new Error("save folder must be an absolute path");
         const targetRoot = path.resolve(requestedTarget);
@@ -344,7 +363,7 @@ export function registerIpc(
             await inspectSaveFolderMigrationSourceInWorker(sourceRoot);
           beginSaveFolderMigration(sourceRoot, targetRoot, token);
           journalStarted = true;
-          stagingRoot = copyWorldsToStaging(sourceRoot, targetRoot, token);
+          stagingRoot = await copyWorldsToStagingInWorker(sourceRoot, targetRoot, token);
           fs.renameSync(
             path.join(stagingRoot, "worlds"),
             path.join(targetRoot, "worlds"),
@@ -443,20 +462,20 @@ export function registerIpc(
         throw new Error("could not checkpoint the active world for export");
       const world = activeWorld(settings);
       const result = await dialog.showSaveDialog(win, {
-        title: tr("exportTitle"),
+        title: t("dialog.exportSave"),
         defaultPath: `thehumanbox-${world.hash}.world.save`,
-        filters: [{ name: tr("saveFilterName"), extensions: ["save"] }],
+        filters: [{ name: t("dialog.worldSaveFilter"), extensions: ["save"] }],
       });
       if (result.canceled || !result.filePath) return { exported: false };
       assertExportOutsideDataRoot(effectiveDataRoot(settings), result.filePath);
       const bytes = await fs.promises.readFile(world.savePath);
       await validateWorldSaveBytesInWorker(bytes);
-      const replaced = replaceFileForTransaction(
+      const replaced = await replaceFileForTransaction(
         result.filePath,
         bytes,
         randomUUID(),
       );
-      finishReplacedFile(replaced);
+      await finishReplacedFile(replaced);
       return { exported: true, filePath: result.filePath, hash: world.hash };
     }),
   );
@@ -475,10 +494,14 @@ export function registerIpc(
       const world = activeWorld(settings);
       const decision = await dialog.showMessageBox(win, {
         type: "warning",
-        title: tr("resetTitle"),
-        message: tr("resetTitle"),
-        detail: tr("resetDetail"),
-        buttons: [tr("resetExportAndNew"), tr("resetNewWithoutExport"), tr("cancel")],
+        title: t("dialog.resetWorld"),
+        message: t("dialog.resetWorld"),
+        detail: t("dialog.resetDetail"),
+        buttons: [
+          t("buttons.exportAndStartNew"),
+          t("buttons.startNewWithoutExport"),
+          t("buttons.cancel"),
+        ],
         defaultId: 2,
         cancelId: 2,
         noLink: true,
@@ -488,9 +511,9 @@ export function registerIpc(
       let exportPath: string | null = null;
       if (decision.response === 0) {
         const exportChoice = await dialog.showSaveDialog(win, {
-          title: tr("resetExportTitle"),
+          title: t("dialog.exportBeforeReset"),
           defaultPath: `thehumanbox-${world.hash}.world.save`,
-          filters: [{ name: tr("saveFilterName"), extensions: ["save"] }],
+          filters: [{ name: t("dialog.worldSaveFilter"), extensions: ["save"] }],
         });
         if (exportChoice.canceled || !exportChoice.filePath)
           return { reset: false };
@@ -513,12 +536,12 @@ export function registerIpc(
           assertExportOutsideDataRoot(effectiveDataRoot(settings), exportPath);
           const exportBytes = await fs.promises.readFile(world.savePath);
           await validateWorldSaveBytesInWorker(exportBytes);
-          const replaced = replaceFileForTransaction(
+          const replaced = await replaceFileForTransaction(
             exportPath,
             exportBytes,
             token,
           );
-          finishReplacedFile(replaced);
+          await finishReplacedFile(replaced);
         }
         fs.renameSync(world.markerPath, parkedMarker);
         syncDirectoryBestEffort(path.dirname(world.markerPath));

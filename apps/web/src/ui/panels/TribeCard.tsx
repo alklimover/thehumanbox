@@ -1,26 +1,29 @@
 import clsx from 'clsx'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useUIStore } from '../../state/store'
 import { popHistory } from '../../state/worldStore'
 import { sparklinePoints, trend } from '../../game/model/pop-history'
 import type { PrayerInfo, WorldState } from '../../shared/types'
 import { lineageColor } from '../../shared/constants'
-import { PRAYER_KINDS } from '../../game/model/prayers'
+import { PRAYER_KINDS, prayerPleaText } from '../../game/model/prayers'
 import { lossLine, PERIL_HELP, perilOf, remainingLine } from '../../game/model/tribe-peril'
 import { activeBattles, enemiesOf } from '../../game/render/battles'
 import { relationsLine, relationsOf } from '../../game/model/diplomacy'
 import { leadershipOf } from '../../game/model/leadership'
 import { festivalLabel } from '../../game/render/festivals'
 import { tribeStatus } from '../../game/model/tribe-status'
-import { wealthGapOf, wealthGapWord } from '../../game/model/inequality'
+import { guideLines, type GuideLine } from '../../game/model/era-guide'
+import { wealthGapOf } from '../../game/model/inequality'
 import { crimeLineOf } from '../../game/model/crime'
 import { generationLine, generationsOf } from '../../game/model/generations'
 import { familyLineText, familyLines } from '../../game/model/family-lines'
 import { eldestByLineage, eldestLine } from '../../game/model/tribe-eldest'
 import { ToolSprite } from '../toolbar/ToolSprite'
-import { t, tn } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
-import { displayName } from '../../i18n/names'
+import { TribeHistory } from './TribeHistory'
+import { TribeReasoning } from './TribeReasoning'
+import { formatNumber, t, type MessageKey } from '../../i18n'
+import { knownTribeName } from '../../state/worldStore'
+import { simWordFallback } from '../../fork/i18n/sim'
 
 interface Props {
   world: WorldState
@@ -28,7 +31,7 @@ interface Props {
   /** Pick up a dock tool by id, looking at the tribe. */
   onTool: (toolId: string, at: { x: number; y: number }) => void
   /** Give the tribe a name of the player's choosing. */
-  onRename: (lineage: string, name: string) => void
+  onRename: (lineage: string, name: string) => Promise<boolean>
   /** Teach the tribe the next secret it lacks. */
   onTeach: (lineage: string) => void
 }
@@ -53,19 +56,20 @@ function Sparkline({ lineage }: { lineage: string }) {
   return (
     <div
       className={clsx('tribe-spark', direction)}
-      title={tn('panel.tribe.lately', samples[samples.length - 1]!, { from: samples[0]! })}
+      title={t('panels.tribe.sparkTitle', {
+        from: formatNumber(samples[0]!),
+        to: formatNumber(samples[samples.length - 1]!),
+      })}
     >
       <svg width="72" height="14" viewBox="0 0 72 14" aria-hidden="true">
         <polyline points={sparklinePoints(samples, 72, 14)} fill="none" strokeWidth="1.5" />
       </svg>
       <span>
-        {t(
-          direction === 'up'
-            ? 'panel.tribe.growing'
-            : direction === 'down'
-              ? 'panel.tribe.shrinking'
-              : 'panel.tribe.steady',
-        )}
+        {direction === 'up'
+          ? t('panels.tribe.growing')
+          : direction === 'down'
+            ? t('panels.tribe.shrinking')
+            : t('panels.tribe.steady')}
       </span>
     </div>
   )
@@ -85,36 +89,123 @@ function TribeName({
   onRename: Props['onRename']
 }) {
   const [editing, setEditing] = useState<string | null>(null)
+  // The world answers later. By then the field may be gone, and a refused name keeps it open with a message.
+  const [pending, setPending] = useState(false)
+  const [refused, setRefused] = useState(false)
+  const open = useRef(true)
+  const input = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    open.current = true
+    return () => {
+      open.current = false
+    }
+  }, [])
+  // Disabling the field while the world answers can drop keyboard focus. When a refusal lands, the field is
+  // enabled again, so the player can correct the name without reaching for the mouse.
+  useEffect(() => {
+    if (!pending && refused && editing !== null) input.current?.focus()
+  }, [pending, refused, editing])
+
+  const save = (next: string) => {
+    if (pending) return
+    setRefused(false)
+    setPending(true)
+    onRename(lineage, next).then(
+      (saved) => {
+        if (!open.current) return
+        setPending(false)
+        if (saved) setEditing(null)
+        else setRefused(true)
+      },
+      () => {
+        if (!open.current) return
+        setPending(false)
+        setRefused(true)
+      },
+    )
+  }
+
   if (editing === null) {
     return (
       <button
         className="tribe-card-name tribe-card-rename"
-        title={t('panel.tribe.renameTip')}
-        onClick={() => setEditing(name)}
+        title={t('panels.tribe.rename')}
+        onClick={() => {
+          // A new edit starts clean: the last refusal belonged to the previous attempt.
+          setRefused(false)
+          setEditing(name)
+        }}
       >
         {name} <span aria-hidden="true">✎</span>
       </button>
     )
   }
   return (
-    <input
-      className="tribe-card-name-input"
-      autoFocus
-      maxLength={24}
-      value={editing}
-      aria-label={t('panel.tribe.nameAria')}
-      onChange={(e) => setEditing(e.target.value)}
-      onBlur={() => setEditing(null)}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter') {
-          const next = editing.trim()
-          if (next && next !== name) onRename(lineage, next)
-          setEditing(null)
-        } else if (e.key === 'Escape') setEditing(null)
-      }}
-    />
+    <>
+      <input
+        ref={input}
+        className="tribe-card-name-input"
+        autoFocus
+        maxLength={24}
+        value={editing}
+        disabled={pending}
+        aria-label={t('panels.tribe.nameLabel')}
+        onChange={(e) => {
+          setRefused(false)
+          setEditing(e.target.value)
+        }}
+        // A blur while the world answers must not close the field: the name is still being saved.
+        onBlur={() => {
+          if (!pending) setEditing(null)
+        }}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          // Enter and Escape that end an IME composition finish the word, not the name.
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return
+          if (e.key === 'Enter') {
+            const next = editing.trim()
+            // Nothing new to save: the field just closes.
+            if (!next || next === name) setEditing(null)
+            else save(next)
+          } else if (e.key === 'Escape') setEditing(null)
+        }}
+      />
+      {refused && (
+        <span role="alert" style={{ color: '#ff9b6b', fontSize: 11 }}>
+          {t('panels.rename.refused')}
+        </span>
+      )}
+    </>
   )
+}
+
+/** One line of a tribe's starter guide to its next age, in words. */
+function guideText(line: GuideLine): string {
+  switch (line.kind) {
+    case 'secrets':
+      return t('panels.tribe.stillToLearn', { list: line.names.join(', ') })
+    case 'people':
+      return t('panels.tribe.guide.worldPeople', {
+        have: formatNumber(line.have),
+        need: formatNumber(line.need),
+        short: formatNumber(line.short),
+      })
+    case 'ready':
+      return t('panels.tribe.guide.ready')
+  }
+}
+
+/** What a tribe known for each craft is said to be known for. */
+const CRAFT_KEYS: Record<string, MessageKey> = {
+  woodcutting: 'panels.tribe.lore.craft.woodcutting',
+  quarrying: 'panels.tribe.lore.craft.quarrying',
+  foraging: 'panels.tribe.lore.craft.foraging',
+  fishing: 'panels.tribe.lore.craft.fishing',
+  hunting: 'panels.tribe.lore.craft.hunting',
+  farming: 'panels.tribe.lore.craft.farming',
+  building: 'panels.tribe.lore.craft.building',
+  crafting: 'panels.tribe.lore.craft.crafting',
+  healing: 'panels.tribe.lore.craft.healing',
 }
 
 /**
@@ -133,7 +224,7 @@ export function TribeCard({ world, onAnswer, onTool, onRename, onTeach }: Props)
   const crime = crimeLineOf(world.lineage_crime, status.id)
   const prayer = status.prayer
   const enemies = enemiesOf(world.battles, status.id).map(
-    (l) => displayName(world.lineage_names?.[l]) || l.slice(0, 6),
+    (l) => knownTribeName(world.lineage_names, l) ?? l.slice(0, 6),
   )
   const field = activeBattles(world.battles).find(
     (b) => b.attackers.includes(status.id) || b.defenders.includes(status.id),
@@ -141,11 +232,14 @@ export function TribeCard({ world, onAnswer, onTool, onRename, onTeach }: Props)
   const relations = relationsLine(relationsOf(world, status.id))
   const leadership = leadershipOf(world, status.id)
   const festivalName = festivalLabel(world.festivals, status.id)
-  const festival = festivalName ? simLabel('festival', festivalName) : null
+  // Fork: the festival's name in the player's language (fork/i18n/sim/festival.ts).
+  const festival = festivalName ? simWordFallback('festival', festivalName, festivalName) : null
   const peril = perilOf(world, status.id)
   const losses = lossLine(world.tribe_losses?.[status.id])
   const families = familyLines(world.organisms, status.id)
   const eldest = eldestByLineage(world.organisms)[status.id]
+  const lore = world.lineage_lore?.[status.id]
+  const craftKey = lore?.craft ? CRAFT_KEYS[lore.craft] : undefined
   const help = peril ? PERIL_HELP[peril.cause] : null
   const lookAtTribe = (tool: string) => {
     const home = world.settlements?.find((s) => s.lineage_id === status.id)
@@ -156,123 +250,155 @@ export function TribeCard({ world, onAnswer, onTool, onRename, onTeach }: Props)
     <div
       className="tribe-card"
       role="region"
-      aria-label={t('panel.tribe.aria', { name: displayName(status.name) })}
+      aria-label={t('panels.tribe.regionLabel', { name: status.name })}
     >
       <div className="tribe-card-head">
         <span className="lineage-dot" style={{ background: lineageColor(status.id) }} />
-        <TribeName key={status.id} lineage={status.id} name={displayName(status.name)} onRename={onRename} />
-        <button className="tribe-card-close" aria-label={t('common.close')} onClick={() => setFocus('all')}>
+        <TribeName key={status.id} lineage={status.id} name={status.name} onRename={onRename} />
+        <button
+          className="tribe-card-close"
+          aria-label={t('panels.tribe.close')}
+          onClick={() => setFocus('all')}
+        >
           ×
         </button>
       </div>
       {leadership && (
         <div className="tribe-card-leader">
-          {simLabel('government', leadership.government)}
+          {leadership.government}
           {leadership.leader && (
             <>
-              {t('panel.tribe.ledBy')}
+              {` · ${t('panels.tribe.ledBy')} `}
               <button
                 className="tribe-leader-link"
-                title={t('panel.tribe.followLeader')}
+                title={t('panels.tribe.followLeader')}
                 onClick={() => {
                   const ui = useUIStore.getState()
                   ui.selectOrg(leadership.leader!.id)
                   ui.followOrg(leadership.leader!.id)
                 }}
               >
-                {displayName(leadership.leader.name)}
+                {leadership.leader.name}
               </button>
             </>
           )}
         </div>
       )}
-      {festival && <div className="tribe-card-festival">{t('panel.tribe.festival', { festival })}</div>}
+      {festival && (
+        <div className="tribe-card-festival">♫ {t('panels.tribe.festival', { name: festival })}</div>
+      )}
       <div className="tribe-card-sub">
-        {tn('panel.tribe.people', status.people)}
-        {status.era && ` · ${t('model.eraAge', { era: status.era })}`}
-        {gap && ` · ${t('panel.tribe.wealth', { gap: wealthGapWord(gap) })}`}
+        {t('panels.tribe.people', { count: formatNumber(status.people) })}
+        {status.era && ` · ${t('panels.tribe.eraAge', { era: status.era })}`}
+        {gap && ` · ${t('panels.tribe.wealth', { gap })}`}
         {gens && ` · ${generationLine(gens)}`}
         {crime && ` · ${crime}`}
       </div>
       {peril && help && (
         <div className="tribe-peril" role="alert">
           <span>
-            {t('panel.tribe.brink', {
-              remaining: remainingLine(peril.population),
-              peak: peril.peak,
-              reason: help.reason,
+            ⚠{' '}
+            {t('panels.tribe.onBrink', {
+              line: remainingLine(peril.population),
+              peak: formatNumber(peril.peak),
+              reason: t(help.reason),
             })}
           </span>
           <button className="tribe-peril-help" onClick={() => lookAtTribe(help.tool)}>
-            {help.action}
+            {t(help.action)}
           </button>
         </div>
       )}
       {enemies.length > 0 && field && (
         <div className="tribe-peril tribe-war" role="status">
-          <span>{t('panel.tribe.atWar', { names: enemies.join(', ') })}</span>
+          <span>⚔ {t('panels.tribe.atWar', { enemies: enemies.join(', ') })}</span>
           <button
             className="tribe-peril-help"
             onClick={() => onTool('peace', { x: field.location[0], y: field.location[1] })}
           >
-            {t('peril.action.peace')}
+            {t('panels.tribe.makePeace')}
           </button>
         </div>
       )}
       <Sparkline lineage={status.id} />
-      <Need label={t('panel.tribe.food')} value={status.food} />
-      {status.stores > 0 && <p className="tribe-stores">{tn('panel.tribe.granary', status.stores)}</p>}
-      {status.bread > 0 && <p className="tribe-stores">{tn('panel.tribe.bakery', status.bread)}</p>}
-      {status.livestock > 0 && <p className="tribe-stores">{tn('panel.tribe.pen', status.livestock)}</p>}
-      <Need label={t('panel.tribe.water')} value={status.water} />
-      <Need label={t('panel.tribe.health')} value={status.health} />
-      {losses && <div className="tribe-card-losses">{t('panel.tribe.losses', { losses })}</div>}
+      <Need label={t('panels.tribe.food')} value={status.food} />
+      {status.stores > 0 && (
+        <p className="tribe-stores">{t('panels.tribe.granary', { count: formatNumber(status.stores) })}</p>
+      )}
+      {status.bread > 0 && (
+        <p className="tribe-stores">{t('panels.tribe.bakery', { count: formatNumber(status.bread) })}</p>
+      )}
+      {status.livestock > 0 && (
+        <p className="tribe-stores">{t('panels.tribe.pen', { count: formatNumber(status.livestock) })}</p>
+      )}
+      <Need label={t('panels.tribe.water')} value={status.water} />
+      <Need label={t('panels.tribe.health')} value={status.health} />
+      <TribeHistory world={world} lineage={status.id} />
+      <TribeReasoning world={world} status={status} />
+      {losses && <div className="tribe-card-losses">{t('panels.tribe.lostLately', { losses })}</div>}
       {relations && <div className="tribe-card-relations">{relations}</div>}
+      {craftKey && (
+        <div className="tribe-card-relations" title={t('panels.tribe.lore.craftTitle')}>
+          {t(craftKey)}
+        </div>
+      )}
+      {lore?.hungry_winter && (
+        <div className="tribe-card-relations" title={t('panels.tribe.lore.winterTitle')}>
+          {t('panels.tribe.lore.winter', { year: lore.hungry_winter })}
+        </div>
+      )}
+      {!!lore?.war_weary && (
+        <div className="tribe-card-relations" title={t('panels.tribe.lore.warWearyTitle')}>
+          {t('panels.tribe.lore.warWeary', { count: lore.war_weary })}
+        </div>
+      )}
       {eldest && (
-        <div className="tribe-card-relations" title={t('panel.tribe.eldestTip')}>
-          {t('panel.tribe.eldest', { line: eldestLine(eldest) })}
+        <div className="tribe-card-relations" title={t('panels.tribe.oldestTitle')}>
+          {t('panels.tribe.oldest', { line: eldestLine(eldest) })}
         </div>
       )}
       {families.length > 0 && (
-        <div className="tribe-card-relations" title={t('panel.tribe.familiesTip')}>
-          {t('panel.tribe.families', { list: families.map(familyLineText).join(' · ') })}
+        <div className="tribe-card-relations" title={t('panels.tribe.familiesTitle')}>
+          {t('panels.tribe.families', { list: families.map(familyLineText).join(' · ') })}
         </div>
       )}
       <div className="tribe-card-row">
         <span
           className={clsx('tribe-faith', status.blessed && 'blessed', status.despairing && 'despair')}
-          title={status.lostFaith ? t('panel.tribe.lostFaithTip') : t('panel.tribe.faithTip')}
+          title={status.lostFaith ? t('panels.tribe.faithLostTitle') : t('panels.tribe.faithTitle')}
         >
-          {t('panel.tribe.faith', { n: status.faith })}
+          ✧ {t('panels.tribe.faith', { faith: formatNumber(status.faith) })}
           {status.blessed
-            ? t('panel.tribe.blessed')
+            ? ` · ${t('panels.tribe.blessed')}`
             : status.lostFaith
-              ? t('panel.tribe.lostFaith')
+              ? ` · ${t('panels.tribe.lostFaith')}`
               : status.despairing
-                ? t('panel.tribe.despairing')
+                ? ` · ${t('panels.tribe.despairing')}`
                 : ''}
         </span>
-        {status.sick > 0 && <span className="tribe-sick">{tn('panel.tribe.sick', status.sick)}</span>}
+        {status.sick > 0 && (
+          <span className="tribe-sick">{t('panels.tribe.sick', { count: formatNumber(status.sick) })}</span>
+        )}
       </div>
       {status.nextAge && (
         <div className="tribe-next">
           <div className="tribe-next-head">
-            <span>{t('panel.tribe.next', { era: t('model.eraAge', { era: status.nextAge.era }) })}</span>
+            <span>{t('panels.tribe.nextAge', { era: status.nextAge.era })}</span>
             <span className="tribe-next-actions">
               <button
                 className="tribe-inspire"
-                title={t('panel.tribe.inspireTip')}
+                title={t('panels.tribe.inspireTitle')}
                 onClick={() => lookAtTribe('inspire')}
               >
-                {t('panel.tribe.inspire')}
+                ✦ {t('panels.tribe.inspire')}
               </button>
               {status.nextAge.missing.length > 0 && (
                 <button
                   className="tribe-inspire"
-                  title={t('panel.tribe.teachTip')}
+                  title={t('panels.tribe.teachTitle')}
                   onClick={() => onTeach(status.id)}
                 >
-                  {t('panel.tribe.teach')}
+                  ✎ {t('panels.tribe.teach')}
                 </button>
               )}
             </span>
@@ -284,23 +410,24 @@ export function TribeCard({ world, onAnswer, onTool, onRename, onTeach }: Props)
               }}
             />
           </span>
-          {status.nextAge.missing.length > 0 && (
-            <div className="tribe-next-missing">
-              {t('panel.tribe.toLearn', { list: status.nextAge.missing.slice(0, 3).join(', ') })}
+          <div className="tribe-next-missing">
+            {t('panels.tribe.guide.known', {
+              known: formatNumber(status.nextAge.known),
+              required: formatNumber(status.nextAge.required),
+            })}
+          </div>
+          {guideLines(status.nextAge).map((line) => (
+            <div key={line.kind} className="tribe-next-missing">
+              {guideText(line)}
             </div>
-          )}
-          {status.nextAge.peopleNeeded > 0 && (
-            <div className="tribe-next-missing">
-              {tn('panel.tribe.needsPeople', status.nextAge.peopleNeeded)}
-            </div>
-          )}
+          ))}
         </div>
       )}
       {prayer && (
         <button className="tribe-card-prayer" onClick={() => onAnswer(prayer)}>
           <ToolSprite icon={PRAYER_KINDS[prayer.kind]?.icon ?? '🙏'} size={16} />
-          <span>{PRAYER_KINDS[prayer.kind]?.plea ?? t('panel.tribe.praying')}</span>
-          <span className="tribe-card-help">{t('panel.tribe.help')}</span>
+          <span>{prayerPleaText(prayer.kind) ?? t('panels.tribe.praying')}</span>
+          <span className="tribe-card-help">{t('panels.tribe.help')}</span>
         </button>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DOCK_TABS, groupsFor } from './dock-tabs'
-import { CATALOGS } from '../../i18n/catalog'
+import { CATALOGS } from '../../fork/i18n/catalog'
 
 /** The tool ids a tab shows, in order. */
 const idsIn = (tabId: string) => groupsFor(tabId).flatMap((g) => g.tools.map((t) => t.id))

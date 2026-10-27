@@ -17,6 +17,7 @@ use world::grid::{WorldGrid, HEIGHT, WIDTH};
 use world::tiles::{Biome, Tile};
 
 mod args;
+mod learning;
 mod report;
 mod rows;
 mod rss;
@@ -53,6 +54,8 @@ fn main() {
         load,
         save_at_end,
         population_limit,
+        summon_wolves,
+        summon_at,
     } = args::parse();
 
     if world_report {
@@ -69,6 +72,12 @@ fn main() {
     }
 
     if sweep_seeds > 0 {
+        // The seed sweep runs its own worlds, which never see the summon command: refuse rather than
+        // report worlds without the requested wolves.
+        if summon_wolves > 0 {
+            eprintln!("--summon-wolves is not supported with --sweep-seeds; run one seed at a time");
+            std::process::exit(2);
+        }
         let unhealthy = run_seed_sweep(seed, sweep_seeds, max_ticks);
         if gate && unhealthy > 0 {
             eprintln!("\nVIABILITY GATE FAILED: {} unhealthy seed(s)", unhealthy);
@@ -119,9 +128,53 @@ fn main() {
         w
     });
 
+    // THB_DEATHS=<cause> prints the last thoughts of everyone who dies of it.
+    let death_probe = std::env::var("THB_DEATHS").ok();
+    let mut reported: std::collections::HashSet<String> = std::collections::HashSet::new();
     while sim.tick_count < end_tick {
         let t0 = std::time::Instant::now();
+        if summon_wolves > 0 && sim.tick_count == summon_at {
+            // The player summons wolves beside the first living person (the same command as the sandbox
+            // tool). One command spawns at most 12, so larger counts go as several commands.
+            if let Some(p) = sim.organisms.iter().find(|o| o.alive) {
+                let (x, y) = (p.x, p.y);
+                let mut left = summon_wolves;
+                while left > 0 {
+                    let batch = left.min(12);
+                    let cmd = format!(
+                        r#"{{"cmd":"spawn_animal","x":{},"y":{},"kind":"wolf","count":{},"radius":4}}"#,
+                        x, y, batch
+                    );
+                    if !sim.apply_command_json(&cmd) {
+                        eprintln!("summon: no wolves placed at tick {}", sim.tick_count);
+                    }
+                    left -= batch;
+                }
+            }
+        }
         sim.tick();
+        if let Some(cause) = death_probe.as_deref() {
+            for o in sim
+                .organisms
+                .iter()
+                .filter(|o| !o.alive && o.death_cause == cause)
+            {
+                if !reported.insert(o.id.clone()) {
+                    continue;
+                }
+                let last: Vec<&str> = o
+                    .thought_history
+                    .iter()
+                    .rev()
+                    .take(8)
+                    .map(|t| t.text.as_str())
+                    .collect();
+                println!(
+                    "DEATH t{} {} age {} at ({:.0},{:.0}): {:?}",
+                    sim.tick_count, o.name, o.age, o.x, o.y, last
+                );
+            }
+        }
         let tick_us = t0.elapsed().as_micros() as u64;
         tick_times_us.push(tick_us);
         let t = sim.tick_count;
@@ -157,6 +210,19 @@ fn main() {
 
         for org in sim.organisms.iter().filter(|o| o.alive) {
             *thought_freq.entry(org.thought.clone()).or_insert(0) += 1;
+            // THB_WET lists what people standing in water are doing.
+            if std::env::var("THB_WET").is_ok() {
+                let (x, y) = (org.x as i32, org.y as i32);
+                if sim.grid.get(x, y) == world::tiles::Tile::Water {
+                    *thought_freq
+                        .entry(format!("[in water] {}", org.thought))
+                        .or_insert(0) += 1;
+                }
+            }
+            if std::env::var("THB_SPLIT").is_ok() {
+                let tag = if sim.is_night() { "[night] " } else { "[day] " };
+                *thought_freq.entry(format!("{tag}{}", org.thought)).or_insert(0) += 1;
+            }
         }
 
         if t.is_multiple_of(print_every) {
@@ -246,6 +312,7 @@ fn main() {
     print_economy(&sim);
     print_coverage(&sim);
     print_mood(&sim);
+    learning::print_learning(&sim);
     print_institutions(&sim);
     print_society(&sim);
     print_progress(&sim);

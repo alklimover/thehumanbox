@@ -49,7 +49,17 @@ pub fn available_actions_into(
 
     plan.range(0, 25);
 
-    plan.range(26, 38);
+    // Mining and quarrying need rock beside them (mining also room in the
+    // pack), the same check the reference filter below makes. Split so each id
+    // keeps its place in the order the candidates are offered.
+    if near_rock && org.carry_room() > 0 {
+        plan.range(26, 26);
+    }
+    plan.range(27, 28);
+    if near_rock {
+        plan.range(29, 29);
+    }
+    plan.range(30, 38);
 
     if has_mats || near_rock || near_water {
         plan.range(39, 50);
@@ -203,6 +213,7 @@ pub fn available_actions_into(
 
     // A dead organism is turned down for every action by the trade-route check.
     if !org.alive {
+        recycle_plan(plan);
         return;
     }
     // Walk the candidate ranges in the order they were offered, keeping an id
@@ -233,6 +244,18 @@ pub fn available_actions_into(
             }
         }
     }
+    recycle_plan(plan);
+}
+
+thread_local! {
+    /// The candidate ranges of the last plan, kept for the next one: a plan is built for every organism every
+    /// tick, and each one used to allocate (and grow) its own list.
+    static PLAN_RANGES: std::cell::RefCell<Vec<(u16, u16)>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Hands a finished plan's list back for the next plan to reuse.
+fn recycle_plan(plan: Plan) {
+    PLAN_RANGES.with_borrow_mut(|ranges| *ranges = plan.0);
 }
 
 /// The ids whose candidacy needs more than the semantic gate, as bit words,
@@ -302,7 +325,9 @@ struct Plan(Vec<(u16, u16)>);
 
 impl Plan {
     fn new() -> Self {
-        Plan(Vec::with_capacity(96))
+        let mut ranges = PLAN_RANGES.with_borrow_mut(std::mem::take);
+        ranges.clear();
+        Plan(ranges)
     }
 
     fn range(&mut self, start: usize, end: usize) {
@@ -509,6 +534,8 @@ pub(crate) fn available_actions_into_reference(
                     && relationships_deep::action_is_possible(sim, idx, action, nearby)
                     && crate::sim::civ::trade_routes::action_is_possible(sim, idx, action, nearby)
                     && (action != 2704 || crate::sim::civ::trade_routes::can_dispatch_caravan(sim, idx))))
+            && (action != 26 || (near_rock && org.carry_room() > 0))
+            && (action != 29 || near_rock)
             && registry::is_possible(sim, idx, action, ix, iy)
             && seen.insert(action)
     });

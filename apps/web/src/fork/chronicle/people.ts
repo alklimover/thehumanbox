@@ -4,11 +4,11 @@
 // so the ones of a season are told as one row that opens to the names. A
 // death whose memory is only its cause reads as «Не стало Гоку (утонул)».
 import { SEASON_TICKS } from '../../game/model/calendar'
-import { t, tn, type MessageKey } from '../../i18n'
-import { displayName } from '../../i18n/names'
-import { simLabel } from '../../i18n/sim'
-import { simText, type Sex } from '../../i18n/simtext'
-import { genderize } from '../../i18n/simtext/engine'
+import { ft, ftn, type ForkMessageKey } from '../i18n'
+import { displayName } from '../i18n/names'
+import { simLabel } from '../i18n/sim'
+import { simText, type Sex } from '../i18n/simtext'
+import { genderize } from '../i18n/simtext/engine'
 import { entryPerson, entrySex, entryText, type ChronicleEntry } from './model'
 
 export type PersonKind = 'gone' | 'elder'
@@ -95,7 +95,7 @@ export function collapsePeople(entries: readonly ChronicleEntry[]): HistoryItem[
   )
 }
 
-const CAUSE_KEY: Record<string, MessageKey> = {
+const CAUSE_KEY: Record<string, ForkMessageKey> = {
   'old age': 'chronicle.people.cause.oldAge',
   starvation: 'chronicle.people.cause.starvation',
   dehydration: 'chronicle.people.cause.dehydration',
@@ -113,7 +113,7 @@ const CAUSE_KEY: Record<string, MessageKey> = {
 /** How someone died, said of them: «утонула», «от старости»; a new cause by its name. */
 export function causePhrase(cause: string, sex: Sex | null): string {
   const key = CAUSE_KEY[cause]
-  return key ? genderize(t(key), sex) : simLabel('deathCause', cause)
+  return key ? genderize(ft(key), sex) : simLabel('deathCause', cause)
 }
 
 type SexOf = (name: string) => Sex | null
@@ -128,7 +128,7 @@ function sexes(entry: ChronicleEntry, sexOf: SexOf) {
 export function personText(member: PersonMember, sexOf: SexOf, peak = 0): string {
   const { entry, line } = member
   if (line.kind === 'gone' && line.cause) {
-    return t('chronicle.people.goneCause', {
+    return ft('chronicle.people.goneCause', {
       name: displayName(line.name),
       cause: causePhrase(line.cause, entrySex(entry, sexOf)),
     })
@@ -141,10 +141,10 @@ export function memberText(member: PersonMember, sexOf: SexOf): string {
   const { entry, line } = member
   const name = displayName(line.name)
   const ctx = sexes(entry, sexOf)
-  if (line.cause) return t('chronicle.people.memberCause', { name, cause: causePhrase(line.cause, ctx.sex) })
+  if (line.cause) return ft('chronicle.people.memberCause', { name, cause: causePhrase(line.cause, ctx.sex) })
   if (!line.memory) return name
   // The memory as the line itself translates it: the person's sex, the names in it.
-  return t('chronicle.people.memberCarried', { name, memory: simText('memory', line.memory, ctx) })
+  return ft('chronicle.people.memberCarried', { name, memory: simText('memory', line.memory, ctx) })
 }
 
 const PREVIEW = 3
@@ -153,7 +153,7 @@ const PREVIEW = 3
 function namesPreview(members: readonly PersonMember[]): string {
   const names = members.slice(0, PREVIEW).map((m) => displayName(m.line.name))
   const rest = members.length - names.length
-  return rest > 0 ? t('chronicle.people.namesMore', { names: names.join(', '), n: rest }) : names.join(', ')
+  return rest > 0 ? ft('chronicle.people.namesMore', { names: names.join(', '), n: rest }) : names.join(', ')
 }
 
 /** Causes, the commonest first: «утопление — 3, старость — 2»; null when none is known. */
@@ -163,7 +163,7 @@ function causesSummary(members: readonly PersonMember[]): { text: string; all: b
   if (counts.size === 0) return null
   const text = [...counts]
     .sort((a, b) => b[1] - a[1])
-    .map(([cause, n]) => t('chronicle.people.causeCount', { cause: simLabel('deathCause', cause), n }))
+    .map(([cause, n]) => ft('chronicle.people.causeCount', { cause: simLabel('deathCause', cause), n }))
     .join(', ')
   const known = [...counts.values()].reduce((a, b) => a + b, 0)
   return { text, all: known === members.length }
@@ -175,9 +175,9 @@ function causesSummary(members: readonly PersonMember[]): { text: string; all: b
  */
 export function groupText(kind: PersonKind, members: readonly PersonMember[]): string {
   const n = members.length
-  if (kind === 'elder') return tn('chronicle.people.elders', n, { detail: namesPreview(members) })
+  if (kind === 'elder') return ftn('chronicle.people.elders', n, { detail: namesPreview(members) })
   const causes = causesSummary(members)
-  if (causes?.all) return tn('chronicle.people.gone', n, { detail: causes.text })
+  if (causes?.all) return ftn('chronicle.people.gone', n, { detail: causes.text })
   const names = namesPreview(members)
-  return tn('chronicle.people.gone', n, { detail: causes ? `${names} · ${causes.text}` : names })
+  return ftn('chronicle.people.gone', n, { detail: causes ? `${names} · ${causes.text}` : names })
 }

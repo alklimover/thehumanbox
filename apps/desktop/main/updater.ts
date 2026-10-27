@@ -1,8 +1,9 @@
 import { app, BrowserWindow, dialog } from 'electron'
 import { autoUpdater, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater'
 import { loadSettings } from './settings'
-import { tr } from './i18n'
 import { appBundleFromExe, hasDeveloperIdSignature, startUnsignedMacInstall } from './mac-unsigned-install'
+import { t } from './i18n'
+import { currentDesktopOperation } from './exclusive-operation'
 
 export type UpdateCheckStatus = 'checking' | 'available' | 'downloaded' | 'up-to-date' | 'unsupported' | 'error'
 
@@ -31,18 +32,29 @@ function usesUnsignedMacInstall(): boolean {
   return bundle !== null && !hasDeveloperIdSignature(bundle)
 }
 
+// Installing quits the app. A save-folder move, a reset or a simulation restart
+// running in this process must finish first: quitting mid-way leaves it to
+// recovery at the next start. Returns the reason to wait, or null when idle.
+function installWaitReason(): string | null {
+  return currentDesktopOperation() === null ? null : t('update.busyMessage')
+}
+
 function installNow(): UpdateCheckResult {
+  const waitReason = installWaitReason()
+  if (waitReason) return { ...latestStatus, message: waitReason }
   if (!usesUnsignedMacInstall()) {
     setImmediate(() => autoUpdater.quitAndInstall())
     return latestStatus
   }
   if (!downloadedFile) {
-    return { ...latestStatus, message: tr('updateFileMissing') }
+    return { ...latestStatus, message: t('update.fileMissing') }
   }
   const result = startUnsignedMacInstall(downloadedFile, process.execPath, process.pid)
   if (!result.started) {
-    const message = result.message ?? tr('updateFailed')
-    void dialog.showMessageBox({ type: 'error', title: tr('updateFailedTitle'), message: tr('updateFailed'), detail: message })
+    const message = result.message ?? t('update.failedMessage')
+    dialog
+      .showMessageBox({ type: 'error', title: t('update.failedTitle'), message: t('update.failedMessage'), detail: message })
+      .catch((error: unknown) => console.error('[updater] could not show the install failure:', error))
     return { ...latestStatus, message }
   }
   setImmediate(() => app.quit())
@@ -99,16 +111,35 @@ export function initUpdater(getWindow: () => BrowserWindow | null): void {
     // ask once per version. A newer version still gets its own prompt.
     if (promptedVersion === info.version) return
     promptedVersion = info.version
-    const { response } = await dialog.showMessageBox({
-      type: 'info',
-      buttons: [tr('updateRestart'), tr('updateLater')],
-      defaultId: 0,
-      cancelId: 1,
-      title: tr('updateReadyTitle'),
-      message: tr('updateReady', { version: info.version }),
-      detail: tr('updateReadyDetail'),
-    })
-    if (response === 0) installNow()
+    let response: number
+    try {
+      ;({ response } = await dialog.showMessageBox({
+        type: 'info',
+        buttons: [t('buttons.restartAndUpdate'), t('buttons.later')],
+        defaultId: 0,
+        cancelId: 1,
+        title: t('update.readyTitle'),
+        message: t('update.readyMessage', { version: info.version }),
+        detail: t('update.readyDetail'),
+      }))
+    } catch (error) {
+      // Nothing awaits this listener, so a failed prompt would otherwise be an
+      // unhandled rejection. The download stays held, so the update toast can
+      // still install it.
+      console.error('[updater] could not show the update prompt:', error)
+      return
+    }
+    if (response !== 0) return
+    // The toast can still install this download later, so a refusal here only
+    // needs to be said, not retried.
+    const waitReason = installWaitReason()
+    if (waitReason) {
+      dialog
+        .showMessageBox({ type: 'info', message: waitReason })
+        .catch((error: unknown) => console.error('[updater] could not show the wait notice:', error))
+      return
+    }
+    installNow()
   })
 
   autoUpdater.on('error', (err) => {
@@ -121,33 +152,46 @@ export function initUpdater(getWindow: () => BrowserWindow | null): void {
   if (!app.isPackaged) {
     latestStatus = {
       status: 'unsupported',
-      message: 'Update checks are only available in packaged builds.',
+      message: t('update.packagedOnlyCheck'),
     }
     return
   }
 
-  const s = loadSettings()
-  if (!s.autoUpdate) return
-
-  void checkForUpdatesNow()
+  // The first check waits for the setting. The timer and the focus check are
+  // registered either way and read the setting each time, so a settings file
+  // that was unreadable at startup takes effect once it reads again.
+  if (automaticChecksEnabled()) void checkForUpdatesNow()
 
   setInterval(() => {
-    if (!loadSettings().autoUpdate) return
+    if (!automaticChecksEnabled()) return
     void checkForUpdatesNow().catch(() => {})
   }, CHECK_INTERVAL_MS)
 
   app.on('browser-window-focus', () => {
     if (Date.now() - lastCheckAt < FOCUS_CHECK_MIN_GAP_MS) return
-    if (!loadSettings().autoUpdate) return
+    if (!automaticChecksEnabled()) return
     void checkForUpdatesNow().catch(() => {})
   })
+}
+
+// The settings file is read on a timer and on window focus. An exception there
+// reaches the main process's uncaughtException handler, which stops the
+// simulation and quits the game. So an unreadable file turns automatic checks
+// off for now, and the boot path reports the file's problem in the window.
+function automaticChecksEnabled(): boolean {
+  try {
+    return loadSettings().autoUpdate
+  } catch (error) {
+    console.warn('[updater] settings unreadable; automatic update checks are paused:', error)
+    return false
+  }
 }
 
 export async function checkForUpdatesNow(): Promise<UpdateCheckResult> {
   if (!app.isPackaged) {
     latestStatus = {
       status: 'unsupported',
-      message: 'Update checks are only available in packaged builds.',
+      message: t('update.packagedOnlyCheck'),
     }
     return latestStatus
   }
@@ -178,14 +222,14 @@ export function installDownloadedUpdate(): UpdateCheckResult {
   if (!app.isPackaged) {
     latestStatus = {
       status: 'unsupported',
-      message: 'Update installs are only available in packaged builds.',
+      message: t('update.packagedOnlyInstall'),
     }
     return latestStatus
   }
   if (latestStatus.status !== 'downloaded') {
     return {
       ...latestStatus,
-      message: latestStatus.message ?? 'No downloaded update is ready to install.',
+      message: latestStatus.message ?? t('update.nothingReady'),
     }
   }
   return installNow()

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../../i18n/locale'
+import { setLocaleForTests } from '../../fork/i18n/locale'
 import { SANDBOX_CATEGORIES, type SandboxTool } from '../../simulation/sandbox'
 import { toolHowTo, toolReach } from './tool-tips'
 
@@ -35,10 +35,10 @@ describe('a point tool says what the brush reaches', () => {
 describe('in Russian', () => {
   afterEach(() => setLocaleForTests('en'))
 
-  it('puts the reach in the right plural form', () => {
-    setLocaleForTests('ru')
-    expect(toolReach(toolById('road'), 1)).toBe('радиус: 1 клетка · ')
-    expect(toolReach(toolById('rain_patch'), 0)).toBe('радиус: 4 клетки · ')
-    expect(toolReach(toolById('rain_patch'), 1)).toBe('радиус: 5 клеток · ')
+  it('writes the reach in Russian', async () => {
+    await setLocaleForTests('ru')
+    expect(toolReach(toolById('road'), 1)).toBe('радиус: 1 кл. · ')
+    expect(toolReach(toolById('rain_patch'), 0)).toBe('радиус: 4 кл. · ')
+    expect(toolReach(toolById('rain_patch'), 1)).toBe('радиус: 5 кл. · ')
   })
 })

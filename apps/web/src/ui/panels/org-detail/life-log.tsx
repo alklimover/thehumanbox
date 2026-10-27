@@ -3,27 +3,27 @@ import { lifeStory } from '../../../game/model/life-story'
 import { familySentence } from '../../../game/model/family-lines'
 import { Tooltip } from '../../toolbar/Tooltip'
 import type { OrganismState, OrgDetail } from '../../../shared/types'
-import { fmtNumber, t } from '../../../i18n'
-import { sexOf, simText } from '../../../i18n/simtext'
+import { formatNumber, t } from '../../../i18n'
+import { sexOf, simText } from '../../../fork/i18n/simtext'
 
 export function MemoryCountsSection({ org }: { org: OrganismState }) {
   return (
     <>
-      <div className="org-detail-section">{t('person.memory.title')}</div>
+      <div className="org-detail-section">{t('person.life.memory')}</div>
       <div className="org-memory" style={{ marginBottom: 6 }}>
-        <Tooltip tip={t('person.memory.foodTip', { n: org.memory_count?.food ?? 0 })}>
+        <Tooltip tip={t('person.life.foodTip', { count: formatNumber(org.memory_count?.food ?? 0) })}>
           <span style={{ cursor: 'default' }}>
-            {t('person.memory.food', { n: org.memory_count?.food ?? 0 })}
+            {t('person.life.food', { count: formatNumber(org.memory_count?.food ?? 0) })}
           </span>
         </Tooltip>
-        <Tooltip tip={t('person.memory.waterTip', { n: org.memory_count?.water ?? 0 })}>
+        <Tooltip tip={t('person.life.waterTip', { count: formatNumber(org.memory_count?.water ?? 0) })}>
           <span style={{ cursor: 'default' }}>
-            {t('person.memory.water', { n: org.memory_count?.water ?? 0 })}
+            {t('person.life.water', { count: formatNumber(org.memory_count?.water ?? 0) })}
           </span>
         </Tooltip>
-        <Tooltip tip={t('person.memory.dangerTip', { n: org.memory_count?.danger ?? 0 })}>
+        <Tooltip tip={t('person.life.dangerTip', { count: formatNumber(org.memory_count?.danger ?? 0) })}>
           <span style={{ cursor: 'default' }}>
-            {t('person.memory.danger', { n: org.memory_count?.danger ?? 0 })}
+            {t('person.life.danger', { count: formatNumber(org.memory_count?.danger ?? 0) })}
           </span>
         </Tooltip>
       </div>
@@ -36,7 +36,7 @@ export function DeathSection({ org }: { org: OrganismState }) {
   if (!line) return null
   return (
     <>
-      <div className="org-detail-section">{t('person.death.title')}</div>
+      <div className="org-detail-section">{t('person.life.death')}</div>
       <div className="thought-row" style={{ marginBottom: 6 }}>
         <span className="thought-text">{line}</span>
       </div>
@@ -58,7 +58,7 @@ export function LifeStorySection({
   const family = familySentence(org, organisms ?? [])
   return (
     <>
-      <div className="org-detail-section">{t('person.story.title')}</div>
+      <div className="org-detail-section">{t('person.life.story')}</div>
       <ul className="life-story">
         {lines.map((line, i) => (
           <li key={i} className="thought-text">
@@ -84,11 +84,11 @@ export function RecentLifeSection({ detail }: { detail: OrgDetail | null }) {
     <>
       {history.length > 0 && (
         <>
-          <div className="org-detail-section">{t('person.recent.title')}</div>
+          <div className="org-detail-section">{t('person.life.recent')}</div>
           <div className="thought-history">
             {history.map((e, i) => (
               <div key={i} className="thought-row">
-                <span className="thought-tick">{t('person.tick', { tick: fmtNumber(e.tick) })}</span>
+                <span className="thought-tick">{t('person.life.tick', { tick: formatNumber(e.tick) })}</span>
                 <span className="thought-text">{simText('thought', e.text, { sex: sexOf(detail) })}</span>
               </div>
             ))}
@@ -108,11 +108,11 @@ export function WitnessedSection({ detail }: { detail: OrgDetail | null }) {
     <>
       {witnessed.length > 0 && (
         <>
-          <div className="org-detail-section">{t('person.witnessed.title')}</div>
+          <div className="org-detail-section">{t('person.life.witnessed')}</div>
           <div className="thought-history">
             {witnessed.map((e, i) => (
               <div key={i} className="thought-row">
-                <span className="thought-tick">{t('person.tick', { tick: fmtNumber(e.tick) })}</span>
+                <span className="thought-tick">{t('person.life.tick', { tick: formatNumber(e.tick) })}</span>
                 <span className="thought-text" style={{ color: '#bfa9d6' }}>
                   {simText('life', e.text, { sex: sexOf(detail) })}
                 </span>
@@ -142,14 +142,14 @@ export function InnerLifeSection({ detail }: { detail: OrgDetail | null }) {
           if (!oldest && !proudest && !heaviest) return null
           return (
             <>
-              <div className="org-detail-section">{t('person.inner.title')}</div>
+              <div className="org-detail-section">{t('person.life.innerLife')}</div>
               <div
                 style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 0', fontSize: 11 }}
               >
                 {oldest && oldest.kind !== 'core' && (
                   <div>
                     <span style={{ color: '#666', minWidth: 90, display: 'inline-block' }}>
-                      {t('person.inner.oldest')}
+                      {t('person.life.oldest')}
                     </span>
                     <span style={{ color: '#a8c0e0' }}>
                       {simText('memory', oldest.text, { sex: sexOf(detail) })}
@@ -159,7 +159,7 @@ export function InnerLifeSection({ detail }: { detail: OrgDetail | null }) {
                 {proudest && (
                   <div>
                     <span style={{ color: '#666', minWidth: 90, display: 'inline-block' }}>
-                      {t('person.inner.proudest')}
+                      {t('person.life.proudest')}
                     </span>
                     <span style={{ color: '#f6c46a' }}>
                       {simText('memory', proudest.text, { sex: sexOf(detail) })}
@@ -169,7 +169,7 @@ export function InnerLifeSection({ detail }: { detail: OrgDetail | null }) {
                 {heaviest && (
                   <div>
                     <span style={{ color: '#666', minWidth: 90, display: 'inline-block' }}>
-                      {t('person.inner.heaviest')}
+                      {t('person.life.heaviest')}
                     </span>
                     <span style={{ color: '#6090c0' }}>
                       {simText('memory', heaviest.text, { sex: sexOf(detail) })}

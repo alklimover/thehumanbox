@@ -5,7 +5,8 @@ import { Tooltip } from '../../toolbar/Tooltip'
 import { DAY_LENGTH, fmt } from './format'
 import { HomeButton } from './HomeButton'
 import type { OrganismState } from '../../../shared/types'
-import { t, tn } from '../../../i18n'
+import { shownGeneration } from '../../../game/model/generations'
+import { formatNumber, t } from '../../../i18n'
 
 export function OrgHeader({
   org,
@@ -18,7 +19,7 @@ export function OrgHeader({
   following,
   onFollow,
   onClose,
-  tn: tribeName,
+  tn,
 }: {
   org: OrganismState
   color: string
@@ -43,58 +44,55 @@ export function OrgHeader({
             {title}
           </span>
         ))}
-        {isSick && (
-          <span className="org-sick-badge">
-            {t(org.sex === 'female' ? 'panel.org.sickFemale' : 'panel.org.sick')}
-          </span>
-        )}
+        {isSick && <span className="org-sick-badge">{t('person.header.sick')}</span>}
         {carrying && (
-          <Tooltip tip={t('person.carryingWood')}>
+          <Tooltip tip={t('person.header.carrying')}>
             <span className="org-carrying-badge" style={{ cursor: 'default' }}>
               🪵
             </span>
           </Tooltip>
         )}
         <span className="org-detail-actions">
-          <Tooltip tip={isStarred ? t('person.unstar') : t('person.starTip')}>
+          <Tooltip tip={isStarred ? t('person.header.unstar') : t('person.header.starTip')}>
             <button
               className={clsx('icon-btn', isStarred && 'active-star')}
-              aria-label={isStarred ? t('person.unstar') : t('person.star')}
+              aria-label={isStarred ? t('person.header.unstar') : t('person.header.star')}
               onClick={() => toggleStar(org.id)}
             >
               {isStarred ? '★' : '☆'}
             </button>
           </Tooltip>
-          <Tooltip tip={t('person.lifeTip')}>
-            <button className="icon-btn" aria-label={t('person.lifeAria')} onClick={() => setShowLife(true)}>
+          <Tooltip tip={t('person.header.lifeTip')}>
+            <button
+              className="icon-btn"
+              aria-label={t('person.header.life')}
+              onClick={() => setShowLife(true)}
+            >
               📖
             </button>
           </Tooltip>
           <HomeButton org={org} />
-          <Tooltip tip={following ? t('person.following') : t('person.followTip')}>
+          <Tooltip tip={following ? t('person.header.following') : t('person.header.followTip')}>
             <button
               className={clsx('icon-btn', following && 'active')}
-              aria-label={following ? t('person.unfollow') : t('person.follow')}
+              aria-label={following ? t('person.header.unfollow') : t('person.header.follow')}
               onClick={() => onFollow(following ? null : org.id)}
             >
               ⊙
             </button>
           </Tooltip>
-          <button aria-label={t('common.close')} className="icon-btn icon-close" onClick={onClose}>
+          <button aria-label={t('person.header.close')} className="icon-btn icon-close" onClick={onClose}>
             ✕
           </button>
         </span>
       </div>
 
       <div className="org-detail-sub">
-        {t('person.gen', { n: org.generation })}
+        {t('person.header.gen', { generation: formatNumber(shownGeneration(org.generation)) })} ·{' '}
+        {ageInDays > 0 ? t('person.header.ageDays', { count: ageInDays }) : t('person.header.newborn')}
         {' · '}
-        {ageInDays > 0
-          ? tn('person.daysOld', ageInDays)
-          : t(org.sex === 'female' ? 'person.newbornFemale' : 'person.newborn')}
-        {' · '}
-        {tribeName(org.lineage_id)}
-        {org.max_age > 0 && t('person.maxAge', { age: fmt(org.max_age) })}
+        {tn(org.lineage_id)}
+        {org.max_age > 0 && ` · ${t('person.header.maxAge', { time: fmt(org.max_age) })}`}
       </div>
     </>
   )

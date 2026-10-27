@@ -1,4 +1,4 @@
-import { t } from '../../i18n'
+import { t, type MessageKey } from '../../i18n'
 import { SANDBOX_CATEGORIES, type SandboxCategory, type SandboxTool } from '../../simulation/sandbox'
 
 /**
@@ -8,53 +8,56 @@ import { SANDBOX_CATEGORIES, type SandboxCategory, type SandboxTool } from '../.
  *
  * Adding a tool:
  *   1. Add it to its category in `simulation/sandbox.ts`.
- *   2. Give it a sprite in `ToolSprite.tsx` and a line in `tool-tips.ts`.
+ *   2. Give it a sprite in `ToolSprite.tsx`, and its name and tip under `dock.tools` and `dock.tips`
+      in every language folder of `i18n/locales` (English is the source).
  *   3. If it needs a new effect when it lands, map it in `2d/world/SandboxBursts.tsx`.
  * Adding a category: create it in `sandbox.ts`, then list its id in one tab
  * below. `dock-tabs.test.ts` fails if any tool or category is left out.
  */
 export interface DockTab {
   id: string
-  label: string
+  /** A `dock.tabs` key: the word on the bar. */
+  label: MessageKey
   icon: string
-  tip: string
+  /** A `dock.tabTips` key: the tooltip. */
+  tip: MessageKey
   groups: string[]
 }
 
 export const DOCK_TABS: DockTab[] = [
   {
     id: 'life',
-    label: t('tools.tab.life'),
+    label: 'dock.tabs.life',
     icon: '🚶',
-    tip: t('tools.tabTip.life'),
+    tip: 'dock.tabTips.life',
     groups: ['life', 'monsters', 'animals', 'birds', 'reptiles', 'safari'],
   },
   {
     id: 'nature',
-    label: t('tools.tab.nature'),
+    label: 'dock.tabs.nature',
     icon: '⛰️',
-    tip: t('tools.tabTip.nature'),
+    tip: 'dock.tabTips.nature',
     groups: ['terrain', 'biomes', 'sky', 'miracles', 'eras'],
   },
   {
     id: 'resources',
-    label: t('tools.tab.resources'),
+    label: 'dock.tabs.resources',
     icon: '🍎',
-    tip: t('tools.tabTip.resources'),
+    tip: 'dock.tabTips.resources',
     groups: ['resources', 'build', 'good'],
   },
   {
     id: 'deadly',
-    label: t('tools.tab.deadly'),
+    label: 'dock.tabs.deadly',
     icon: '💀',
-    tip: t('tools.tabTip.deadly'),
+    tip: 'dock.tabTips.deadly',
     groups: ['bad'],
   },
   {
     id: 'world',
-    label: t('tools.tab.world'),
+    label: 'dock.tabs.world',
     icon: '🗺️',
-    tip: t('tools.tabTip.world'),
+    tip: 'dock.tabTips.world',
     groups: ['tribes', 'maps', 'view'],
   },
 ]
@@ -83,12 +86,23 @@ export function groupsFor(tabId: string): SandboxCategory[] {
   return tab.groups.flatMap((id) => SANDBOX_CATEGORIES.filter((c) => c.id === id))
 }
 
-/** The life tab's own group is its people; under the word "life" the chip says so. */
-const GROUP_LABELS: Record<string, string> = { life: t('tools.chip.life') }
+/** A tab's word in the active language. */
+export function tabLabel(id: string): string {
+  const tab = DOCK_TABS.find((x) => x.id === id)
+  return tab ? t(tab.label) : id
+}
 
-/** What a group's chip on the bar says. */
+/** A group's name in the active language. The life group's name is only its chip's: see groupLabel. */
+export function groupName(group: SandboxCategory): string {
+  const key = `dock.groups.${group.id}` as MessageKey
+  const text = t(key)
+  // t() hands back the key itself when no text exists for it.
+  return text === key ? group.label : text
+}
+
+/** What a group's chip on the bar says. The life tab's own group is its people. */
 export function groupLabel(group: SandboxCategory): string {
-  return GROUP_LABELS[group.id] ?? group.label
+  return group.id === 'life' ? t('dock.peopleGroup') : groupName(group)
 }
 
 /** The group a tab opens on: the remembered one while it is still in the tab, else its first. */
@@ -180,14 +194,24 @@ export function unseenNewToolsInGroup(groupId: string, seen: ReadonlySet<string>
   )
 }
 
-/** The new tools seen so far, from browser storage (empty when storage is unavailable). */
+/**
+ * The new tools seen so far, from browser storage. A player with no record has never seen the dock
+ * before, so nothing in it is new to them: the current new tools start out seen, and the marks only
+ * appear for tools added after that. Without storage the marks are hidden too, since they could
+ * never be cleared.
+ */
 export function readSeenNewTools(): Set<string> {
   try {
     const raw = window.localStorage.getItem(SEEN_NEW_STORAGE_KEY)
-    const ids: unknown = raw ? JSON.parse(raw) : []
+    if (raw === null) {
+      const first = new Set(NEW_TOOL_IDS)
+      window.localStorage.setItem(SEEN_NEW_STORAGE_KEY, JSON.stringify([...first]))
+      return first
+    }
+    const ids: unknown = JSON.parse(raw)
     return new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : [])
   } catch {
-    return new Set()
+    return new Set(NEW_TOOL_IDS)
   }
 }
 

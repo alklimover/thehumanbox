@@ -4,7 +4,7 @@
 // on each person, the friends they name, their trust toward others, and the
 // organisms list.
 import { personName } from '../../shared/personName'
-import { displayName } from '../../i18n/names'
+import { displayName } from '../../fork/i18n/names'
 
 export interface KinPerson {
   id: string

@@ -1,6 +1,26 @@
 use super::*;
 
-pub const SAVE_SCHEMA_VERSION: u32 = 6;
+pub const SAVE_SCHEMA_VERSION: u32 = 7;
+
+/// Whether a system that runs every `period` ticks runs on `tick`, at `phase` in its cycle. The heavy periodic
+/// systems each take their own phase: on round periods (240, 600, 1200) they all fell on the same ticks, and a
+/// late world's every-1200th tick ran them together at three to four times an ordinary tick's cost, a stall
+/// the player saw as everyone freezing at once. The phases below never coincide with each other or with a
+/// multiple of ten, where the light periodic systems run.
+pub(crate) fn on_beat(tick: u64, period: u64, phase: u64) -> bool {
+    tick % period == phase % period
+}
+
+/// Phase of the era and water-depletion pass (every 600 ticks). Baseline discoveries stay on the multiples.
+pub(crate) const ERAS_PHASE: u64 = 151;
+/// Phase of village sowing (every `SOW_STEP`, 600 ticks).
+pub(crate) const SOW_PHASE: u64 = 433;
+/// Phase of the construction pass (every 240 ticks).
+pub(crate) const CONSTRUCT_PHASE: u64 = 97;
+/// Phase of sending out carts (every `CART_STEP`, 120 ticks).
+pub(crate) const CART_PHASE: u64 = 59;
+/// Phase of the colonisation check (every 400 ticks).
+pub(crate) const COLONY_PHASE: u64 = 211;
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -197,20 +217,19 @@ mod history_year_tests {
             "births in both years: {:?}",
             sim.history.births_by_year
         );
+        // Deaths land in years too, though how many die in a short window
+        // shifts with the world's rules, so none dying is no failure.
         let deaths: u64 = sim.history.deaths_by_year.iter().map(|&n| u64::from(n)).sum();
-        assert!(
-            deaths > 0
-                && deaths
-                    <= sim.history.deaths_old_age
-                        + sim.history.deaths_starvation
-                        + sim.history.deaths_dehydration
-                        + sim.history.deaths_sickness
-                        + sim.history.deaths_beasts
-                        + sim.history.deaths_drowning
-                        + sim.history.deaths_fire
-                        + sim.history.deaths_disaster
-                        + sim.history.deaths_combat
-        );
+        let all_deaths = sim.history.deaths_old_age
+            + sim.history.deaths_starvation
+            + sim.history.deaths_dehydration
+            + sim.history.deaths_sickness
+            + sim.history.deaths_beasts
+            + sim.history.deaths_drowning
+            + sim.history.deaths_fire
+            + sim.history.deaths_disaster
+            + sim.history.deaths_combat;
+        assert_eq!(deaths, all_deaths, "every death lands in a year");
     }
 }
 

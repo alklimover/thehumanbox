@@ -118,17 +118,23 @@ mod wasm_facade {
             serde_json::to_vec(&self.inner.to_save_state()).unwrap_or_default()
         }
 
-        pub fn command(&mut self, json: &str) -> bool {
-            self.inner.apply_command_json(json)
+        /// Runs a player command and returns its outcome as JSON: `{"applied", "code", "count", "name"}`.
+        pub fn command(&mut self, json: &str) -> String {
+            let outcome = self.inner.apply_command_json_reported(json);
+            serde_json::to_string(&outcome).expect("command outcome serialization cannot fail")
         }
 
         #[wasm_bindgen(js_name = orgDetail)]
         pub fn org_detail(&self, id: &str) -> String {
-            self.inner
-                .organisms
+            let organisms = &self.inner.organisms;
+            organisms
                 .iter()
                 .find(|org| org.id == id)
-                .and_then(|org| serde_json::to_string(&org.to_detail_json()).ok())
+                .and_then(|org| {
+                    let mut detail = org.to_detail_json();
+                    detail.family_words = crate::organism::family_words::family_words(org, organisms);
+                    serde_json::to_string(&detail).ok()
+                })
                 .unwrap_or_default()
         }
 

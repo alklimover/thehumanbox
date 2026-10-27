@@ -2,12 +2,12 @@
 // (apps/server/src/fork_chronicle). Entries arrive newest first, in English as
 // the simulation wrote them; they are grouped by calendar year here and
 // translated only when shown.
-import { calendarSeasonAt, YEAR_TICKS } from '../../game/model/calendar'
-import { getLocale, t, tn, type MessageKey } from '../../i18n'
-import { displayName } from '../../i18n/names'
-import { simLabel } from '../../i18n/sim'
-import { milestoneDescription } from '../../i18n/sim/milestone'
-import { simActor, simText, type Sex } from '../../i18n/simtext'
+import { SEASON_TICKS, YEAR_TICKS } from '../../game/model/calendar'
+import { ft, ftn, getLocale, type ForkMessageKey } from '../i18n'
+import { displayName } from '../i18n/names'
+import { simLabel } from '../i18n/sim'
+import { milestoneDescription } from '../i18n/sim/milestone'
+import { simActor, simText, type Sex } from '../i18n/simtext'
 
 export interface ChronicleTribeLink {
   id: string
@@ -71,7 +71,7 @@ export const DEFAULT_CATEGORIES: readonly ChronicleCategory[] = CATEGORIES.filte
   (c) => c !== 'people' && c !== 'nature' && c !== 'prayers',
 )
 
-export const CATEGORY_LABEL: Record<ChronicleCategory, MessageKey> = {
+export const CATEGORY_LABEL: Record<ChronicleCategory, ForkMessageKey> = {
   eras: 'chronicle.cat.eras',
   war: 'chronicle.cat.war',
   faith: 'chronicle.cat.faith',
@@ -113,7 +113,15 @@ export const CATEGORY_COLOR: Record<string, string> = {
   other: '#998',
 }
 
-const SEASON_KEY: Record<string, MessageKey> = {
+/** The simulation's seasons in the order a year runs through them (game/model/calendar.ts). */
+const SEASON_ORDER = ['abundance', 'decline', 'scarcity', 'recovery'] as const
+
+function calendarSeasonAt(tick: number): (typeof SEASON_ORDER)[number] {
+  const ticks = Math.max(0, Math.floor(tick))
+  return SEASON_ORDER[Math.floor((ticks % YEAR_TICKS) / SEASON_TICKS) % SEASON_ORDER.length]
+}
+
+const SEASON_KEY: Record<string, ForkMessageKey> = {
   abundance: 'calendar.season.abundance',
   decline: 'calendar.season.decline',
   scarcity: 'calendar.season.scarcity',
@@ -127,7 +135,7 @@ export function yearOf(tick: number): number {
 
 /** The season's name for a row ("Winter", «зима»). */
 export function seasonOf(tick: number): string {
-  return t(SEASON_KEY[calendarSeasonAt(tick)])
+  return ft(SEASON_KEY[calendarSeasonAt(tick)])
 }
 
 export interface YearGroup {
@@ -247,9 +255,9 @@ export function entryText(
 ): string {
   if (e.src === 'server' && e.kind === 'died_out') {
     const name = displayName(e.tribes[0]?.name ?? e.actor)
-    return peak > 0 ? tn('chronicle.diedOutPeak', peak, { name }) : t('chronicle.diedOut', { name })
+    return peak > 0 ? ftn('chronicle.diedOutPeak', peak, { name }) : ft('chronicle.diedOut', { name })
   }
-  if (e.src === 'era') return t('chronicle.worldEra', { era: simLabel('era', e.text) })
+  if (e.src === 'era') return ft('chronicle.worldEra', { era: simLabel('era', e.text) })
   if (e.src === 'headline' && getLocale() === 'en') {
     const milestone = milestoneLine(e.text)
     if (milestone) return milestone
@@ -353,7 +361,7 @@ export function tribeOptions(
     .map((tr) => {
       const diedOut = isDiedOut(tr.id, tribes, alive)
       const name = displayName(tr.name)
-      return { id: tr.id, label: diedOut ? `${name} ${t('chronicle.diedOutMark')}` : name, diedOut }
+      return { id: tr.id, label: diedOut ? `${name} ${ft('chronicle.diedOutMark')}` : name, diedOut }
     })
     .sort((a, b) => Number(a.diedOut) - Number(b.diedOut) || a.label.localeCompare(b.label))
 }

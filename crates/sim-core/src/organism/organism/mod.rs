@@ -132,6 +132,8 @@ pub struct Organism {
     pub last_area_cell: (i32, i32),
     pub wander_target: Option<(i32, i32)>,
     pub journey: Option<Journey>,
+    /// Today's stint of everyday work, if any (see `sim::agents::daily_work`). Runtime only.
+    pub work: Option<crate::sim::agents::daily_work::WorkPlan>,
     /// Remembered route around obstacles; runtime only, never saved.
     pub route: std::cell::RefCell<super::navigation::RouteCache>,
     pub last_groomed: u64,
@@ -167,6 +169,10 @@ pub struct Organism {
     /// Practice in each trade this person has worked at, 0 to 1. Grows with
     /// every attempt at the trade's actions and is kept when they change job.
     pub practice: BTreeMap<String, f32>,
+    /// What this person has learned to do by doing it or watching others (see `organism::skills`).
+    pub skills: super::skills::Skills,
+    /// What the deaths they have seen taught them (see `organism::lessons`).
+    pub lessons: super::lessons::Lessons,
     pub religion_id: Option<String>,
     pub degrees: Vec<String>,
     pub tools: BTreeMap<String, u8>,
@@ -282,6 +288,7 @@ impl Organism {
             last_area_cell: (x as i32, y as i32),
             wander_target: None,
             journey: None,
+            work: None,
             route: Default::default(),
             last_groomed: 0,
             last_fed_kin: 0,
@@ -306,6 +313,8 @@ impl Organism {
             piety: 0.0,
             specialty: None,
             practice: BTreeMap::new(),
+            skills: Default::default(),
+            lessons: Default::default(),
             religion_id: None,
             degrees: Vec::new(),
             tools: BTreeMap::new(),

@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { WorldState, GridState, OrganismState, AnimalState, OrgDetail, OrgLife } from '../shared/types'
 import { WS_BASE, API_BASE, IS_LOCAL_SERVER, sandboxHeaders } from '../shared/config'
+import { FAILED_OUTCOME, parseCommandOutcome, type CommandOutcome } from './command-outcome'
 import { useWorldStore } from '../state/worldStore'
+import { useUIStore } from '../state/store'
 import { binaryFramesReady, fetchSnapshotWithProgress, loadBinaryFrameDecoder, parseWorldFrame } from './wire'
 import { mergeFrame, type MergeCaches } from './merge'
 import { signalSimFrame } from './frame-signal'
+import { t } from '../i18n'
+import { ft } from '../fork/i18n'
 import { logger } from '../shared/logger'
+import { showNotice } from '../shared/confirm'
+import { judgeHandshake, type HandshakeVerdict } from './wire-protocol'
 import {
   type LocalWorldReloadDetail,
   type WorldSource,
@@ -15,15 +21,17 @@ import {
   clearOwnWorldRecoveryRequest,
   clearOwnWorldResetRequest,
   getOwnWorldSeed,
+  setOwnWorldSeed,
   getOwnWorldRecoveryRequest,
   hasOwnWorldResetRequest,
 } from './worldSource'
 import { canSendSandboxCommand, type SandboxCommand } from './sandbox'
 import { isDesktop } from '../shared/desktop'
 import { isDesktopStartupPending } from '../shared/desktopStartup'
+import { readRunInBackground, RUN_IN_BACKGROUND_EVENT } from '../shared/run-in-background'
 import { localSaveWorkerRequest } from './wasmPersistence'
 import { FrameSequence } from './frameSequence'
-import { getLocale, t } from '../i18n'
+import { getLocale } from '../fork/i18n/locale'
 import {
   fetchRuntimeControlState,
   WASM_BASE_TICK_MS,
@@ -70,7 +78,7 @@ export function useSimulation(source: WorldSource = 'native'): {
   idleParked: boolean
   resume: () => Promise<boolean>
   sandboxAvailable: boolean
-  sendCommand: (cmd: SandboxCommand) => Promise<boolean>
+  sendCommand: (cmd: SandboxCommand) => Promise<CommandOutcome>
   pauseSim: () => Promise<boolean>
   setSpeed: (mult: number) => Promise<boolean>
   runtimeState: RuntimeState
@@ -149,7 +157,7 @@ export function useSimulation(source: WorldSource = 'native'): {
       // A hidden or minimized window gets no animation frames, so nothing drains the queue
       // while a local server keeps broadcasting. Buffering would overflow it and re-download
       // the snapshot in a loop; drop the frame and let the visibility handler resync once
-      // (the wasm worker pauses itself when hidden and never fetches snapshots).
+      // (the wasm worker pauses, or stops sending frames, while hidden and never fetches snapshots).
       if (effectiveSource !== 'wasm' && document.hidden) {
         frameSequenceRef.current.markAwaitingFullFrame()
         return
@@ -188,6 +196,7 @@ export function useSimulation(source: WorldSource = 'native'): {
     function requestSnapshotResync(force = false) {
       if (effectiveSource === 'wasm') return
       if (destroyed) return
+      if (versionRefused) return
       if (snapshotPendingRef.current) {
         if (!force) return
         if (snapshotAbort) snapshotAbort.abort()
@@ -367,6 +376,8 @@ export function useSimulation(source: WorldSource = 'native'): {
           paused?: boolean
           tickMs?: number
           speed?: number
+          seed?: string
+          outcome?: unknown
         }
         if (m.type === 'frame' && (typeof m.frame === 'string' || m.frame instanceof Uint8Array)) {
           if (!announced) {
@@ -392,6 +403,11 @@ export function useSimulation(source: WorldSource = 'native'): {
         } else if (m.type === 'reset_done') {
           clearOwnWorldResetRequest()
         } else if (m.type === 'recovery_done') {
+          // The restored world may have another seed; the word-split and other per-world watches read it from here.
+          if (typeof m.seed === 'string') {
+            setOwnWorldSeed(m.seed)
+            useUIStore.getState().bindStarredWorld(m.seed)
+          }
           clearOwnWorldRecoveryRequest()
         } else if (m.type === 'recovery_cancelled') {
           clearOwnWorldRecoveryRequest()
@@ -415,6 +431,7 @@ export function useSimulation(source: WorldSource = 'native'): {
             pendingWorkerRequests.delete(m.requestId)
             pending.resolve({
               ok: m.ok === true,
+              outcome: m.outcome && typeof m.outcome === 'object' ? (m.outcome as CommandOutcome) : undefined,
               paused: typeof m.paused === 'boolean' ? m.paused : undefined,
               speed:
                 typeof m.speed === 'number' && Number.isFinite(m.speed) && m.speed > 0
@@ -454,13 +471,24 @@ export function useSimulation(source: WorldSource = 'native'): {
         setLocalSaveStatus({
           phase: 'error',
           fatal: true,
-          message: e.message || t('errors.worker.stopped'),
+          message: e.message || ft('errors.worker.stopped'),
         })
       }
+      const postVisibility = () =>
+        worker.postMessage({
+          type: 'visibility',
+          hidden: document.visibilityState === 'hidden',
+          keepRunning: readRunInBackground(),
+        })
+      // A page opened in a background tab gets no visibilitychange, so say where it starts.
+      postVisibility()
+      const ownSeed = getOwnWorldSeed()
+      // Stars belong to the world they were made in; a world that starts with another seed is a new one.
+      useUIStore.getState().bindStarredWorld(ownSeed)
       worker.postMessage({
         type: 'start',
         id: OWN_WORLD_ID,
-        seed: getOwnWorldSeed(),
+        seed: ownSeed,
         reset: hasOwnWorldResetRequest(),
         recoveryId: getOwnWorldRecoveryRequest(),
         locale: getLocale(),
@@ -533,7 +561,7 @@ export function useSimulation(source: WorldSource = 'native'): {
             setLocalSaveStatus({
               phase: 'error',
               retryable: true,
-              message: request.detail?.failureMessage ?? t('errors.checkpoint.reload'),
+              message: request.detail?.failureMessage ?? t('dialogs.worldNotice.checkpointRefresh'),
             })
           }
         })
@@ -542,15 +570,12 @@ export function useSimulation(source: WorldSource = 'native'): {
       window.addEventListener(LOCAL_WORLD_RELOAD_EVENT, onSafeReloadRequest)
 
       const onVisibility = () => {
-        if (document.visibilityState === 'hidden') {
-          worker.postMessage({ type: 'save' })
-          worker.postMessage({ type: 'visibility', hidden: true })
-        } else {
-          worker.postMessage({ type: 'visibility', hidden: false })
-        }
+        if (document.visibilityState === 'hidden') worker.postMessage({ type: 'save' })
+        postVisibility()
       }
       const onPageHide = () => worker.postMessage({ type: 'save' })
       document.addEventListener('visibilitychange', onVisibility)
+      window.addEventListener(RUN_IN_BACKGROUND_EVENT, postVisibility)
       window.addEventListener('pagehide', onPageHide)
       resumeRef.current = () => {
         setIdleParked(false)
@@ -560,6 +585,7 @@ export function useSimulation(source: WorldSource = 'native'): {
       return () => {
         destroyed = true
         document.removeEventListener('visibilitychange', onVisibility)
+        window.removeEventListener(RUN_IN_BACKGROUND_EVENT, postVisibility)
         window.removeEventListener('pagehide', onPageHide)
         window.removeEventListener(LOCAL_WORLD_CHECKPOINT_EVENT, onCheckpointRequest)
         window.removeEventListener(LOCAL_WORLD_RELOAD_EVENT, onSafeReloadRequest)
@@ -625,6 +651,10 @@ export function useSimulation(source: WorldSource = 'native'): {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let healthyTimer: ReturnType<typeof setTimeout> | null = null
     let attempts = 0
+    // Set once a server has been refused for speaking another protocol: reconnecting would only refuse it again.
+    let versionRefused = false
+    // The socket whose hello was accepted. Only it may fetch a snapshot or resync from the window events.
+    let acceptedSocket: WebSocket | null = null
     // A socket only counts as reachable once it has stayed open this long; a server that
     // accepts and immediately closes (overload shedding, proxy idle kill) keeps its backoff.
     const HEALTHY_AFTER_MS = 5_000
@@ -649,6 +679,7 @@ export function useSimulation(source: WorldSource = 'native'): {
 
     function connect() {
       if (destroyed) return
+      if (versionRefused) return
       const existing = wsRef.current
       if (
         existing &&
@@ -689,7 +720,6 @@ export function useSimulation(source: WorldSource = 'native'): {
           attempts = 0
           setFailedAttempts(0)
         }, HEALTHY_AFTER_MS)
-        requestSnapshotResync()
       }
       ws.onclose = () => {
         if (destroyed) return
@@ -700,6 +730,7 @@ export function useSimulation(source: WorldSource = 'native'): {
           healthyTimer = null
         }
         setConnected(false)
+        if (versionRefused) return
         attempts += 1
         setFailedAttempts(attempts)
         if (rafPending.current !== null) {
@@ -717,9 +748,42 @@ export function useSimulation(source: WorldSource = 'native'): {
           /* noop */
         }
       }
+      // The first message must be the server's hello. Until it has been judged, nothing is decoded.
+      let handshaken = false
       ws.onmessage = (e) => {
         if (destroyed) return
+        if (!handshaken) {
+          const verdict = judgeHandshake(e.data)
+          if (!verdict.ok) {
+            refuseServer(ws, verdict)
+            return
+          }
+          // Only a server that has said hello gets a snapshot fetch or its frames; the fetch is what brings
+          // the world in, so a refused server cannot feed the window either.
+          handshaken = true
+          acceptedSocket = ws
+          requestSnapshotResync()
+          return
+        }
         enqueueMessage(e.data)
+      }
+    }
+
+    /** A server that cannot be read: say so once, stop the socket, and do not reconnect to it. */
+    function refuseServer(ws: WebSocket, verdict: Extract<HandshakeVerdict, { ok: false }>) {
+      versionRefused = true
+      // A snapshot still downloading from an earlier connection must not land after the refusal.
+      if (snapshotAbort) snapshotAbort.abort()
+      logger.error('ws', 'simulation server refused: it speaks another wire protocol', verdict)
+      const server =
+        verdict.reason === 'protocol'
+          ? t('dialogs.worldNotice.versionNumber', { version: verdict.server.version })
+          : t('dialogs.worldNotice.versionOlder')
+      void showNotice(t('dialogs.worldNotice.versionTitle'), t('dialogs.worldNotice.versionBody', { server }))
+      try {
+        ws.close()
+      } catch {
+        /* noop */
       }
     }
 
@@ -810,7 +874,8 @@ export function useSimulation(source: WorldSource = 'native'): {
         }
         reconnectDelayMs = 1000
         connect()
-      } else if (ws && ws.readyState === WebSocket.OPEN) {
+      } else if (ws && ws.readyState === WebSocket.OPEN && ws === acceptedSocket) {
+        // A socket that has not said hello yet gets its snapshot from the hello path, not from here.
         requestSnapshotResync(true)
       }
     }
@@ -869,10 +934,30 @@ export function useSimulation(source: WorldSource = 'native'): {
     }
   }, [effectiveSource])
 
+  const requestCommandFromWasm = useCallback((json: string): Promise<CommandOutcome> => {
+    const worker = wasmWorkerRef.current
+    if (!worker) return Promise.resolve(FAILED_OUTCOME)
+    const requestId = nextWorkerRequestRef.current++
+    return new Promise<CommandOutcome>((resolve) => {
+      const timer = setTimeout(() => {
+        pendingWorkerRequestsRef.current.delete(requestId)
+        resolve(FAILED_OUTCOME)
+      }, 5000)
+      pendingWorkerRequestsRef.current.set(requestId, {
+        resolve: (result) =>
+          resolve(
+            result.outcome ??
+              (result.ok ? { applied: true, code: 'applied', count: 0, name: null } : FAILED_OUTCOME),
+          ),
+        timer,
+      })
+      worker.postMessage({ type: 'command', json, requestId })
+    })
+  }, [])
+
   const requestFromWasm = useCallback(
     (
       payload:
-        | { type: 'command'; json: string }
         | { type: 'save' }
         | { type: 'retry_storage' }
         | { type: 'pause' }
@@ -1018,7 +1103,7 @@ export function useSimulation(source: WorldSource = 'native'): {
     setLocalSaveStatus({ phase: 'saving', tick })
     try {
       const response = await fetch(`${API_BASE}/save`, { method: 'POST', headers: sandboxHeaders() })
-      if (!response.ok) throw new Error(t('errors.save.failedStatus', { status: String(response.status) }))
+      if (!response.ok) throw new Error(ft('errors.save.failedStatus', { status: String(response.status) }))
       const result = (await response.json()) as { tick?: number; saved_at?: number }
       setLocalSaveStatus({
         phase: 'saved',
@@ -1029,7 +1114,7 @@ export function useSimulation(source: WorldSource = 'native'): {
     } catch (error) {
       setLocalSaveStatus({
         phase: 'error',
-        message: error instanceof Error ? error.message : t('errors.save.failed'),
+        message: error instanceof Error ? error.message : ft('errors.save.failed'),
       })
       return false
     }
@@ -1071,10 +1156,10 @@ export function useSimulation(source: WorldSource = 'native'): {
     saveLocalWorld,
     loadLocalOrgDetail,
     loadLocalOrgLife,
-    sendCommand: async (cmd: SandboxCommand) => {
-      if (!sandboxAvailable) return false
+    sendCommand: async (cmd: SandboxCommand): Promise<CommandOutcome> => {
+      if (!sandboxAvailable) return FAILED_OUTCOME
       if (effectiveSource === 'wasm') {
-        return requestFromWasm({ type: 'command', json: JSON.stringify(cmd) })
+        return requestCommandFromWasm(JSON.stringify(cmd))
       }
       try {
         const res = await fetch(`${API_BASE}/command`, {
@@ -1082,9 +1167,11 @@ export function useSimulation(source: WorldSource = 'native'): {
           headers: sandboxHeaders({ 'content-type': 'application/json' }),
           body: JSON.stringify(cmd),
         })
-        return res.ok
+        const outcome = parseCommandOutcome(await res.text())
+        if (outcome) return outcome
+        return res.ok ? { applied: true, code: 'applied', count: 0, name: null } : FAILED_OUTCOME
       } catch {
-        return false
+        return FAILED_OUTCOME
       }
     },
     pauseSim,

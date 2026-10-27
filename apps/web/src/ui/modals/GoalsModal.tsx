@@ -1,31 +1,21 @@
-import { calendarAt } from '../../game/model/calendar'
-import { goalTitle } from '../../i18n/goals'
-import { DIFFICULTY_ORDER, goalFraction, goalsSummary } from '../../game/model/goals'
-import { t, type MessageKey } from '../../i18n'
-import type { Difficulty, GoalStatus, WorldState } from '../../shared/types'
+import { useEffect, useRef, useState } from 'react'
+import {
+  DIFFICULTY_NOTES,
+  DIFFICULTY_ORDER,
+  goalFraction,
+  goalProgressText,
+  goalsSummary,
+} from '../../game/model/goals'
+import type { Difficulty, WorldState } from '../../shared/types'
 import { sendSandboxCommand } from '../../simulation/commandBus'
+import { t, type MessageKey } from '../../i18n'
 import { Modal } from './Modal'
+import { goalTitle } from '../../fork/i18n/goals'
 
-const DIFFICULTY: Record<Difficulty, { label: MessageKey; note: MessageKey }> = {
-  calm: { label: 'goals.difficulty.calm', note: 'goals.difficulty.calm.note' },
-  normal: { label: 'goals.difficulty.normal', note: 'goals.difficulty.normal.note' },
-  harsh: { label: 'goals.difficulty.harsh', note: 'goals.difficulty.harsh.note' },
-}
-
-/** How many goals are met, or the day the world was lost. */
-function headline(done: number, total: number, lostTick: number | null | undefined): string {
-  if (lostTick != null) {
-    const date = calendarAt(lostTick)
-    return t('goals.lostOn', { year: date.year, season: date.season, day: date.dayOfSeason })
-  }
-  return total === 0 ? t('goals.none') : t('goals.met', { done, total })
-}
-
-/** The goal's progress as words: "3 of 5", "not yet", "met". */
-function progressText(goal: GoalStatus): string {
-  if (goal.done) return t('goals.progress.met')
-  if (goal.target === 1) return t('goals.progress.notYet')
-  return t('goals.progress.count', { progress: goal.progress, target: goal.target })
+const DIFFICULTY_LABEL: Record<Difficulty, MessageKey> = {
+  calm: 'dialogs.goals.levels.calm',
+  normal: 'dialogs.goals.levels.normal',
+  harsh: 'dialogs.goals.levels.harsh',
 }
 
 interface Props {
@@ -38,23 +28,52 @@ export function GoalsModal({ world, onClose }: Props) {
   const goals = world.goals ?? []
   const difficulty: Difficulty = world.difficulty ?? 'normal'
   const summary = goalsSummary(goals, world.lost_tick)
+  // The level the player has just asked for, while the world answers.
+  const [sending, setSending] = useState<Difficulty | null>(null)
+  // The world turned the last choice down. The buttons still show the old level, so say so.
+  const [refused, setRefused] = useState(false)
+  const open = useRef(true)
+  useEffect(() => {
+    open.current = true
+    return () => {
+      open.current = false
+    }
+  }, [])
+
+  const choose = (level: Difficulty) => {
+    if (sending) return
+    setRefused(false)
+    setSending(level)
+    sendSandboxCommand({ cmd: 'set_difficulty', level }).then(
+      (ok) => {
+        if (!open.current) return
+        setSending(null)
+        setRefused(!ok)
+      },
+      () => {
+        if (!open.current) return
+        setSending(null)
+        setRefused(true)
+      },
+    )
+  }
 
   return (
     <Modal
       open
       onClose={onClose}
       className="achievements-modal goals-modal"
-      title={t('goals.title')}
+      title={t('dialogs.goals.title')}
       hideTitle
     >
       <div className="lang-modal-header">
-        <span className="lang-modal-title">{t('goals.heading')}</span>
-        <span className="tree-modal-sub">{headline(summary.done, summary.total, world.lost_tick)}</span>
+        <span className="lang-modal-title">{t('dialogs.goals.heading')}</span>
+        <span className="tree-modal-sub">{summary.headline}</span>
       </div>
 
       {summary.lost && (
         <p role="status" data-testid="goals-lost" style={{ color: '#e07060', margin: '10px 0 0' }}>
-          {t('goals.lost')}
+          {t('dialogs.goals.lost')}
         </p>
       )}
 
@@ -70,7 +89,7 @@ export function GoalsModal({ world, onClose }: Props) {
                 {g.done ? '★ ' : '☆ '}
                 {goalTitle(g)}
               </span>
-              <span className="tree-modal-sub">{progressText(g)}</span>
+              <span className="tree-modal-sub">{goalProgressText(g)}</span>
             </div>
             <div
               aria-hidden="true"
@@ -90,23 +109,27 @@ export function GoalsModal({ world, onClose }: Props) {
 
       <div style={{ marginTop: 14 }}>
         <div className="tree-modal-sub" style={{ marginBottom: 6 }}>
-          {t('goals.difficulty', { note: t(DIFFICULTY[difficulty].note) })}
+          {t('dialogs.goals.difficulty', { notes: t(DIFFICULTY_NOTES[difficulty]) })}
         </div>
-        <div role="group" aria-label={t('goals.difficulty.aria')} style={{ display: 'flex', gap: 6 }}>
+        <div role="group" aria-label={t('dialogs.goals.difficultyGroup')} style={{ display: 'flex', gap: 6 }}>
           {DIFFICULTY_ORDER.map((level) => (
             <button
               key={level}
               type="button"
               className="lang-btn"
               aria-pressed={level === difficulty}
-              onClick={() => {
-                void sendSandboxCommand({ cmd: 'set_difficulty', level })
-              }}
+              disabled={sending !== null}
+              onClick={() => choose(level)}
             >
-              {t(DIFFICULTY[level].label)}
+              {t(DIFFICULTY_LABEL[level])}
             </button>
           ))}
         </div>
+        {refused && (
+          <p role="alert" style={{ color: '#e07060', fontSize: 11, margin: '8px 0 0' }}>
+            {t('dialogs.goals.difficultyRefused')}
+          </p>
+        )}
       </div>
     </Modal>
   )

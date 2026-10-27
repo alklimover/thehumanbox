@@ -4,6 +4,7 @@ import { API_BASE } from '../../shared/config'
 import { useUIStore } from '../../state/store'
 import { useSimulationData } from '../../simulation/simulationData'
 import { t } from '../../i18n'
+import { ft } from '../../fork/i18n'
 
 interface Props {
   onClose: () => void
@@ -59,7 +60,7 @@ export function AboutModal({ onClose }: Props) {
     <Modal open onClose={onClose} className="about-modal" title={t('dialogs.about.title')} hideTitle>
       <div className="about-head">
         <span className="about-title">{t('dialogs.about.heading')}</span>
-        <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
+        <button aria-label={t('dialogs.about.close')} className="close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
@@ -83,11 +84,11 @@ export function AboutModal({ onClose }: Props) {
             {!apiEnabled ? (
               <div className="about-grid">
                 <span className="about-k">{t('dialogs.about.runtime')}</span>
-                <span className="about-v">{t('dialogs.about.localRuntime')}</span>
+                <span className="about-v">{t('dialogs.about.runtimeLocal')}</span>
               </div>
             ) : (
               <>
-                {error && <div className="about-err">{t('dialogs.about.versionFailed', { error })}</div>}
+                {error && <div className="about-err">{t('dialogs.about.versionError', { error })}</div>}
                 {!error && !backend && <div className="about-loading">{t('dialogs.about.loading')}</div>}
               </>
             )}
@@ -113,7 +114,7 @@ export function AboutModal({ onClose }: Props) {
           <a href="https://github.com/1homsi/xip" target="_blank" rel="noreferrer">
             xipjs
           </a>
-          <span className="about-built-with-detail">{t('dialogs.about.engine')}</span>
+          <span className="about-built-with-detail">{t('dialogs.about.engineDetail')}</span>
         </div>
 
         <div className="about-section">{t('dialogs.about.links')}</div>
@@ -121,12 +122,12 @@ export function AboutModal({ onClose }: Props) {
           <a href="https://github.com/alklimover/thehumanbox" target="_blank" rel="noreferrer">
             github.com/alklimover/thehumanbox
           </a>
-          <span className="about-built-with-detail">{t('dialogs.about.fork')}</span>
+          <span className="about-built-with-detail">{ft('dialogs.about.fork')}</span>
           <br />
           <a href="https://github.com/1homsi/thehumanbox" target="_blank" rel="noreferrer">
             github.com/1homsi/thehumanbox
           </a>
-          <span className="about-built-with-detail">{t('dialogs.about.original')}</span>
+          <span className="about-built-with-detail">{ft('dialogs.about.original')}</span>
         </div>
       </div>
     </Modal>

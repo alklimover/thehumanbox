@@ -4,8 +4,8 @@ import { useUIStore } from '../../state/store'
 import { useWorldStore } from '../../state/worldStore'
 import { EVENT_ICONS, EVENT_COLORS } from '../../shared/constants'
 import { eventTarget } from '../../game/model/event-target'
-import { fmtNumber, t } from '../../i18n'
-import { sexByName, simActor, simText } from '../../i18n/simtext'
+import { formatNumber, t } from '../../i18n'
+import { sexByName, simActor, simText } from '../../fork/i18n/simtext'
 
 /** Rows about the player's own role: prayers and how they ended. */
 const GODLY = new Set(['prayer', 'answered', 'forsaken'])
@@ -23,13 +23,12 @@ function goTo(event: SimEvent) {
 }
 
 export function EventRow({ event }: { event: SimEvent }) {
-  const actorSex = sexByName(useWorldStore.getState().world?.organisms)(event.actor)
   return (
     <div
       className={'event-row' + (GODLY.has(event.type) ? ' godly' : '')}
       role="button"
       tabIndex={0}
-      title={t('panel.events.goThere')}
+      title={t('panels.eventRow.goThere')}
       onClick={() => goTo(event)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -38,12 +37,16 @@ export function EventRow({ event }: { event: SimEvent }) {
         }
       }}
     >
-      <span className="event-tick">{fmtNumber(event.tick)}</span>
+      <span className="event-tick">{formatNumber(event.tick)}</span>
       <span className="event-icon" style={{ color: EVENT_COLORS[event.type] }}>
         {EVENT_ICONS[event.type]}
       </span>
       <span className="event-actor">{simActor(event.actor)}</span>
-      <span className="event-detail">{simText('event', event.detail, { sex: actorSex })}</span>
+      <span className="event-detail">
+        {simText('event', event.detail, {
+          sex: sexByName(useWorldStore.getState().world?.organisms)(event.actor),
+        })}
+      </span>
     </div>
   )
 }

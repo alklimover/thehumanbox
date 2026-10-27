@@ -1,5 +1,5 @@
-import { t } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
+import { ft } from '../../fork/i18n'
+import { simLabel } from '../../fork/i18n/sim'
 
 /** Each tribe guidance's map mark; `label` is its name as shown (simLabel 'strategy'). */
 export const STRATEGY_VISUALS = {
@@ -98,5 +98,5 @@ export function strategyBeaconPositions(
 
 export function strategyTimeLabel(ticksRemaining: number): string {
   const days = Math.max(1, Math.ceil(ticksRemaining / 600))
-  return t('model.strategy.days', { days })
+  return ft('model.strategy.days', { days })
 }

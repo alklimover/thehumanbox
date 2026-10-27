@@ -19,10 +19,9 @@ import { lineageColor } from '../../shared/constants'
 import { useFrozenSnapshot } from '../../shared/hooks/useFrozenSnapshot'
 import { Modal } from './Modal'
 import { shownGeneration } from '../../game/model/generations'
-import { fmtNumber, t, tn } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
-import { sexOf, simText } from '../../i18n/simtext'
-import { displayName } from '../../i18n/names'
+import { formatNumber, t } from '../../i18n'
+import { sexOf, simText } from '../../fork/i18n/simtext'
+import { displayName } from '../../fork/i18n/names'
 
 // Namespace shim so the rest of the file keeps using d3.X.* without
 // a sweep; tree-shaking still drops everything we don't list above.
@@ -292,7 +291,11 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
     ctx.fillStyle = '#3a3028'
     ctx.textAlign = 'left'
     for (const lbl of generationLabels) {
-      ctx.fillText(t('tree.generation', { n: lbl.gen }), lbl.x, lbl.y - NODE_R - 6)
+      ctx.fillText(
+        t('dialogs.tree.generation', { gen: formatNumber(shownGeneration(lbl.gen)) }),
+        lbl.x,
+        lbl.y - NODE_R - 6,
+      )
     }
 
     ctx.lineWidth = 1.2
@@ -422,7 +425,10 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
         ctx.font = '8px monospace'
         ctx.fillStyle = '#4a3e35'
         ctx.fillText(
-          t('tree.nodeMeta', { days: Math.floor(org.age / DAY_LENGTH), gen: org.generation }),
+          t('dialogs.tree.ageGen', {
+            days: formatNumber(Math.floor(org.age / DAY_LENGTH)),
+            gen: formatNumber(shownGeneration(org.generation)),
+          }),
           x,
           y + NODE_R + 24,
         )
@@ -527,21 +533,21 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
   const hovered = hoverId != null ? (organisms.find((o) => o.id === hoverId) ?? null) : null
 
   return (
-    <Modal open onClose={onClose} className="tree-modal" title={t('tree.title')} hideTitle>
+    <Modal open onClose={onClose} className="tree-modal" title={t('dialogs.tree.title')} hideTitle>
       <div className="lang-modal-header">
-        <span className="lang-modal-title">{t('tree.heading')}</span>
+        <span className="lang-modal-title">{t('dialogs.tree.heading')}</span>
         <span className="tree-modal-sub">
-          {t('tree.sub', {
-            alive: organisms.filter((o) => o.alive).length,
-            dead: organisms.filter((o) => !o.alive).length,
-            generations: (maxGen ?? 0) + 1,
+          {t('dialogs.tree.summary', {
+            alive: formatNumber(organisms.filter((o) => o.alive).length),
+            ancestors: formatNumber(organisms.filter((o) => !o.alive).length),
+            generations: formatNumber((maxGen ?? 0) + 1),
           })}
         </span>
         <div className="modal-header-actions">
-          <button className="reload-btn" onClick={reload} title={t('modals.reload')}>
+          <button className="reload-btn" onClick={reload} title={t('dialogs.tree.reload')}>
             ⟳
           </button>
-          <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
+          <button aria-label={t('dialogs.tree.close')} className="close-btn" onClick={onClose}>
             ✕
           </button>
         </div>
@@ -561,14 +567,11 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
             )}
             <span style={{ color: '#666' }}>
               {' '}
-              ·{' '}
-              {t('tree.meta', {
-                gen: shownGeneration(hovered.generation),
-                days: Math.floor(hovered.age / DAY_LENGTH),
-                lineage: (hovered.lineage_id ?? '').slice(0, 6),
-              })}
+              · {t('dialogs.tree.gen', { gen: formatNumber(shownGeneration(hovered.generation)) })} ·{' '}
+              {t('dialogs.tree.days', { days: formatNumber(Math.floor(hovered.age / DAY_LENGTH)) })} ·{' '}
+              {(hovered.lineage_id ?? '').slice(0, 6)}
             </span>
-            {hovered.partner_id && <span style={{ color: '#c97' }}> ♥ {t('tree.bonded')}</span>}
+            {hovered.partner_id && <span style={{ color: '#c97' }}> ♥ {t('dialogs.tree.bonded')}</span>}
             {hovered.father_id &&
               (() => {
                 const father = organisms.find((o) => o.id === hovered.father_id)
@@ -578,25 +581,28 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
                   <span style={{ color: isCheating ? '#e8b060' : '#7ab0e0' }}>
                     {' · '}
                     {isCheating ? '⚡' : ''}
-                    {t('tree.father', {
-                      name: personName(father) + (father.surname ? ` ${displayName(father.surname)}` : ''),
+                    {t('dialogs.tree.father', {
+                      name: `${personName(father)}${father.surname ? ` ${displayName(father.surname)}` : ''}`,
                     })}
                   </span>
                 ) : null
               })()}
             {hovered.children_count != null && hovered.children_count > 0 && (
-              <span style={{ color: '#888' }}> · {tn('tree.children', hovered.children_count)}</span>
+              <span style={{ color: '#888' }}>
+                {' '}
+                · {t('dialogs.tree.children', { count: formatNumber(hovered.children_count) })}
+              </span>
             )}
             {hovered.discoveries?.includes('fire') && <span> 🔥</span>}
             {hovered.discoveries?.includes('shelter') && <span> 🏠</span>}
             <span className="tree-tooltip-thought">
               {' '}
-              {t('life.quote', { text: simText('thought', hovered.thought, { sex: sexOf(hovered) }) })}
+              "{simText('thought', hovered.thought, { sex: sexOf(hovered) })}"
             </span>
           </>
         ) : (
           <span style={{ color: '#333' }}>
-            {t('tree.hint')} <span style={{ color: '#c97' }}>─ ─</span> {t('tree.bondedPair')}
+            {t('dialogs.tree.hint')} <span style={{ color: '#c97' }}>─ ─</span> {t('dialogs.tree.bondedPair')}
           </span>
         )}
       </div>
@@ -624,23 +630,24 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
         <button className="tree-zoom-btn" onClick={() => zoomBy(1.25)}>
           ＋
         </button>
-        <button className="tree-zoom-btn" onClick={fitAll} title={t('tree.fitAll.title')}>
-          {t('tree.fitAll')}
+        <button className="tree-zoom-btn" onClick={fitAll} title={t('dialogs.tree.fitAllTitle')}>
+          {t('dialogs.tree.fitAll')}
         </button>
-        <button className="tree-zoom-btn" onClick={fitAlive} title={t('tree.fitAlive.title')}>
-          {t('tree.fitAlive')}
+        <button className="tree-zoom-btn" onClick={fitAlive} title={t('dialogs.tree.fitAliveTitle')}>
+          {t('dialogs.tree.fitAlive')}
         </button>
         <button className="tree-zoom-btn" onClick={() => zoomBy(0.8)}>
           －
         </button>
         <span style={{ color: '#444', marginLeft: 8 }}>
-          🔥 {simLabel('discovery', 'fire')} · 🏠 {simLabel('discovery', 'shelter')} · †{' '}
-          {t('tree.legend.deceased')} · <span style={{ color: '#c97' }}>♥</span> {t('tree.bonded')} ·{' '}
-          <span style={{ color: '#888' }}>- {t('tree.legend.mother')}</span>·{' '}
+          🔥 {t('dialogs.tree.legendFire')} · 🏠 {t('dialogs.tree.legendShelter')} · †{' '}
+          {t('dialogs.tree.legendDeceased')} · <span style={{ color: '#c97' }}>♥</span>{' '}
+          {t('dialogs.tree.legendBonded')} ·{' '}
+          <span style={{ color: '#888' }}>- {t('dialogs.tree.legendMother')}</span>·{' '}
           <span style={{ color: '#888', borderBottom: '1px dashed #888' }}>
-            - - {t('tree.legend.father')}
+            - - {t('dialogs.tree.legendFather')}
           </span>
-          · <span style={{ color: '#e8b060' }}>- - {t('tree.legend.infidelity')}</span>
+          · <span style={{ color: '#e8b060' }}>- - {t('dialogs.tree.legendInfidelity')}</span>
           {sexWords && (
             <>
               {' '}
@@ -649,7 +656,7 @@ export function FamilyTreeModal({ organisms: livOrgs, sexWords, focusId = null, 
             </>
           )}
         </span>
-        <span style={{ color: '#333', marginLeft: 'auto' }}>{fmtNumber(Math.round(tf.k * 100))}%</span>
+        <span style={{ color: '#333', marginLeft: 'auto' }}>{Math.round(tf.k * 100)}%</span>
       </div>
     </Modal>
   )

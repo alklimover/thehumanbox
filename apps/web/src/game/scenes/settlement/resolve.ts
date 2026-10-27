@@ -1,8 +1,8 @@
+import { t } from '../../../i18n'
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
-import { t, tn } from '../../../i18n'
-import { sexOf, simText } from '../../../i18n/simtext'
-import { displayName } from '../../../i18n/names'
+import { sexOf, simText } from '../../../fork/i18n/simtext'
+import { displayName } from '../../../fork/i18n/names'
 
 const RADIUS = 12
 
@@ -33,7 +33,9 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
     const entry: SceneOccupant = {
       org: o,
       role: o.is_leader ? 'host' : 'kin',
-      activity: o.thought ? simText('thought', o.thought, { sex: sexOf(o) }) : t('map.scene.idling'),
+      activity: o.thought
+        ? simText('thought', o.thought, { sex: sexOf(o) })
+        : t('panels.scene.activity.idling'),
     }
     if (d <= 5) inside.push(entry)
     else away.push(entry)
@@ -52,11 +54,8 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
   return {
     scene,
     world,
-    title: t('map.village.title', { tribe: lineageName }),
-    subtitle: t('map.village.subtitle', {
-      huts: tn('map.village.huts', hutCount),
-      n: inside.length + away.length,
-    }),
+    title: `${lineageName} village`,
+    subtitle: `Town square · ${hutCount} hut${hutCount === 1 ? '' : 's'} · ${inside.length + away.length} residents`,
     isDay: !!world.is_day,
     occupants: inside.slice(0, 8),
     away: away.slice(0, 16),

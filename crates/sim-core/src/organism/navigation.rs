@@ -98,7 +98,9 @@ fn step_cost(grid: &WorldGrid, x: i32, y: i32) -> i32 {
     } else {
         OPEN_STEP_COST
     };
-    base + (grid.hazard_at(x, y) * 30.0) as i32
+    // Hazard only ever adds: no step costs less than a road step, which the searches' early outs rely on.
+    // (Nothing writes a negative hazard; the floor makes that a guarantee rather than a habit.)
+    base + (grid.hazard_at(x, y).max(0.0) * 30.0) as i32
 }
 
 const DETOUR_RADIUS: i32 = 16;
@@ -157,6 +159,11 @@ fn detour_step_in(
             if (nx - start.0).abs() > DETOUR_RADIUS || (ny - start.1).abs() > DETOUR_RADIUS {
                 continue;
             }
+            // Same early out as the plan search: a step costs at least a road step.
+            let idx = index(nx, ny);
+            if scratch.cost(idx) <= cost + ROAD_STEP_COST {
+                continue;
+            }
             let tile = grid.get(nx, ny);
             if !tile.walkable() || tile == Tile::Fire {
                 continue;
@@ -170,7 +177,6 @@ fn detour_step_in(
                 continue;
             }
             let next_cost = cost + step_cost(grid, nx, ny);
-            let idx = index(nx, ny);
             if next_cost >= scratch.cost(idx) {
                 continue;
             }
@@ -196,6 +202,9 @@ const PLAN_SIDE: usize = (PLAN_RADIUS * 2 + 1) as usize;
 /// Most tiles one plan may expand; bounded so a crowd of blocked walkers
 /// cannot stall a tick.
 const PLAN_BUDGET: usize = 3000;
+/// A route that ends this near its goal (in tiles) reaches it, even when it gains little: a home in a block
+/// of huts can be got no nearer than two tiles, and refusing that last step sent people round and round it.
+const NEAR_ENOUGH: i32 = 2;
 /// The route search's estimate per tile of distance to the target: a weighted A* (1.4 times the open-ground
 /// step). The admissible estimate (the road step, 6) was measured slower: 4 to 12% more instructions, because
 /// it weakens the pull toward the goal across open ground. At 10 (the open step) the estimate overshoots along
@@ -538,6 +547,12 @@ impl Planner {
                     continue;
                 }
                 let idx = index(nx, ny);
+                // A step costs at least a road step (hazard only adds), so a cell already reached at or
+                // below `cost + ROAD_STEP_COST` cannot improve. Checked before the tile is read: the
+                // skip depends only on costs of tiles already read, so a remembered search stays exact.
+                if scratch.cost(idx) <= cost + ROAD_STEP_COST {
+                    continue;
+                }
                 // A tile is a neighbour of up to eight expanded ones: read it once.
                 let (word, bit) = (idx / 64, 1u64 << (idx % 64));
                 let cell_step = if read[word] & bit != 0 {
@@ -566,7 +581,7 @@ impl Planner {
             }
         }
         // Only worth walking when it ends clearly closer than we started.
-        if best.2 == start || best.0 + 2 > start_distance && best.0 != 0 {
+        if best.2 == start || best.0 + 2 > start_distance && best.0 > NEAR_ENOUGH {
             return Some((None, expanded));
         }
         let mut steps = Vec::new();
@@ -734,7 +749,7 @@ mod wide {
             }
         }
         // Only worth walking when it ends clearly closer than we started.
-        if best.2 == start || best.0 + 2 > start_distance && best.0 != 0 {
+        if best.2 == start || best.0 + 2 > start_distance && best.0 > NEAR_ENOUGH {
             return None;
         }
         let mut steps = Vec::new();
@@ -873,6 +888,51 @@ mod tests {
         assert_eq!((125 - ex).abs().max((125 - ey).abs()), 8);
         // Standing at the wall, no tile gets any closer: that is unreachable.
         assert!(plan_route(&grid, (ex, ey), (125, 125)).is_none());
+    }
+
+    #[test]
+    fn a_home_boxed_in_by_huts_is_reached_at_its_doorstep() {
+        let mut grid = WorldGrid::new(1);
+        for y in 80..120 {
+            for x in 80..120 {
+                grid.set(x, y, Tile::Grass);
+            }
+        }
+        // Huts all round the home spot, one tile out: two tiles away is as near as anyone gets.
+        for y in 99..=101 {
+            for x in 99..=101 {
+                if (x, y) != (100, 100) {
+                    grid.set(x, y, Tile::Hut);
+                }
+            }
+        }
+        let steps = plan_route(&grid, (103, 100), (100, 100)).expect("a route to the doorstep");
+        let &(ex, ey) = steps.last().unwrap();
+        assert_eq!(
+            (100 - ex).abs().max((100 - ey).abs()),
+            2,
+            "ends on the doorstep: {steps:?}"
+        );
+        // A route that gains as little but ends far from its goal is still refused.
+        let mut far = walled();
+        for y in 118..=132 {
+            for x in 118..=132 {
+                if y == 118 || y == 132 || x == 118 || x == 132 {
+                    far.set(x, y, Tile::Rock);
+                }
+            }
+        }
+        let doorstep = plan_route(&far, (100, 100), (125, 125)).unwrap();
+        assert!(plan_route(&far, *doorstep.last().unwrap(), (125, 125)).is_none());
+    }
+
+    #[test]
+    fn no_step_costs_less_than_a_road_step_even_on_negative_hazard() {
+        let mut grid = WorldGrid::new(1);
+        grid.set(10, 10, Tile::Grass);
+        grid.road[WorldGrid::idx(10, 10)] = crate::world::grid::ROAD_TRACK;
+        grid.hazard[WorldGrid::idx(10, 10)] = -0.5;
+        assert_eq!(step_cost(&grid, 10, 10), ROAD_STEP_COST);
     }
 
     #[test]

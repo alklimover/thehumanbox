@@ -1,11 +1,11 @@
 import type { WorldState } from '../../shared/types'
+import { personName } from '../../shared/personName'
+import { governmentWord } from '../../shared/government-words'
 
 export interface Leadership {
   government: string
   leader: { id: string; name: string } | null
 }
-
-const pretty = (s: string) => s.replace(/[-_]/g, ' ')
 
 /** How a tribe is ruled and by whom, if it has a government at all. */
 export function leadershipOf(
@@ -18,7 +18,7 @@ export function leadershipOf(
     ? world.organisms.find((o) => o.id === gov.leader_id && o.alive !== false)
     : undefined
   return {
-    government: pretty(gov.kind),
-    leader: leader ? { id: leader.id, name: leader.name } : null,
+    government: governmentWord(gov.kind),
+    leader: leader ? { id: leader.id, name: personName(leader) } : null,
   }
 }

@@ -55,11 +55,19 @@ impl Simulation {
             lineage_eras: self.lineage_eras.clone(),
             lineage_generations_reached: self.lineage_generations_reached.clone(),
             lineage_unrest: self.lineage_unrest.clone(),
+            lineage_winter_memory: self.lineage_winter_memory.clone(),
+            lineage_war_weariness: self.lineage_war_weariness.clone(),
             lineage_crime: self.lineage_crime.clone(),
             goals: self.goals.clone(),
             events: self.events.iter().rev().take(200).rev().cloned().collect(),
             organisms: self.organisms.iter().map(org_to_save).collect(),
             animals: self.animals.iter().map(animal_to_save).collect(),
+            game_wariness: {
+                let mut patches: Vec<(i32, i32, f32)> =
+                    self.game_wariness.iter().map(|(&(x, y), &w)| (x, y, w)).collect();
+                patches.sort_by_key(|&(x, y, _)| (x, y));
+                patches
+            },
             carcasses: self
                 .carcasses
                 .iter()
