@@ -379,7 +379,7 @@ describe('the god’s stories', () => {
     expect(stories[0].weight).toBeGreaterThan(stories[1].weight)
     // The powers' labels are read when the module loads, so only the phrase around one changes here.
     await setLocaleForTests('ru')
-    expect(prayerStories(w)[0].detail).toBe('Поможет «harvest». Молитва скоро угаснет')
+    expect(prayerStories(w)[0].detail).toBe('Поможет «урожай». Молитва скоро угаснет')
   })
 
   it('a tribe praying for several things is one row, its most urgent prayer', async () => {
@@ -422,8 +422,8 @@ describe('the god’s stories', () => {
       detail: '“spring” will help. 1 more prayer',
     })
     await setLocaleForTests('ru')
-    expect(prayerStories(w)[0].detail).toBe('Поможет «harvest». Ещё 2 молитвы. Молитва скоро угаснет')
-    expect(prayerStories(answered)[0].detail).toBe('Поможет «spring». Ещё 1 молитва')
+    expect(prayerStories(w)[0].detail).toBe('Поможет «урожай». Ещё 2 молитвы. Молитва скоро угаснет')
+    expect(prayerStories(answered)[0].detail).toBe('Поможет «родник». Ещё 1 молитва')
   })
 
   it('puts the dying tribe above a war, and a war above an era to come', () => {

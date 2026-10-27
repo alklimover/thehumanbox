@@ -26,3 +26,18 @@ export function bookTopic(topic: string | null | undefined): string {
   const key = TOPICS[topic]
   return key ? ft(key) : topic
 }
+
+/** Battle sizes as the simulation sends them (the Rust enum names). */
+const SCALES: Record<string, ForkMessageKey> = {
+  Skirmish: 'civ.scale.Skirmish',
+  Raid: 'civ.scale.Raid',
+  Siege: 'civ.scale.Siege',
+  Battle: 'civ.scale.Battle',
+  War: 'civ.scale.War',
+}
+
+/** A battle's size in the player's language; an unknown one as sent. */
+export function battleScale(scale: string): string {
+  const key = SCALES[scale]
+  return key ? ft(key) : scale
+}

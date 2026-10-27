@@ -4,8 +4,16 @@ import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
 import { sexOf, simText } from '../../../fork/i18n/simtext'
 import { displayName } from '../../../fork/i18n/names'
+import { ft, type ForkMessageKey } from '../../../fork/i18n'
 
 const RADIUS = 14
+
+/** Fork: the shop's title and subtitle (upstream writes them in English). */
+const SHOP_WORDS: Record<'forge' | 'bakery' | 'mill', { title: ForkMessageKey; subtitle: ForkMessageKey }> = {
+  forge: { title: 'map.shop.forge.title', subtitle: 'map.shop.forge.subtitle' },
+  bakery: { title: 'map.shop.bakery.title', subtitle: 'map.shop.bakery.subtitle' },
+  mill: { title: 'map.shop.mill.title', subtitle: 'map.shop.mill.subtitle' },
+}
 
 /** What a worker in the building is doing, in words: "working at the forge". */
 function workingAt(kind: 'forge' | 'bakery' | 'mill'): string {
@@ -56,14 +64,12 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   const owned = building as { owner_lineage?: string | null; lineage_id?: string | null }
   const ownerLineage = owned.owner_lineage ?? owned.lineage_id ?? ''
   const lineageName =
-    displayName(world.lineage_names?.[ownerLineage]) || (ownerLineage ? ownerLineage.slice(0, 6) : 'unowned')
+    displayName(world.lineage_names?.[ownerLineage]) ||
+    (ownerLineage ? ownerLineage.slice(0, 6) : ft('map.shop.unowned'))
 
-  const subtitle =
-    kind === 'forge'
-      ? `Iron, anvil, and smoke · ${lineageName}`
-      : kind === 'bakery'
-        ? `Bread, ovens, and yeast · ${lineageName}`
-        : `Grain, stones, and flour · ${lineageName}`
+  // Fork: upstream leaves the shop's title and subtitle in English.
+  const words = SHOP_WORDS[kind]
+  const subtitle = ft(words.subtitle, { tribe: lineageName })
 
   const fixtures: SceneFixture[] =
     kind === 'forge'
@@ -88,12 +94,7 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   return {
     scene,
     world,
-    title:
-      kind === 'forge'
-        ? `${lineageName} forge`
-        : kind === 'bakery'
-          ? `${lineageName} bakery`
-          : `${lineageName} mill`,
+    title: ft(words.title, { tribe: lineageName }),
     subtitle,
     isDay: !!world.is_day,
     occupants: inside.slice(0, 6),

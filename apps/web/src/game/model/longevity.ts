@@ -5,6 +5,7 @@
 import { t } from '../../i18n'
 import { ageInYears } from './calendar'
 import { personName } from '../../shared/personName'
+import { displayName } from '../../fork/i18n/names'
 
 export interface LongestLife {
   name: string
@@ -61,7 +62,7 @@ export function longevityLines(longevity: Longevity, lineageName: (lineage: stri
   return [
     t('model.longevity.longest', {
       age: ageInYears(longest.age),
-      name: longest.name,
+      name: displayName(longest.name),
       lineage: lineageName(longest.lineage_id),
     }),
     t('model.longevity.average', {

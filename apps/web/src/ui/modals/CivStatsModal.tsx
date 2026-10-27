@@ -24,7 +24,7 @@ import {
 import { simLabel } from '../../fork/i18n/sim'
 import { simArtworkTitle, simBookTitle, simFaithName, simText } from '../../fork/i18n/simtext'
 import { displayName } from '../../fork/i18n/names'
-import { bookTopic } from '../../fork/i18n/civ-words'
+import { battleScale, bookTopic } from '../../fork/i18n/civ-words'
 
 interface Props {
   world: WorldState
@@ -737,7 +737,7 @@ export function CivStatsModal({ world, onClose, onGuide }: Props) {
               return (
                 <div key={b.id} className="civ-row">
                   <span className="civ-row-head">
-                    {'\u{2694}\u{FE0F}'} {b.scale}
+                    {'\u{2694}\u{FE0F}'} {battleScale(b.scale)}
                   </span>
                   <span className="civ-row-sub">
                     {t('dialogs.civ.conflicts.versus', { attackers: atk, defenders: def })}

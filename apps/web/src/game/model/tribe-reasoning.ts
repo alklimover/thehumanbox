@@ -1,6 +1,7 @@
 import type { WorldState } from '../../shared/types'
 import { enemiesOf } from '../render/battles'
 import type { TribeStatus } from './tribe-status'
+import { displayName } from '../../fork/i18n/names'
 
 /**
  * Why a tribe does what it does, read off what the simulation already sends. The sim keeps no single
@@ -109,7 +110,7 @@ export interface Stance {
 
 /** The tribes this one stands with, stands neutral to, or is at odds with, from the attitudes between them. */
 export function stanceOf(world: WorldState, id: string): Stance {
-  const name = (lid: string) => world.lineage_names?.[lid] ?? lid.slice(0, 6)
+  const name = (lid: string) => displayName(world.lineage_names?.[lid]) || lid.slice(0, 6)
   const out: Stance = { allied: [], neutral: [], rivals: [] }
   for (const r of world.tribal_relations ?? []) {
     const other = r.a === id ? r.b : r.b === id ? r.a : null

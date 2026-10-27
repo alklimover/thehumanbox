@@ -4,6 +4,8 @@ import { t } from '../../i18n'
 import { WordSplitWatch, type WordSplit } from '../../game/model/word-split'
 import { getOwnWorldSeed } from '../../simulation/worldSource'
 import { screenBusy, TOAST_RETRY_MS } from './screenBusy'
+import { displayName } from '../../fork/i18n/names'
+import { simLabel } from '../../fork/i18n/sim'
 
 /** Holds the seeds of the worlds the notice has been shown for (a JSON list), so each world shows it once. */
 export const WORD_SPLIT_KEY = 'thb-word-split-shown'
@@ -104,7 +106,7 @@ export function WordSplitToast({ world }: { world: WorldState | null }) {
   }, [split])
 
   if (!split || !visible) return null
-  const name = (lineage: string) => world?.lineage_names?.[lineage] ?? lineage.slice(0, 6)
+  const name = (lineage: string) => displayName(world?.lineage_names?.[lineage]) || lineage.slice(0, 6)
   return (
     <div className="desktop-toast word-split-toast" role="status" aria-live="polite">
       <button
@@ -120,9 +122,9 @@ export function WordSplitToast({ world }: { world: WorldState | null }) {
         {t('model.wordSplit.text', {
           first: name(split.first),
           second: name(split.second),
-          concept: split.concept,
-          firstWord: split.firstWord,
-          secondWord: split.secondWord,
+          concept: simLabel('concept', split.concept),
+          firstWord: displayName(split.firstWord),
+          secondWord: displayName(split.secondWord),
         })}
       </div>
     </div>

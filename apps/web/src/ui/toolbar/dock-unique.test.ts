@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DOCK_TABS, groupsFor } from './dock-tabs'
-import { CATALOGS } from '../../fork/i18n/catalog'
+import ruDock from '../../i18n/locales/ru/dock.json'
 
 /** The tool ids a tab shows, in order. */
 const idsIn = (tabId: string) => groupsFor(tabId).flatMap((g) => g.tools.map((t) => t.id))
@@ -28,7 +28,7 @@ describe('every tool appears exactly once on the dock', () => {
     const names = new Map<string, string>()
     for (const tab of DOCK_TABS) {
       for (const tool of groupsFor(tab.id).flatMap((g) => g.tools)) {
-        const name = CATALOGS.ru[`tools.label.${tool.id}`]
+        const name = (ruDock.tools as Record<string, string>)[tool.id]
         expect(typeof name, `Russian name for ${tool.id}`).toBe('string')
         const other = names.get(name as string)
         expect(other, `${String(name)} names both ${other} and ${tool.id}`).toBeUndefined()

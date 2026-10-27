@@ -28,6 +28,7 @@ import { PopulationLoadSlider } from '../../fork/PopulationLoad'
 import { WorldsSection } from '../../fork/WorldsSection'
 import { ModeSetting } from '../../fork/modes/ModeSetting'
 import { WatchSection } from '../../fork/chronicle/WatchSection'
+import { ft } from '../../fork/i18n'
 
 interface Props {
   onClose: () => void
@@ -889,7 +890,7 @@ function SettingRow({
       <div className="settings-row-text">
         <div className="settings-row-title">
           {title}
-          {beta && <span className="settings-beta">beta</span>}
+          {beta && <span className="settings-beta">{ft('settings.beta')}</span>}
         </div>
         <div className="settings-row-desc">{desc}</div>
       </div>

@@ -553,6 +553,8 @@ function buildLineageVocabs(
 ): LineageVocab[] {
   const byLineage: Record<string, OrganismState[]> = {}
   for (const org of organisms) {
+    // A person a frame carries without its lineage (no cold fields yet) would make a column named "undefined".
+    if (!org.lineage_id) continue
     if (!byLineage[org.lineage_id]) byLineage[org.lineage_id] = []
     byLineage[org.lineage_id].push(org)
   }

@@ -1,6 +1,7 @@
 import type { WorldState } from '../../shared/types'
 import { t } from '../../i18n'
 import { newPerils } from './peril-watch'
+import { displayName } from '../../fork/i18n/names'
 
 /** The changes the player can make the clock stop for while fast-forwarding. */
 export const PAUSE_TRIGGERS = ['brink', 'era', 'war', 'famine', 'extinct'] as const
@@ -127,7 +128,8 @@ export function watchChanges(
 
 /** The status line's reason for one change, e.g. "Birch died out". */
 export function changeReason(hit: ChangeHit): string {
-  const names = hit.names.join(', ')
+  // Fork: tribe names in the player's alphabet (fork/i18n/names).
+  const names = hit.names.map(displayName).join(', ')
   switch (hit.trigger) {
     case 'brink':
       return t('model.pause.brink', { names })

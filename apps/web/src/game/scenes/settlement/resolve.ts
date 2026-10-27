@@ -3,6 +3,7 @@ import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core
 import type { WorldState } from '../../../shared/types'
 import { sexOf, simText } from '../../../fork/i18n/simtext'
 import { displayName } from '../../../fork/i18n/names'
+import { ft, ftn } from '../../../fork/i18n'
 
 const RADIUS = 12
 
@@ -54,8 +55,12 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
   return {
     scene,
     world,
-    title: `${lineageName} village`,
-    subtitle: `Town square · ${hutCount} hut${hutCount === 1 ? '' : 's'} · ${inside.length + away.length} residents`,
+    // Fork: upstream leaves the village's title and subtitle in English.
+    title: ft('map.village.title', { tribe: lineageName }),
+    subtitle: ft('map.village.subtitle', {
+      huts: ftn('map.village.huts', hutCount),
+      n: inside.length + away.length,
+    }),
     isDay: !!world.is_day,
     occupants: inside.slice(0, 8),
     away: away.slice(0, 16),

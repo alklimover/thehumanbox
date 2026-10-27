@@ -3,7 +3,9 @@
 // attribute or death cause in the simulation fails here until it is translated.
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
-import { CATALOGS } from '../catalog'
+import enPerson from '../../../i18n/locales/en/person.json'
+import ruDock from '../../../i18n/locales/ru/dock.json'
+import ruPerson from '../../../i18n/locales/ru/person.json'
 import { setLocaleForTests } from '../locale'
 import { simLabel } from '.'
 import { SIM_TABLES } from './tables'
@@ -189,7 +191,7 @@ describe('people and language tables', () => {
     expect(kinds.length).toBeGreaterThanOrEqual(36)
     expectCovers('animal', kinds)
     for (const kind of kinds) {
-      const dock = CATALOGS.ru[`tools.label.${kind}`]
+      const dock = (ruDock.tools as Record<string, string>)[kind]
       if (dock !== undefined) expect(SIM_TABLES.animal[kind].ru, kind).toBe(dock)
     }
   })
@@ -221,15 +223,16 @@ describe('people and language tables', () => {
     expect(simLabel('animal', 'polar_bear')).toBe('белый медведь')
   })
 
-  it('has the flavour line of every sign and the tip of every aspiration role', () => {
+  it('upstream’s locale files have the flavour line of every sign and the tip of every aspiration role', () => {
     const flavor = block(rust('sim/cosmos.rs'), 'impl ZodiacSign {', 'pub fn from_birth_tick')
     for (const sign of Object.keys(SIM_TABLES.zodiac)) {
-      const en = CATALOGS.en[`people.zodiacFlavor.${sign}`]
+      const en = (enPerson.zodiac.flavor as Record<string, string>)[sign]
       expect(en, sign).toBeDefined()
       expect(flavor, sign).toContain(`"${en as string}"`)
     }
     const roles = Object.keys(SIM_TABLES.aspiration).filter((id) => !id.includes(' '))
     expect(roles).toHaveLength(10)
-    for (const role of roles) expect(CATALOGS.ru[`people.aspirationTip.${role}`], role).toBeDefined()
+    const tips = ruPerson.aspiration.tip as Record<string, string>
+    for (const role of roles) expect(tips[role], role).toBeDefined()
   })
 })

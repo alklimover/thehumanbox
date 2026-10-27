@@ -28,6 +28,7 @@ import { AnimalSpriteLayers } from './cf/animals/AnimalSpriteLayers'
 import { PeopleSpriteLayers } from './cf/people/PeopleSpriteLayers'
 import { WORLD_MAX_DPR } from './world-dpr'
 import { OCEAN, hex } from './art-palette'
+import { ft } from '../../fork/i18n'
 
 /** Past the map the sea stays in its deepest band, so the world has no visible edge. */
 const WORLD_EDGE = hex(OCEAN.abyss)
@@ -342,7 +343,7 @@ export function WorldView({
               setRendererKey((key) => key + 1)
             }}
           >
-            Retry renderer
+            {ft('map.retry')}
           </button>
         </div>
       )}

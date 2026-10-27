@@ -19,11 +19,11 @@ import {
   PRAYER_KINDS,
   type PrayerRow,
 } from '../../game/model/prayers'
-import { eraRows } from '../../game/model/era-flourish'
 import { personName } from '../../shared/personName'
 import { SANDBOX_CATEGORIES } from '../../simulation/sandbox'
 import type { GoalStatus, PrayerInfo, WorldState } from '../../shared/types'
 import { t } from '../../i18n'
+import { toolName } from '../../ui/toolbar/tool-tips'
 
 export type StoryKind =
   | 'war'
@@ -88,9 +88,10 @@ function names(world: Pick<World, 'lineage_names'>, ids: readonly string[]): str
     .join(', ')
 }
 
-/** A power as the dock names it. */
+/** A power as the dock names it, in the player's language. */
 export function toolLabel(id: string): string {
-  return SANDBOX_CATEGORIES.flatMap((c) => c.tools).find((tool) => tool.id === id)?.label ?? id
+  const tool = SANDBOX_CATEGORIES.flatMap((c) => c.tools).find((t) => t.id === id)
+  return tool ? toolName(tool) : id
 }
 
 function capital(text: string): string {
@@ -106,6 +107,14 @@ function home(world: World, lineage: string | undefined) {
 }
 
 // ---------------------------------------------------------------- memory
+
+/** Each tribe's era id as the simulation sends it (game/model/era-flourish's eraRows gives them in words). */
+function eraIds(world: Pick<WorldState, 'lineage_eras'>): [string, string][] {
+  const eras = world.lineage_eras
+  if (!eras) return []
+  if (Array.isArray(eras)) return eras.filter((r) => r.era_name).map((r) => [r.lineage_id, r.era_name])
+  return Object.entries(eras)
+}
 
 interface EraChange {
   lineage: string
@@ -144,7 +153,7 @@ export class StoryWatch {
     for (const r of world.religions ?? []) {
       if (!this.faiths.has(r.id)) this.faiths.set(r.id, first ? -Infinity : world.tick)
     }
-    for (const [lineage, era] of eraRows(world)) {
+    for (const [lineage, era] of eraIds(world)) {
       const before = this.eras.get(lineage)
       if (before !== undefined && before !== era) {
         this.eraChanges = this.eraChanges.filter((c) => c.lineage !== lineage)

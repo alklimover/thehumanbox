@@ -4,6 +4,7 @@ import type { OrganismState, WorldState } from '../../../shared/types'
 import { householdAround } from '../shared/occupants'
 import { eraWord } from '../../../shared/era-words'
 import { displayName } from '../../../fork/i18n/names'
+import { personName } from '../../../shared/personName'
 
 const ERA_LABEL: Record<string, MessageKey> = {
   'pre-stone': 'panels.scene.home.era.preStone',
@@ -212,7 +213,7 @@ export function resolveHomeScene(world: WorldState, scene: SceneId): SceneContex
   return {
     scene,
     world,
-    title: t('panels.scene.home.title', { name: host.name }),
+    title: t('panels.scene.home.title', { name: personName(host) }),
     subtitle: `${flavor} · ${lineageName} · ${eraWord(era)}`,
     isDay,
     occupants: inside,

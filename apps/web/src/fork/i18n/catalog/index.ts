@@ -13,19 +13,11 @@ import { modals } from './modals'
 import { model } from './model'
 import { modes } from './modes'
 import { onboarding } from './onboarding'
-import { panels } from './panels'
-import { people } from './people'
 import { person } from './person'
-import { scenarios } from './scenarios'
 import { settings } from './settings'
-import { shortcuts } from './shortcuts'
 import { speed } from './speed'
 import { splash } from './splash'
-import { stats } from './stats'
 import { status } from './status'
-import { toasts } from './toasts'
-import { tools } from './tools'
-import { toolTips } from './tools-tips'
 import { worlds } from './worlds'
 
 /** Every area of the interface. Add a new area here; its keys join ForkMessageKey. */
@@ -44,26 +36,18 @@ const AREAS = {
   model,
   modes,
   onboarding,
-  panels,
-  people,
   person,
-  scenarios,
   settings,
-  shortcuts,
   speed,
   splash,
-  stats,
   status,
-  toasts,
-  toolTips,
-  tools,
   worlds,
 }
 
 type Areas = typeof AREAS
 export type ForkMessageKey = { [A in keyof Areas]: keyof Areas[A]['en'] & string }[keyof Areas]
 
-/** Keys whose English is a plural (use tn for them). */
+/** Keys whose English is a plural (use ftn for them). */
 export type ForkPluralKey = {
   [A in keyof Areas]: {
     [K in keyof Areas[A]['en']]: Areas[A]['en'][K] extends PluralForms ? K : never

@@ -4,7 +4,6 @@ import { FLOURISH_TICKS, type EraChange } from '../../../model/era-flourish'
 import type { CfFrame } from './frame'
 import { displayName } from '../../../../fork/i18n/names'
 import { getLocale } from '../../../../fork/i18n/locale'
-import { eraWord } from '../../../../shared/era-words'
 
 type Ctx = CanvasRenderingContext2D
 
@@ -45,11 +44,10 @@ export function paintEraFlourish(ctx: Ctx, f: CfFrame, changes: readonly EraChan
 
     // The plate fades in quickly and out over the last third of its time.
     const alpha = Math.min(1, age * 8) * Math.min(1, (1 - age) / 0.3)
-    // Fork: the name in the player's alphabet, the era in their language (`change.era` is pretty-printed,
-    // "pre stone"; the ids join words with a hyphen), and Russian keeps its case («бронзовый век»).
+    // Fork: the name in the player's alphabet, and Russian keeps its case («бронзовый век»).
     const name =
       displayName(world.lineage_names?.[change.lineage] ?? settlement.name) || change.lineage.slice(0, 6)
-    const eraAge = t('panels.tribe.eraAge', { era: eraWord(change.era.trim().replace(/\s+/g, '-')) })
+    const eraAge = t('panels.tribe.eraAge', { era: change.era })
     const text = `${name} · ${getLocale() === 'ru' ? eraAge : eraAge.toUpperCase()}`
     const font = 13 * s
     const width = (text.length * 7.6 + 16) * s

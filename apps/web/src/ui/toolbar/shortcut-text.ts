@@ -1,4 +1,5 @@
 import { t, type MessageKey } from '../../i18n'
+import { keyCapName } from '../../fork/i18n/keys'
 
 /**
  * The description of each row of `SHORTCUT_HELP`, keyed by the keys it lists. The keys themselves
@@ -35,5 +36,6 @@ const KEY_TEXT: Readonly<Record<string, MessageKey | undefined>> = {
 /** The keys of a shortcut as shown: key caps as they are, a gesture in the active language. */
 export function shortcutKeys(keys: string): string {
   const key = KEY_TEXT[keys]
-  return key ? t(key) : keys
+  // Fork: "space" in the player's language (fork/i18n/keys.ts).
+  return key ? t(key) : keyCapName(keys)
 }

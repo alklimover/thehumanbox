@@ -17,6 +17,7 @@ import { useWorldStore } from '../../state/worldStore'
 import { speedTools } from './dock-tabs'
 import { ToolSprite } from './ToolSprite'
 import { Tooltip } from './Tooltip'
+import { keyCapName } from '../../fork/i18n/keys'
 
 /** A word beside the odd speeds in the list; the rest speak for themselves. */
 function speedNote(mult: number): string | undefined {
@@ -156,7 +157,7 @@ export function TimeControl({ paused, speed, onPick }: Props) {
           <Tip
             title={paused ? t('dock.time.resume') : t('dock.time.pause')}
             body={paused ? t('dock.time.resumeTip') : t('dock.time.pauseTip', { speed: formatSpeed(speed) })}
-            how="space"
+            how={keyCapName('space')}
           />
         }
       >

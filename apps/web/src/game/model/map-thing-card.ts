@@ -102,7 +102,7 @@ const NOTE_WORDS: Record<GroundNote, MessageKey> = {
 
 function animalCard(animal: AnimalState): ThingCard {
   const lines: string[] = []
-  if (animal.name) lines.push(t('model.thing.animal.named', { name: animal.name }))
+  if (animal.name) lines.push(t('model.thing.animal.named', { name: displayName(animal.name) }))
   lines.push(t(animal.tame ? 'model.thing.animal.tame' : 'model.thing.animal.wild'))
   if (animal.young) lines.push(t('model.thing.animal.young'))
   if (animal.sleeping) lines.push(t('model.thing.animal.asleep'))
@@ -120,7 +120,7 @@ function buildingCard(world: WorldState, building: Building): ThingCard {
   const state = getBuildingState(building)
   const lines: string[] = []
   const owner = building.owner_lineage ?? building.lineage_id
-  const tribe = owner ? world.lineage_names?.[owner] : undefined
+  const tribe = owner ? displayName(world.lineage_names?.[owner]) : undefined
   if (tribe) lines.push(t('model.thing.building.tribe', { tribe }))
   lines.push(buildingStateLine(state))
   const people = peopleIn(world, building)
@@ -176,7 +176,7 @@ function vehicleCard(world: WorldState, vehicle: VehicleInfo): ThingCard {
 }
 
 function caravanCard(world: WorldState, caravan: CaravanInfo): ThingCard {
-  const name = (lineage: string) => world.lineage_names?.[lineage] ?? lineage
+  const name = (lineage: string) => displayName(world.lineage_names?.[lineage]) || lineage
   return {
     title: capitalise(t('model.thing.caravan.title')),
     lines: [
@@ -191,7 +191,7 @@ function caravanCard(world: WorldState, caravan: CaravanInfo): ThingCard {
 
 function farmCard(world: WorldState, farm: FarmInfo): ThingCard {
   const lines: string[] = []
-  const tribe = farm.lineage_id ? world.lineage_names?.[farm.lineage_id] : undefined
+  const tribe = farm.lineage_id ? displayName(world.lineage_names?.[farm.lineage_id]) : undefined
   if (tribe) lines.push(t('model.thing.farm.tribe', { tribe }))
   lines.push(t(farm.withered ? 'model.thing.stage.withered' : STAGE_WORDS[farmStage(farm, world.tick)]))
   const title = farm.crop ? capitalise(cropWord(farm.crop)) : capitalise(t('model.thing.farm.field'))
