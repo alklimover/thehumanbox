@@ -16,8 +16,7 @@
 // The report gets one line per kept fork text: "label<TAB>key<TAB>kind", kind
 // "both" (both rewrote the text) or "en-changed" (and the English changed too).
 // Exit code 0 when merged, 2 on bad input.
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { appendFileSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
@@ -104,4 +103,5 @@ function main() {
   console.log(`${args.label || args.out}: ${flatten(theirs).size} keys, ${kept.length} fork texts kept over upstream's`)
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main()
+// Real paths: a temp dir on macOS sits behind a symlink (/tmp -> /private/tmp).
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) main()
