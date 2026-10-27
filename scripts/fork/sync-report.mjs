@@ -323,8 +323,10 @@ function localeAt(sha, path) {
 
 const shownText = (v) => (typeof v === 'string' ? v : Object.values(v).join(' / '))
 const sameText = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+/** Russian that is still the English text, when that text has words to translate (not "{a} & {b}" or "2×"). */
 const sameAsEnglish = (ru, en) => {
   const english = typeof en === 'string' ? en : en.other
+  if (!/[A-Za-z]{2,}/.test(english.replace(/\{\w+\}/g, ''))) return false
   return (typeof ru === 'string' ? [ru] : Object.values(ru)).some((form) => form.trim() === english.trim())
 }
 
@@ -362,7 +364,7 @@ function localeSection() {
   if (review.length > 0) {
     lines.push(
       '',
-      '<details><summary>Русские тексты автора для сверки с глоссарием (<code>docs/fork/GLOSSARY.ru.md</code>)</summary>',
+      '<details><summary>Русские тексты новых и изменённых ключей — для сверки с глоссарием (<code>docs/fork/GLOSSARY.ru.md</code>)</summary>',
       '',
       ...review.slice(0, LIST_LIMIT * 2),
       ...(review.length > LIST_LIMIT * 2 ? [`- …и ещё ${review.length - LIST_LIMIT * 2}`] : []),

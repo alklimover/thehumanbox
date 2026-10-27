@@ -362,7 +362,7 @@ export function MoreDropdown({
               </button>
             </Tooltip>
           ))}
-          {/* Fork: on the desktop eras, wars and tribes dying out are in "Don't miss what matters". */}
+          {/* Fork: on the desktop eras, wars and dying tribes are left to the fork's watch (fork/chronicle). */}
           {isDesktop() && <span className="more-pause-note">{ft('watch.pauseElsewhere')}</span>}
         </div>
         <Tooltip

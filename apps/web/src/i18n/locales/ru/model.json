@@ -282,7 +282,7 @@
     "sentence": "Семья {surname} в этом племени: живых {living}, старейший прожил {days} дн."
   },
   "death": {
-    "line": "Умер от {cause} в возрасте {age}"
+    "line": "Причина смерти: {cause}, возраст: {age}"
   },
   "life": {
     "childOfBoth": "Родители: {mother} и {father}.",
