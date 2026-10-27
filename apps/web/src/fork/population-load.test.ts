@@ -30,9 +30,9 @@ const slowLaptop: DeviceProfile = {
 
 describe('referenceTickMs', () => {
   it('follows the measured points and keeps rising past them', () => {
-    expect(referenceTickMs(940)).toBe(16)
-    expect(referenceTickMs(4310)).toBe(96)
-    expect(referenceTickMs(1390)).toBeCloseTo(25.5)
+    expect(referenceTickMs(940)).toBe(14.7)
+    expect(referenceTickMs(4050)).toBe(77)
+    expect(referenceTickMs(1420)).toBeCloseTo(24.15)
     expect(referenceTickMs(6000)).toBeGreaterThan(referenceTickMs(5000))
     expect(referenceTickMs(10)).toBe(referenceTickMs(120))
   })
@@ -62,7 +62,7 @@ describe('estimateLoad', () => {
 
   it('rates 5,000 people heavy at 1x even on the reference machine today', () => {
     const load = estimateLoad(5000, 100, reference)
-    expect(load.cpuShare).toBeCloseTo(1.14)
+    expect(load.cpuShare).toBeCloseTo(1.08)
     expect(load.level).toBe('heavy')
     expect(load.comfortableSpeed).toBeLessThan(1)
   })

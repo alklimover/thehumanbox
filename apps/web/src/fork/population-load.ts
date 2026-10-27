@@ -29,25 +29,25 @@ const UNKNOWN_MACHINE_FACTOR = 1.8
 
 /**
  * Milliseconds per tick of a mature world on one core of the reference
- * machine, by people alive. Measured headless after the person lookups (#29)
- * and the caravan dispatch check (3.3 in docs/fork/PERF-PLAN.ru.md), best of
- * three 300-tick runs: seeds 7 and 42 after 60,000 ticks under a population
- * limit of 120, 350, 1,000 and 2,000 (the mean of the two seeds), and a real
- * 2,530-person world, also grown with `spawn` to 3,000, 3,510, 4,310 and
- * 4,550 (150 ticks to settle first). 5,000 is extrapolated from 4,550 with
- * the exponent below.
+ * machine, by people alive. Measured headless after the route search keeps
+ * its answers (3.5 in docs/fork/PERF-PLAN.ru.md), best of three 300-tick
+ * runs: seeds 7 and 42 after 60,000 ticks under a population limit of 120,
+ * 350, 1,000 and 2,000 (the mean of the two seeds), and a real 2,530-person
+ * world, also grown with `spawn` to 2,900, 3,340, 4,050 and 4,260 people
+ * (150 ticks to settle first). 5,000 is extrapolated from 4,260 with the
+ * exponent below.
  */
 const TICK_CURVE: ReadonlyArray<readonly [number, number]> = [
-  [120, 1.7],
-  [320, 5.2],
-  [940, 16],
-  [1840, 35],
-  [2530, 52],
-  [3000, 63],
-  [3510, 76],
-  [4310, 96],
-  [4550, 100],
-  [5000, 114],
+  [120, 1.5],
+  [320, 5],
+  [940, 14.7],
+  [1900, 33.6],
+  [2530, 44],
+  [2900, 51],
+  [3340, 62],
+  [4050, 77],
+  [4260, 86],
+  [5000, 108],
 ]
 /** Growth past the last point: tick cost ~ people^1.4. */
 const TICK_EXPONENT_PAST_CURVE = 1.4
