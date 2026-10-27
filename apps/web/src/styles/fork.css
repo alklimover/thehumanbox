@@ -440,3 +440,9 @@
   font-size: 10px;
   font-weight: 400;
 }
+/* Under upstream's "pause on" switches on the desktop: where the rest of the stops are set. */
+.more-pause-note {
+  flex-basis: 100%;
+  color: var(--px-muted);
+  font-size: 10px;
+}

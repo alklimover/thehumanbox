@@ -463,3 +463,606 @@ fn at_night_a_person_walks_home_and_sleeps_there_not_in_any_shelter() {
     }
     assert!(slept, "the person sleeps at home once there");
 }
+
+fn parched_at(tiles: &[((i32, i32), Tile)], hydration: f32) -> (Organism, WorldGrid) {
+    let mut rng = StdRng::seed_from_u64(5);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 30..=70 {
+        for y in 30..=70 {
+            grid.set(x, y, Tile::Grass);
+        }
+    }
+    for &((x, y), t) in tiles {
+        grid.set(x, y, t);
+    }
+    let mut org = Organism::new(
+        "dry".into(),
+        "Dry".into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = 0.8;
+    org.hydration = hydration;
+    (org, grid)
+}
+
+#[test]
+fn someone_thirsty_beside_a_frozen_lake_breaks_the_ice_to_drink() {
+    let (org, grid) = parched_at(&[((51, 50), Tile::Ice)], 0.25);
+    let mut rng = StdRng::seed_from_u64(0);
+    let (action, thought) = org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        &mut rng,
+        false,
+        "state",
+        &[0, 1, 2, 3, 4, 5, 6, 7, 9],
+    );
+    assert_eq!(action, 9);
+    assert_eq!(thought.as_deref(), Some("breaking the ice to drink"));
+}
+
+#[test]
+fn only_someone_parched_cuts_through_the_houses_between_them_and_water() {
+    // Houses built all the way round, with water just beyond.
+    let mut tiles: Vec<((i32, i32), Tile)> = (-1i32..=1)
+        .flat_map(|dx| (-1i32..=1).map(move |dy| (dx, dy)))
+        .filter(|&d| d != (0, 0))
+        .map(|(dx, dy)| ((50 + dx, 50 + dy), Tile::Hut))
+        .collect();
+    tiles.extend((40..=60).map(|x| ((x, 53), Tile::Water)));
+    let (parched, grid) = parched_at(&tiles, 0.2);
+    let step = parched.toward((50, 53), &grid);
+    assert_eq!(
+        crate::organism::organism::DIRECTIONS[step].1,
+        1,
+        "steps toward the water"
+    );
+    // Someone only thirsty is still held by the houses: no step leads through.
+    let (thirsty, grid) = parched_at(&tiles, 0.5);
+    let step = thirsty.toward((50, 53), &grid);
+    assert_ne!(crate::organism::organism::DIRECTIONS[step], (0, 1));
+}
+
+#[test]
+fn thirsty_with_frozen_water_nearer_than_open_water_heads_for_the_ice() {
+    // Open water 23 tiles south, a frozen patch 18 tiles away to the south-east. Both are in reach
+    // at this thirst, and the nearer one is the goal from every tile on the way.
+    let (org, grid) = parched_at(&[((50, 73), Tile::Water), ((62, 56), Tile::Ice)], 0.19);
+    let mut rng = StdRng::seed_from_u64(0);
+    let (action, thought) = org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        &mut rng,
+        false,
+        "state",
+        &[0, 1, 2, 3, 4, 5, 6, 7],
+    );
+    assert_eq!(thought.as_deref(), Some("heading for the frozen water"));
+    assert!(
+        crate::organism::organism::DIRECTIONS[action].0 > 0,
+        "steps east toward the ice"
+    );
+}
+
+#[test]
+fn someone_dying_of_thirst_keeps_the_walk_to_water_in_view() {
+    let (mut org, _grid) = parched_at(&[], 0.2);
+    org.think("moving to water", 100);
+    // Teaching and mourning think on the same tick; the bubble keeps the need.
+    org.think("teaching Neni", 101);
+    assert_eq!(org.thought, "moving to water");
+    org.think("dying", 102);
+    assert_eq!(org.thought, "dying", "death is always shown");
+    // Once the thirst is gone, other thoughts show again.
+    let (mut watered, _grid) = parched_at(&[], 0.9);
+    watered.think("moving to water", 100);
+    watered.think("teaching Neni", 101);
+    assert_eq!(watered.thought, "teaching Neni");
+}
+
+#[test]
+fn hunger_keeps_the_walk_to_food_in_view_up_to_the_food_branch_threshold() {
+    // The food branch of the choice of action runs below 0.42 energy; the thought must hold there too.
+    let (mut org, _grid) = parched_at(&[], 0.9);
+    org.energy = 0.40;
+    org.think("moving to food", 100);
+    org.think("teaching Neni", 101);
+    assert_eq!(org.thought, "moving to food");
+}
+
+#[test]
+fn a_reflection_does_not_replace_the_walk_to_water() {
+    let (mut org, _grid) = parched_at(&[], 0.2);
+    org.energy = 0.9;
+    org.think("moving to water", 100);
+    org.reflect_internally(101);
+    assert_eq!(org.thought, "moving to water");
+}
+
+#[test]
+fn a_need_eased_gives_way_even_while_another_need_is_urgent() {
+    // Thirst has eased but hunger is urgent: the old walk to water no longer holds the bubble.
+    let (mut org, _grid) = parched_at(&[], 0.9);
+    org.energy = 0.2;
+    org.think("moving to water", 100);
+    org.think("teaching Neni", 101);
+    assert_eq!(org.thought, "teaching Neni");
+    // A thought that only mentions water is not a walk to it.
+    let (mut thirsty, _grid) = parched_at(&[], 0.2);
+    thirsty.think("sitting by the water", 100);
+    thirsty.think("teaching Neni", 101);
+    assert_eq!(thirsty.thought, "teaching Neni");
+}
+
+fn worker_on_sand(name: &str) -> (Organism, WorldGrid, StdRng) {
+    let mut rng = StdRng::seed_from_u64(0);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 40..=60 {
+        for y in 40..=60 {
+            grid.set(x, y, Tile::Sand);
+        }
+    }
+    // A pool close by, so fishing is a choice they can make here.
+    grid.set(52, 52, Tile::Water);
+    let mut org = Organism::new(
+        "id".into(),
+        name.into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = 0.80;
+    org.hydration = 0.95;
+    org.health = 0.90;
+    org.age = 1500;
+    (org, grid, rng)
+}
+
+fn learned_pick(org: &Organism, grid: &WorldGrid, rng: &mut StdRng, available: &[usize]) -> usize {
+    org.choose_action(
+        grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        rng,
+        false,
+        "state",
+        available,
+    )
+    .0
+}
+
+#[test]
+fn dreaded_work_loses_a_close_learned_choice() {
+    use crate::organism::skills::{Skill, DREAD};
+    let (mut org, grid, mut rng) = worker_on_sand("Wary");
+    // Fishing (28) has served a little better than resting (17) here.
+    org.q_table.insert("state".into(), vec![(28, 0.30), (17, 0.27)]);
+    assert_eq!(learned_pick(&org, &grid, &mut rng, &[17, 28]), 28);
+
+    org.skills.set_feeling(Skill::Fishing, DREAD);
+    assert_eq!(learned_pick(&org, &grid, &mut rng, &[17, 28]), 17);
+}
+
+#[test]
+fn liked_work_wins_a_near_tie_but_not_a_clear_loss() {
+    use crate::organism::skills::{Skill, LIKING_CAP};
+    let (mut org, grid, mut rng) = worker_on_sand("Keen");
+    org.skills.set_feeling(Skill::Fishing, LIKING_CAP);
+    org.q_table.insert("state".into(), vec![(28, 0.28), (17, 0.30)]);
+    assert_eq!(learned_pick(&org, &grid, &mut rng, &[17, 28]), 28);
+
+    org.q_table.insert("state".into(), vec![(28, 0.28), (17, 0.50)]);
+    assert_eq!(learned_pick(&org, &grid, &mut rng, &[17, 28]), 17);
+}
+
+#[test]
+fn someone_hurt_felling_trees_stops_going_off_to_chop_wood() {
+    use crate::organism::skills::{Skill, DREAD};
+    let chops = |dread: bool| {
+        let mut picks = 0;
+        for seed in 0..40 {
+            let (mut org, mut grid, _) = worker_on_sand("Axe");
+            grid.set(50, 50, Tile::Grass);
+            org.discoveries.insert("stone_tools".into());
+            if dread {
+                org.skills.set_feeling(Skill::Woodcutting, DREAD);
+            }
+            let mut rng = StdRng::seed_from_u64(seed);
+            if learned_pick(&org, &grid, &mut rng, &[17]) == 27 {
+                picks += 1;
+            }
+        }
+        picks
+    };
+    assert!(chops(false) > 0, "a toolmaker on a tree tile sometimes chops");
+    assert_eq!(chops(true), 0);
+}
+
+#[test]
+fn every_daily_work_action_practises_its_own_skill() {
+    use crate::organism::skills::Skill;
+    for (action, skill) in [
+        (27, Skill::Woodcutting),
+        (28, Skill::Fishing),
+        (29, Skill::Quarrying),
+        (34, Skill::Foraging),
+        (35, Skill::Farming),
+        (338, Skill::Farming),
+        (121, Skill::Hunting),
+    ] {
+        assert_eq!(Skill::of_action(action), Some(skill), "action {action}");
+    }
+    assert_eq!(Skill::of_action(17), None);
+}
+
+#[test]
+fn passing_over_food_across_the_water_they_go_for_food_they_can_reach() {
+    let mut rng = StdRng::seed_from_u64(9);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 30..=70 {
+        for y in 30..=70 {
+            grid.set(x, y, Tile::Grass);
+        }
+    }
+    // Close food across the water to the south, farther food on dry land to the west.
+    for (dx, dy) in [(-1, 1), (1, 1), (1, -1), (1, 0), (0, -1)] {
+        grid.set(50 + dx, 50 + dy, Tile::Rock);
+    }
+    grid.set(50, 51, Tile::Water);
+    grid.set(50, 52, Tile::Food);
+    grid.set(45, 50, Tile::Food);
+    let mut org = Organism::new(
+        "weak".into(),
+        "Weak".into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = 0.3;
+    org.hydration = 0.9;
+    let (action, thought) = org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        &mut rng,
+        false,
+        "state",
+        &[0, 1, 2, 3, 4, 5, 6, 7, 8],
+    );
+    assert_eq!(thought.as_deref(), Some("moving to food"));
+    assert!(action < 8);
+    assert!(
+        crate::organism::organism::DIRECTIONS[action].0 < 0,
+        "heads west to the reachable food"
+    );
+}
+
+#[test]
+fn someone_too_weak_to_swim_does_not_wade_toward_food_across_the_water() {
+    let mut rng = StdRng::seed_from_u64(9);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 30..=70 {
+        for y in 30..=70 {
+            grid.set(x, y, Tile::Grass);
+        }
+    }
+    // Rock on three sides; the only way toward the food is through the water.
+    for (dx, dy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (1, 1)] {
+        grid.set(50 + dx, 50 + dy, Tile::Rock);
+    }
+    grid.set(50, 51, Tile::Water);
+    grid.set(50, 52, Tile::Water);
+    grid.set(50, 53, Tile::Food);
+    let mut org = Organism::new(
+        "weak".into(),
+        "Weak".into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = 0.3;
+    org.hydration = 0.9;
+    // Asked again and again: a crossing planned on the way to rejecting the
+    // food must not be taken up the next time.
+    for tick in 100..104 {
+        let (action, thought) = org.choose_action(
+            &grid,
+            &BuildingList::new(),
+            tick,
+            0.0,
+            &[],
+            false,
+            0,
+            &mut rng,
+            false,
+            "state",
+            &[0, 1, 2, 3, 4, 5, 6, 7, 8],
+        );
+        if action < 8 {
+            let (dx, dy) = crate::organism::organism::DIRECTIONS[action];
+            assert_ne!(grid.get(50 + dx, 50 + dy), Tile::Water, "waded in ({thought:?})");
+        }
+    }
+}
+
+#[test]
+fn someone_who_saw_a_burning_flees_a_fire_even_at_night() {
+    use crate::organism::lessons::Lesson;
+    let mut rng = StdRng::seed_from_u64(13);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 30..=70 {
+        for y in 30..=70 {
+            grid.set(x, y, Tile::Grass);
+        }
+    }
+    grid.set(52, 50, Tile::Fire);
+    let mut org = Organism::new(
+        "wary".into(),
+        "Wary".into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = 0.9;
+    org.hydration = 0.9;
+    org.traits.fear = 0.0;
+    org.lessons.learn(Lesson::Fire, 1.0);
+    let (action, thought) = org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        true,
+        0,
+        &mut rng,
+        false,
+        "state",
+        &[0, 1, 2, 3, 4, 5, 6, 7],
+    );
+    assert_eq!(thought.as_deref(), Some("heat dangerous"));
+    assert!(
+        crate::organism::organism::DIRECTIONS[action].0 < 0,
+        "steps away from the fire"
+    );
+}
+
+fn hungry_with_nothing_known(tile_here: Tile, grass_at: Option<(i32, i32)>) -> (usize, Option<String>) {
+    let mut rng = StdRng::seed_from_u64(11);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 30..=70 {
+        for y in 30..=70 {
+            grid.set(x, y, Tile::Sand);
+        }
+    }
+    grid.set(50, 50, tile_here);
+    if let Some((x, y)) = grass_at {
+        grid.set(x, y, Tile::Grass);
+    }
+    let mut org = Organism::new(
+        "hungry".into(),
+        "Hungry".into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = 0.3;
+    org.hydration = 0.9;
+    org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        &mut rng,
+        false,
+        "state",
+        &[0, 1, 2, 3, 4, 5, 6, 7, 8, 32],
+    )
+}
+
+#[test]
+fn someone_hungry_with_no_food_known_digs_for_roots_in_the_grass() {
+    let (action, thought) = hungry_with_nothing_known(Tile::Grass, None);
+    assert_eq!(action, 32);
+    assert_eq!(thought.as_deref(), Some("digging for roots"));
+}
+
+#[test]
+fn off_the_grass_they_walk_to_the_nearest_green_ground_for_roots() {
+    let (action, thought) = hungry_with_nothing_known(Tile::Sand, Some((53, 50)));
+    assert_eq!(thought.as_deref(), Some("looking for roots"));
+    assert!(action < 8);
+    assert_eq!(
+        crate::organism::organism::DIRECTIONS[action].0,
+        1,
+        "toward the grass to the east"
+    );
+}
+
+fn fire_beside_remembered_food(energy: f32) -> (usize, Option<String>) {
+    let mut rng = StdRng::seed_from_u64(17);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 30..=70 {
+        for y in 30..=70 {
+            grid.set(x, y, Tile::Grass);
+        }
+    }
+    grid.set(52, 50, Tile::Fire);
+    let mut org = Organism::new(
+        "starving".into(),
+        "Starving".into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = energy;
+    org.hydration = 0.9;
+    org.traits.fear = 0.0;
+    org.food_memory.insert((54, 50), 0.9);
+    org.choose_action(
+        &grid,
+        &BuildingList::new(),
+        100,
+        0.0,
+        &[],
+        false,
+        0,
+        &mut rng,
+        false,
+        "state",
+        &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    )
+}
+
+#[test]
+fn hungry_someone_goes_on_to_food_beside_a_fire_instead_of_stepping_back() {
+    let (action, thought) = fire_beside_remembered_food(0.3);
+    assert_eq!(thought.as_deref(), Some("moving to known food"));
+    assert!(
+        crate::organism::organism::DIRECTIONS[action].0 > 0,
+        "turned back from the food for the fire"
+    );
+}
+
+#[test]
+fn someone_not_hungry_still_keeps_their_distance_from_a_fire() {
+    let (action, thought) = fire_beside_remembered_food(0.6);
+    assert_eq!(thought.as_deref(), Some("heat dangerous"));
+    assert!(crate::organism::organism::DIRECTIONS[action].0 < 0);
+}
+
+#[test]
+fn grass_across_the_water_is_no_place_to_dig_for_someone_too_weak_to_swim() {
+    let mut rng = StdRng::seed_from_u64(15);
+    let traits = Traits::random(&mut rng);
+    let mut grid = WorldGrid::new(4);
+    for x in 30..=70 {
+        for y in 30..=70 {
+            grid.set(x, y, Tile::Sand);
+        }
+    }
+    for (dx, dy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (1, 1)] {
+        grid.set(50 + dx, 50 + dy, Tile::Rock);
+    }
+    grid.set(50, 51, Tile::Water);
+    grid.set(50, 52, Tile::Grass);
+    let mut org = Organism::new(
+        "weak".into(),
+        "Weak".into(),
+        50.0,
+        50.0,
+        0,
+        "".into(),
+        "lin".into(),
+        5000,
+        traits,
+    );
+    org.energy = 0.3;
+    org.hydration = 0.9;
+    for tick in 100..103 {
+        let (action, thought) = org.choose_action(
+            &grid,
+            &BuildingList::new(),
+            tick,
+            0.0,
+            &[],
+            false,
+            0,
+            &mut rng,
+            false,
+            "state",
+            &[0, 1, 2, 3, 4, 5, 6, 7, 8, 32],
+        );
+        if action < 8 {
+            let (dx, dy) = crate::organism::organism::DIRECTIONS[action];
+            assert_ne!(grid.get(50 + dx, 50 + dy), Tile::Water, "waded in ({thought:?})");
+        }
+    }
+}
+
+#[test]
+fn a_habit_of_mining_is_not_followed_where_there_is_no_rock() {
+    let (mut org, mut grid, mut rng) = worker_on_sand("Miner");
+    // Mining (26) has served them best, resting (17) less.
+    org.q_table.insert("state".into(), vec![(26, 0.9), (17, 0.1)]);
+    assert_eq!(
+        learned_pick(&org, &grid, &mut rng, &[17, 26]),
+        17,
+        "no rock beside them"
+    );
+    grid.set(51, 50, Tile::Rock);
+    assert_eq!(
+        learned_pick(&org, &grid, &mut rng, &[17, 26]),
+        26,
+        "beside a rock face"
+    );
+}
+
+#[test]
+fn with_only_unworkable_work_on_offer_they_walk_on() {
+    let (mut org, grid, mut rng) = worker_on_sand("Miner");
+    // Only mining (26) and quarrying (29) are on offer, and there is no rock beside them.
+    org.q_table.insert("state".into(), vec![(26, 0.9), (29, 0.5)]);
+    for _ in 0..20 {
+        let pick = learned_pick(&org, &grid, &mut rng, &[26, 29]);
+        assert!(pick < 8, "picked {pick} with no rock beside them");
+    }
+}

@@ -4,8 +4,9 @@ import { Modal } from './Modal'
 import type { OrganismState } from '../../shared/types'
 import { lineageColor } from '../../shared/constants'
 import { useUIStore } from '../../state/store'
-import { t, tn } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
+import { shownGeneration } from '../../game/model/generations'
+import { formatNumber, t, type MessageKey } from '../../i18n'
+import { simLabel } from '../../fork/i18n/sim'
 
 const DAY_LENGTH = 600
 
@@ -28,7 +29,7 @@ interface Props {
 
 const CATEGORIES: Array<{
   id: Category
-  label: string
+  label: MessageKey
   emoji: string
   scoreOf: (o: OrganismState) => number
   format: (o: OrganismState) => string
@@ -36,79 +37,82 @@ const CATEGORIES: Array<{
 }> = [
   {
     id: 'oldest',
-    label: t('notable.oldest'),
+    label: 'dialogs.notable.oldest',
     emoji: '⌛',
     scoreOf: (o) => o.age,
-    format: (o) => tn('notable.days', Math.floor(o.age / DAY_LENGTH)),
+    format: (o) => t('dialogs.notable.days', { count: formatNumber(Math.floor(o.age / DAY_LENGTH)) }),
     filter: (o) => o.alive,
   },
   {
     id: 'children',
-    label: t('notable.children'),
+    label: 'dialogs.notable.children',
     emoji: '🍼',
     scoreOf: (o) => o.children_count ?? 0,
-    format: (o) => tn('notable.childCount', o.children_count ?? 0),
+    format: (o) => t('dialogs.notable.childrenCount', { count: formatNumber(o.children_count ?? 0) }),
     filter: (o) => (o.children_count ?? 0) > 0,
   },
   {
     id: 'friends',
-    label: t('notable.friends'),
+    label: 'dialogs.notable.friends',
     emoji: '🤝',
     scoreOf: (o) => Object.keys(o.friends ?? {}).length,
-    format: (o) => tn('notable.friendCount', Object.keys(o.friends ?? {}).length),
+    format: (o) =>
+      t('dialogs.notable.friendsCount', { count: formatNumber(Object.keys(o.friends ?? {}).length) }),
     filter: (o) => o.alive && Object.keys(o.friends ?? {}).length > 0,
   },
   {
     id: 'wealth',
-    label: t('notable.wealth'),
+    label: 'dialogs.notable.wealth',
     emoji: '💰',
     scoreOf: (o) => o.wealth ?? 0,
-    format: (o) => tn('notable.coin', o.wealth ?? 0),
+    format: (o) => t('dialogs.notable.coin', { count: formatNumber(o.wealth ?? 0) }),
     filter: (o) => o.alive && (o.wealth ?? 0) > 0,
   },
   {
     id: 'discoveries',
-    label: t('notable.discoveries'),
+    label: 'dialogs.notable.discoveries',
     emoji: '🔎',
     scoreOf: (o) => (o.discoveries ?? []).length,
-    format: (o) => tn('notable.discoveryCount', (o.discoveries ?? []).length),
+    format: (o) =>
+      t('dialogs.notable.discoveriesCount', { count: formatNumber((o.discoveries ?? []).length) }),
     filter: (o) => o.alive && (o.discoveries ?? []).length > 0,
   },
   {
     id: 'literacy',
-    label: t('notable.literacy'),
+    label: 'dialogs.notable.literate',
     emoji: '📜',
     scoreOf: (o) => o.literacy ?? 0,
-    format: (o) => t('notable.literate', { n: Math.round((o.literacy ?? 0) * 100) }),
+    format: (o) =>
+      t('dialogs.notable.literacy', { percent: formatNumber(Math.round((o.literacy ?? 0) * 100)) }),
     filter: (o) => o.alive && (o.literacy ?? 0) > 0.05,
   },
   {
     id: 'piety',
-    label: t('notable.piety'),
+    label: 'dialogs.notable.devout',
     emoji: '🕯️',
     scoreOf: (o) => o.piety ?? 0,
-    format: (o) => t('notable.pious', { n: Math.round((o.piety ?? 0) * 100) }),
+    format: (o) => t('dialogs.notable.piety', { percent: formatNumber(Math.round((o.piety ?? 0) * 100)) }),
     filter: (o) => o.alive && (o.piety ?? 0) > 0.05,
   },
   {
     id: 'joy',
-    label: t('notable.joy'),
+    label: 'dialogs.notable.joy',
     emoji: '☀',
     scoreOf: (o) => o.joy_ticks ?? 0,
-    format: (o) => tn('notable.joyTicks', o.joy_ticks ?? 0),
+    format: (o) => t('dialogs.notable.joyTicks', { count: formatNumber(o.joy_ticks ?? 0) }),
     filter: (o) => o.alive && (o.joy_ticks ?? 0) > 0,
   },
   {
     id: 'grief',
-    label: t('notable.grief'),
+    label: 'dialogs.notable.grief',
     emoji: '◌',
     scoreOf: (o) => o.grief_ticks ?? 0,
-    format: (o) => tn('notable.griefTicks', o.grief_ticks ?? 0),
+    format: (o) => t('dialogs.notable.griefTicks', { count: formatNumber(o.grief_ticks ?? 0) }),
     filter: (o) => o.alive && (o.grief_ticks ?? 0) > 0,
   },
   {
     id: 'aspiration',
-    label: t('notable.aspiration'),
+    label: 'dialogs.notable.aspiration',
     emoji: '✦',
     scoreOf: (o) => o.age,
     format: (o) => simLabel('aspiration', o.aspiration),
@@ -130,12 +134,14 @@ export function NotableOrgsModal({ organisms, onClose }: Props) {
   const livingCount = useMemo(() => organisms.filter((o) => o.alive).length, [organisms])
 
   return (
-    <Modal open onClose={onClose} className="notable-modal" title={t('notable.title')} hideTitle>
+    <Modal open onClose={onClose} className="notable-modal" title={t('dialogs.notable.title')} hideTitle>
       <div className="lang-modal-header">
-        <span className="lang-modal-title">{t('notable.heading')}</span>
-        <span className="tree-modal-sub">{t('notable.sub', { n: livingCount })}</span>
+        <span className="lang-modal-title">{t('dialogs.notable.heading')}</span>
+        <span className="tree-modal-sub">
+          {t('dialogs.notable.alive', { count: formatNumber(livingCount) })}
+        </span>
         <div className="modal-header-actions">
-          <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
+          <button aria-label={t('dialogs.notable.close')} className="close-btn" onClick={onClose}>
             ✕
           </button>
         </div>
@@ -167,7 +173,7 @@ export function NotableOrgsModal({ organisms, onClose }: Props) {
                 letterSpacing: '0.03em',
               }}
             >
-              {cat.emoji} {cat.label}
+              {cat.emoji} {t(cat.label)}
             </button>
           )
         })}
@@ -176,7 +182,7 @@ export function NotableOrgsModal({ organisms, onClose }: Props) {
       <div style={{ overflowY: 'auto', maxHeight: 'calc(80vh - 140px)', padding: '8px 12px' }}>
         {rows.length === 0 ? (
           <div style={{ color: '#555', fontStyle: 'italic', textAlign: 'center', padding: 40 }}>
-            {t('notable.empty')}
+            {t('dialogs.notable.empty')}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -233,7 +239,7 @@ export function NotableOrgsModal({ organisms, onClose }: Props) {
                       </span>
                     )}
                     <span style={{ color: '#555', marginLeft: 8, fontSize: 10 }}>
-                      {t('stats.generation', { n: r.org.generation })}
+                      {t('dialogs.notable.gen', { gen: shownGeneration(r.org.generation) })}
                     </span>
                     {!r.org.alive && <span style={{ color: '#444', marginLeft: 6 }}>†</span>}
                   </span>

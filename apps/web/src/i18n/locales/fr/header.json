@@ -1,0 +1,153 @@
+{
+  "starTitle": "Mettre une étoile sur GitHub",
+  "starBody": "The Human Box est gratuit et open source. Une étoile aide d'autres personnes à le trouver.",
+  "starAria": "Mettre une étoile à The Human Box sur GitHub",
+  "star": "étoile",
+  "live": "LIVE",
+  "connecting": "connexion…",
+  "tickTip": "Tick de simulation {tick}. 600 ticks correspondent à un jour dans le monde. {days} jours se sont écoulés.",
+  "tick": "tick {tick}",
+  "moonTitle": "lune : {phase}",
+  "moonBody": "Année {year}, jour {day}.",
+  "eraTitle": "ère : {era}",
+  "eraBody": "Façonne les ressources et le comportement des gens.",
+  "stats": "statistiques",
+  "statsBody": "Graphiques de population, naissances et décès, et croissance des lignées dans le temps.",
+  "civTitle": "civilisation",
+  "civ": "civ",
+  "civBody": "Ères, gouvernements, religions, bâtiments, livres, art et titres.",
+  "searchTitle": "trouver des personnes",
+  "search": "rechercher",
+  "searchBody": "Recherchez toutes les personnes, vivantes ou mortes, par nom, pensée, lignée ou découverte.",
+  "chronicles": "chroniques",
+  "chroniclesBody": "L'histoire de ce monde, écrite à partir de ce qui s'est passé.",
+  "more": "plus",
+  "moreBody": "Trouver un outil, sauvegarder le monde, filtrer et régler l'affichage.",
+  "settings": "paramètres",
+  "settingsBody": "Langue, affichage, performances et votre monde.",
+  "worldPanel": "panneau du monde",
+  "closeWorldPanel": "fermer le panneau du monde",
+  "worldPanelBody": "Historique, lignées et journal des événements.",
+  "openWorldPanelAria": "Ouvrir le panneau du monde",
+  "closeWorldPanelAria": "Fermer le panneau du monde",
+  "world": "monde",
+  "peoplePanel": "panneau des personnes",
+  "closePeoplePanel": "fermer le panneau des personnes",
+  "peoplePanelBody": "Toutes les personnes vivantes, ainsi que les morts.",
+  "openPeoplePanelAria": "Ouvrir le panneau des personnes",
+  "closePeoplePanelAria": "Fermer le panneau des personnes",
+  "people": "personnes",
+  "fullscreen": "plein écran",
+  "exitFullscreen": "quitter le plein écran",
+  "enterFullscreenAria": "Passer en plein écran",
+  "exitFullscreenAria": "Quitter le plein écran",
+  "save": {
+    "loading": "chargement de la sauvegarde locale…",
+    "retrying": "nouvelle tentative de stockage local…",
+    "restored": "monde restauré au tick {tick}",
+    "newWorld": "nouveau monde local prêt",
+    "saving": "enregistrement du tick {tick}…",
+    "saved": "enregistré localement · tick {tick}",
+    "savingWorld": "enregistrement du monde…"
+  },
+  "sandbox": {
+    "seedHint": "cliquez sur la terre pour fonder une nouvelle tribu",
+    "guidanceSet": "orientation « {strategy} » activée",
+    "guidanceFailed": "échec de l’orientation",
+    "followNobody": "suivre · personne à portée",
+    "nameNobody": "nommer · personne à portée",
+    "noOnePraying": "personne ne prie",
+    "noTribeBrink": "aucune tribu n’est au bord du gouffre",
+    "taughtSecret": "les dieux leur ont enseigné un secret",
+    "cannotTeach": "ils ne peuvent pas encore être instruits à nouveau",
+    "layersCleared": "couches de la carte effacées",
+    "toolShown": "{tool} affiché",
+    "toolHidden": "{tool} masqué",
+    "toolMapOn": "carte {tool} activée",
+    "toolMapOff": "carte {tool} désactivée",
+    "toolWorking": "{tool}…",
+    "toolApplied": "{tool} appliqué",
+    "toolFailed": "échec : {tool}",
+    "toolAt": "{tool} → {x}, {y}",
+    "result": {
+      "none_here": "personne à portée ici",
+      "none_hurt": "personne ici n'était blessé",
+      "none_sick": "personne ici n'est malade",
+      "none_dead": "personne à ramener à la vie ici",
+      "revive_cooldown": "cette tribu a déjà été ramenée récemment ; les dieux doivent attendre",
+      "world_full": "il n'y a plus de place pour de nouvelles personnes",
+      "animal_full": "il n'y a plus de place pour d'autres animaux",
+      "no_room_for_animal": "pas de place sur ce terrain pour cet animal",
+      "split_small": "trop peu de monde ici pour détacher une tribu",
+      "blocked": "personne ne peut se tenir sur l'eau ou la roche",
+      "no_government": "cette tribu n'a personne pour la diriger",
+      "cannot_teach": "elles ne peuvent pas encore être enseignées à nouveau",
+      "spawned": {
+        "one": "{name} est arrivé",
+        "other": "{count} personnes sont arrivées"
+      },
+      "family_arrived": "une nouvelle famille est arrivée",
+      "healed_animals": {
+        "one": "un animal a repris des forces",
+        "other": "{count} animaux ont repris des forces"
+      },
+      "healed": {
+        "one": "{name} a été soigné",
+        "other": "{count} personnes soignées"
+      },
+      "revived": "{name} a été ramené d'entre les morts",
+      "blessed": {
+        "one": "{name} béni",
+        "other": "{count} personnes bénies"
+      },
+      "inspired": {
+        "one": "{name} inspiré",
+        "other": "{count} personnes inspirées"
+      },
+      "cured": {
+        "one": "{name} guéri",
+        "other": "{count} personnes guéries"
+      },
+      "cured_tribe": {
+        "one": "une personne de la tribu guérie",
+        "other": "{count} personnes de la tribu guéries"
+      },
+      "loved": {
+        "one": "{name} est tombé amoureux",
+        "other": "{count} cœurs remplis d'amour"
+      },
+      "paired": {
+        "one": "un couple réuni",
+        "other": "{count} couples réunis"
+      },
+      "mutated": "{name} a muté",
+      "cursed": "{name} maudit",
+      "taught": "la tribu de {name} a appris un secret",
+      "moved": "{name} déplacé",
+      "gifted_food": {
+        "one": "de la nourriture donnée à {name}",
+        "other": "de la nourriture donnée à {count} personnes"
+      },
+      "gifted_tool": {
+        "one": "un outil donné à {name}",
+        "other": "des outils donnés à {count} personnes"
+      },
+      "crowned": "{name} couronné",
+      "split": {
+        "other": "{count} personnes se sont détachées pour fonder une tribu"
+      },
+      "tamed": {
+        "one": "une bête sauvage est devenue un chien fidèle",
+        "other": "{count} bêtes sauvages sont devenues des chiens fidèles"
+      },
+      "guardian": "un chien gardien s'est posé près de {name}",
+      "smitten": "la foudre a frappé {name}",
+      "struck_beast": "la foudre a abattu une bête",
+      "struck_roof": "la foudre a fendu un toit",
+      "animals": {
+        "one": "un animal est apparu",
+        "other": "{count} animaux sont apparus"
+      }
+    }
+  }
+}

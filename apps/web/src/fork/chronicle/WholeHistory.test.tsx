@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setLocaleForTests } from '../../i18n/locale'
+import { setLocaleForTests } from '../i18n/locale'
 import type { ChronicleEntry } from './model'
 import { WholeHistory } from './WholeHistory'
 
@@ -89,8 +89,8 @@ function layout(scrollHeight: number, clientHeight: number) {
   })
 }
 
-beforeEach(() => {
-  setLocaleForTests('ru')
+beforeEach(async () => {
+  await setLocaleForTests('ru')
   vi.useFakeTimers({ shouldAdvanceTime: true })
   calls = []
   // Node's own localStorage stands in front of the DOM one: give the tab a plain store.
@@ -107,14 +107,14 @@ beforeEach(() => {
   root = createRoot(container)
 })
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount())
   container.remove()
   vi.useRealTimers()
   vi.unstubAllGlobals()
   delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight
   delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
-  setLocaleForTests('en')
+  await setLocaleForTests('en')
 })
 
 describe('the whole history tab', () => {

@@ -1,0 +1,150 @@
+{
+  "starTitle": "Daj gwiazdkę na GitHubie",
+  "starBody": "The Human Box jest darmowy i open source. Gwiazdka pomaga innym go znaleźć.",
+  "starAria": "Daj gwiazdkę The Human Box na GitHubie",
+  "star": "gwiazdka",
+  "live": "LIVE",
+  "connecting": "łączenie…",
+  "tickTip": "Takt symulacji {tick}. 600 taktów to jeden dzień w świecie. Minęło {days} dni.",
+  "tick": "takt {tick}",
+  "moonTitle": "księżyc: {phase}",
+  "moonBody": "Rok {year}, dzień {day}.",
+  "eraTitle": "epoka: {era}",
+  "eraBody": "Kształtuje zasoby i zachowania ludzi.",
+  "stats": "statystyki",
+  "statsBody": "Wykresy populacji, narodzin i zgonów oraz wzrostu rodów w czasie.",
+  "civTitle": "cywilizacja",
+  "civ": "cywilizacja",
+  "civBody": "Epoki, rządy, religie, budynki, księgi, sztuka i nagłówki.",
+  "searchTitle": "znajdź ludzi",
+  "search": "szukaj",
+  "searchBody": "Szukaj wszystkich, żywych i zmarłych, po imieniu, myśli, rodzie lub odkryciu.",
+  "chronicles": "kroniki",
+  "chroniclesBody": "Historia tego świata, spisana na podstawie tego, co się wydarzyło.",
+  "more": "więcej",
+  "moreBody": "Znajdź narzędzie, zapisz świat, ustaw filtry i opcje widoku.",
+  "settings": "ustawienia",
+  "settingsBody": "Język, ekran, wydajność i twój świat.",
+  "worldPanel": "panel świata",
+  "closeWorldPanel": "zamknij panel świata",
+  "worldPanelBody": "Historia, rody i dziennik zdarzeń.",
+  "openWorldPanelAria": "Otwórz panel świata",
+  "closeWorldPanelAria": "Zamknij panel świata",
+  "world": "świat",
+  "peoplePanel": "panel ludzi",
+  "closePeoplePanel": "zamknij panel ludzi",
+  "peoplePanelBody": "Wszyscy żywi, a także zmarli.",
+  "openPeoplePanelAria": "Otwórz panel ludzi",
+  "closePeoplePanelAria": "Zamknij panel ludzi",
+  "people": "ludzie",
+  "fullscreen": "pełny ekran",
+  "exitFullscreen": "wyjdź z pełnego ekranu",
+  "enterFullscreenAria": "Przejdź na pełny ekran",
+  "exitFullscreenAria": "Wyjdź z pełnego ekranu",
+  "save": {
+    "loading": "wczytywanie lokalnego zapisu…",
+    "retrying": "ponawianie zapisu lokalnego…",
+    "restored": "świat przywrócony w ticku {tick}",
+    "newWorld": "nowy lokalny świat gotowy",
+    "saving": "zapisywanie ticku {tick}…",
+    "saved": "zapisano lokalnie · tick {tick}",
+    "savingWorld": "zapisywanie świata…"
+  },
+  "sandbox": {
+    "seedHint": "kliknij ziemię, aby założyć nowe plemię",
+    "guidanceSet": "ustawiono kierunek: {strategy}",
+    "guidanceFailed": "nie udało się ustawić kierunku",
+    "followNobody": "podążanie · nikogo w zasięgu",
+    "nameNobody": "nazwij · nikogo w zasięgu",
+    "noOnePraying": "nikt się nie modli",
+    "noTribeBrink": "żadne plemię nie jest na skraju",
+    "taughtSecret": "bogowie nauczyli ich sekretu",
+    "cannotTeach": "nie mogą jeszcze znów się uczyć",
+    "layersCleared": "warstwy mapy wyczyszczone",
+    "toolShown": "{tool} pokazany",
+    "toolHidden": "{tool} ukryty",
+    "toolMapOn": "mapa {tool} włączona",
+    "toolMapOff": "mapa {tool} wyłączona",
+    "toolWorking": "{tool}…",
+    "toolApplied": "{tool} zastosowany",
+    "toolFailed": "{tool} nie powiodło się",
+    "toolAt": "{tool} → {x}, {y}",
+    "result": {
+      "none_here": "nikogo w zasięgu tutaj",
+      "none_hurt": "nikt tutaj nie był ranny",
+      "none_sick": "nikt tutaj nie choruje",
+      "none_dead": "nie ma tu nikogo do wskrzeszenia",
+      "revive_cooldown": "to plemię zostało niedawno wskrzeszone; bogowie muszą poczekać",
+      "world_full": "nie ma miejsca na więcej ludzi",
+      "animal_full": "nie ma miejsca na więcej zwierząt",
+      "no_room_for_animal": "na tym terenie nie ma miejsca dla tego zwierzęcia",
+      "split_small": "zbyt mało ludzi tutaj, by odłączyć plemię",
+      "blocked": "nikt nie może stanąć na wodzie ani na skale",
+      "no_government": "to plemię nie ma nikogo, kto by nim kierował",
+      "cannot_teach": "nie mogą jeszcze raz się czegoś nauczyć",
+      "spawned": {
+        "one": "{name} przybył",
+        "other": "przybyło osób: {count}"
+      },
+      "family_arrived": "przybyła nowa rodzina",
+      "healed_animals": { "one": "nakarmiono zwierzę", "other": "nakarmiono zwierząt: {count}" },
+      "healed": {
+        "one": "wyleczono: {name}",
+        "other": "wyleczono osób: {count}"
+      },
+      "revived": "{name} został wskrzeszony",
+      "blessed": {
+        "one": "pobłogosławiono: {name}",
+        "other": "pobłogosławiono osób: {count}"
+      },
+      "inspired": {
+        "one": "natchniono: {name}",
+        "other": "natchniono osób: {count}"
+      },
+      "cured": {
+        "one": "wyleczono: {name}",
+        "other": "wyleczono osób: {count}"
+      },
+      "cured_tribe": {
+        "one": "wyleczono jedną osobę z plemienia",
+        "other": "wyleczono w plemieniu osób: {count}"
+      },
+      "loved": {
+        "one": "{name} się zakochał",
+        "other": "serca pełne miłości: {count}"
+      },
+      "paired": {
+        "one": "połączono parę",
+        "other": "połączono par: {count}"
+      },
+      "mutated": "{name} przeszedł mutację",
+      "cursed": "przeklęto: {name}",
+      "taught": "plemię {name} poznało sekret",
+      "moved": "przeniesiono: {name}",
+      "gifted_food": {
+        "one": "dano jedzenie: {name}",
+        "other": "dano jedzenie osobom: {count}"
+      },
+      "gifted_tool": {
+        "one": "dano narzędzie: {name}",
+        "other": "dano narzędzia osobom: {count}"
+      },
+      "crowned": "koronowano: {name}",
+      "split": {
+        "other": "odłączyło się osób: {count}, by założyć plemię"
+      },
+      "tamed": {
+        "one": "dzikie zwierzę stało się wiernym psem",
+        "other": "dzikie zwierzęta stały się wiernymi psami: {count}"
+      },
+      "guardian": "pies stróż stanął przy: {name}",
+      "smitten": "piorun uderzył w: {name}",
+      "struck_beast": "piorun powalił zwierzę",
+      "struck_roof": "piorun rozbił dach",
+      "animals": {
+        "one": "pojawiło się zwierzę",
+        "other": "pojawiło się zwierząt: {count}"
+      }
+    }
+  }
+}

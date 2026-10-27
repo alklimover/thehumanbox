@@ -1,7 +1,7 @@
 import type { OrgDetail } from '../../../shared/types'
 import { t } from '../../../i18n'
-import { simLabel } from '../../../i18n/sim'
-import { displayName } from '../../../i18n/names'
+import { simLabel } from '../../../fork/i18n/sim'
+import { displayName } from '../../../fork/i18n/names'
 
 export function LanguageSection({ detail }: { detail: OrgDetail | null }) {
   return (

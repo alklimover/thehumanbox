@@ -1,18 +1,27 @@
+import { formatNumber, t } from '../../../i18n'
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
-import { t, type MessageKey } from '../../../i18n'
-import { simFaithName } from '../../../i18n/simtext'
+import { simFaithName } from '../../../fork/i18n/simtext'
 
 const TEMPLE_RADIUS = 20
 
-/** How a temple of each kind of faith is described; the simulation has sent the kind in either case. */
-const KIND_SUBTITLE: Record<string, MessageKey> = {
-  animism: 'map.temple.kind.animism',
-  polytheism: 'map.temple.kind.polytheism',
-  monotheism: 'map.temple.kind.monotheism',
-  philosophical: 'map.temple.kind.philosophical',
-  secular: 'map.temple.kind.secular',
+/** One line describing the faith's kind of worship, whatever case the simulation sends it in. */
+function kindSubtitle(kind: string | undefined): string {
+  switch ((kind ?? '').toLowerCase()) {
+    case 'animism':
+      return t('panels.scene.temple.kind.animism')
+    case 'polytheism':
+      return t('panels.scene.temple.kind.polytheism')
+    case 'monotheism':
+      return t('panels.scene.temple.kind.monotheism')
+    case 'philosophical':
+      return t('panels.scene.temple.kind.philosophical')
+    case 'secular':
+      return t('panels.scene.temple.kind.secular')
+    default:
+      return t('panels.scene.temple.kind.fallback')
+  }
 }
 
 const TEMPLE_KINDS = new Set(['temple', 'cathedral', 'shrine', 'mosque', 'synagogue', 'pagoda'])
@@ -79,10 +88,10 @@ export function resolveTempleScene(world: WorldState, scene: SceneId): SceneCont
     const role: SceneOccupant['role'] = o.is_leader ? 'priest' : piety > 0.6 ? 'worshipper' : 'guest'
     const activity =
       piety > 0.6
-        ? t('map.temple.praying')
+        ? t('panels.scene.activity.praying')
         : piety > 0.3
-          ? t('map.temple.reflecting')
-          : t('map.temple.observing')
+          ? t('panels.scene.activity.reflecting')
+          : t('panels.scene.activity.observing')
     const entry: SceneOccupant = { org: o, role, activity }
     if (d <= 4) inside.push(entry)
     else away.push(entry)
@@ -101,9 +110,10 @@ export function resolveTempleScene(world: WorldState, scene: SceneId): SceneCont
 
   const adherents = religion.adherents ?? 0
   const subtitle = [
-    t(KIND_SUBTITLE[(religion.kind ?? '').toLowerCase()] ?? 'map.temple.kind.other'),
-    t('map.temple.faithful', { n: adherents }),
-    t('map.temple.crowd', { inside: inside.length, away: away.length }),
+    kindSubtitle(religion.kind),
+    t('panels.scene.temple.adherents', { count: formatNumber(adherents) }),
+    t('panels.scene.temple.atAltar', { count: formatNumber(inside.length) }),
+    t('panels.scene.temple.nearbyCount', { count: formatNumber(away.length) }),
   ].join(' · ')
 
   return {

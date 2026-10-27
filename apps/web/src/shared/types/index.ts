@@ -269,6 +269,18 @@ export interface FarmInfo {
   progress?: number
 }
 
+/** One line of a tribe's history: what happened, when, and where (tiles; null when the sim has no place). */
+export interface TribeChronicleRow {
+  tick: number
+  kind: 'raid' | 'war' | 'era' | 'famine' | 'arrival' | 'split' | 'craft' | 'leader_died'
+  /** The other tribe in a raid, war or split. */
+  other: string | null
+  /** An era, craft or leader's name, where the kind has one. */
+  word: string | null
+  x: number | null
+  y: number | null
+}
+
 export interface SettlementInfo {
   lineage_id: string
   name: string
@@ -357,6 +369,30 @@ export interface OrgDetail extends OrganismState {
   life_log: LifeEvent[]
   conversations: ConversationEntry[]
   memories: MemoryEntry[]
+  /** What this person knows how to do, 0 to 1, best first. */
+  skills?: { name: string; level: number; feeling?: number }[]
+  lessons?: string[]
+  /** Parents and grandparents, with their words for common things (see the sim's `family_words`). */
+  family_words?: FamilyWords[]
+}
+
+/** A parent or grandparent of a person, and the words they knew for common things. */
+export interface FamilyWords {
+  id: string
+  /** Empty when `remembered` is false. */
+  name: string
+  /** Only meaningful when `remembered` is true. */
+  alive: boolean
+  relation:
+    | 'mother'
+    | 'father'
+    | 'maternal_grandmother'
+    | 'maternal_grandfather'
+    | 'paternal_grandmother'
+    | 'paternal_grandfather'
+  /** False when their record is gone, so there are no words to show. */
+  remembered: boolean
+  vocabulary: Record<string, string>
 }
 
 export interface OrgLife {
@@ -428,6 +464,12 @@ export interface AnimalState {
   away?: boolean
   /** Born recently (a newborn is drawn smaller); see `YOUNG_ANIMAL_TICKS` in the sim. */
   young?: boolean
+  /** Kept as livestock or bonded to a person: no longer wild. */
+  tame?: boolean
+  /** Low on energy and looking for food. */
+  hungry?: boolean
+  /** A predator out after prey or people. */
+  hunting?: boolean
 }
 
 export interface WardInfo {
@@ -557,13 +599,13 @@ export interface GridState {
   height: number
   origin_x: number
   origin_y: number
-  tiles: number[][]
+  tiles: ArrayLike<number>[]
   fire_intensity: number[][]
   structure: number[][]
   /** Bumped when a frame carried a new `structure` layer, so the renderer re-reads it only then. */
   structure_revision?: number
-  biomes?: number[][]
-  depth_map?: number[][]
+  biomes?: ArrayLike<number>[]
+  depth_map?: ArrayLike<number>[]
   food_trail?: number[][]
   water_trail?: number[][]
   path_trail?: number[][]
@@ -589,17 +631,23 @@ export interface GridWire {
   height: number
   origin_x: number
   origin_y: number
-  tiles?: number[][]
+  /**
+   * Tile ids, row-major, one per cell: raw bytes (each id's `i8` bit pattern) in a binary frame,
+   * numbers in a JSON one. Absent when the frame carries no tile layer or the tiles are unchanged.
+   */
+  tiles?: ArrayLike<number>
   fire: [number, number, number][]
   /** Absent on a hot frame whose structure layer is unchanged: keep the one already held. */
   structure?: [number, number, number][]
   /** Cell updates on hot frames; value 0 clears a previous structure mark. */
   structure_delta?: [number, number, number][]
-  biomes?: number[][]
-  depth_map?: number[][]
+  /** Biome ids, row-major, one per cell (raw bytes in a binary frame). */
+  biomes?: ArrayLike<number>
+  /** Sea depth, row-major, one per cell: `(1 - depth) * 200` on water, 255 on land. */
+  depth_map?: ArrayLike<number>
   trails?: [number, number, number, number, number][]
   fertility?: [number, number, number][]
-  fertility_dense?: number[] | Uint8Array
+  fertility_dense?: ArrayLike<number>
   hazard?: [number, number, number][]
   roads?: [number, number, number][]
 }
@@ -658,6 +706,12 @@ export interface WorldState {
   /** The tick the last person died, once the world is lost. */
   lost_tick?: number | null
   lineage_homes?: Record<string, [number, number, number]>
+  /** What each tribe has learned as a people: the craft it is known for, the hungry winter it remembers. */
+  lineage_lore?: Record<string, { craft?: string; hungry_winter?: number; war_weary?: number }>
+  /** Each living tribe's own history, oldest first (sim `tribe_chronicle.rs`). Sent with the cold frames. */
+  tribe_chronicle?: Record<string, TribeChronicleRow[]>
+  /** What each tribe's people are at work on right now, counted by trade: `{lineage: {skill: people}}`. */
+  tribe_work?: Record<string, Record<string, number>>
   current_era?: string
   featured_org_id?: string
   sex_words?: [string, string]

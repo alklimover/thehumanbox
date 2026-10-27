@@ -12,6 +12,11 @@ set -euo pipefail
 #     deleted (upstream's pipeline.yml, desktop-release.yml, dependabot.yml);
 #   - a version-only conflict in apps/desktop/package.json or
 #     apps/web/package.json takes upstream's version;
+#   - a conflict in a Russian locale file (apps/web/src/i18n/locales/ru/*.json,
+#     apps/desktop/main/locales/ru.json) is merged key by key
+#     (merge-locale-json.mjs): upstream's keys and texts, with the fork's
+#     rewritten Russian kept on top; the report lists the kept texts whose
+#     English upstream changed too;
 #   - anything else stops the sync and lists the files.
 # Rename detection is off for the merge: otherwise git follows upstream's
 # desktop-release.yml into the fork's fork-release.yml and edits it silently.
@@ -73,8 +78,9 @@ cd "$ROOT"
 out=${out:-$(mktemp -d "${TMPDIR:-/tmp}/upstream-sync.XXXXXX")}
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
-rm -f "$out"/{report.md,title.txt,result.env,conflicts.tsv,resolutions.tsv}
+rm -f "$out"/{report.md,title.txt,result.env,conflicts.tsv,resolutions.tsv,locale-kept.tsv}
 : >"$out/resolutions.tsv"
+: >"$out/locale-kept.tsv"
 
 result() {
   printf '%s=%s\n' "$1" "$2" >>"$out/result.env"
@@ -151,6 +157,30 @@ unmerged() {
 }
 message="Merge upstream 1homsi/thehumanbox main ($count commits) into the fork"
 
+# The fork rewrites Russian texts in upstream's locale files, never their keys.
+is_ru_locale() {
+  [[ "$1" == apps/web/src/i18n/locales/ru/*.json || "$1" == apps/desktop/main/locales/ru.json ]]
+}
+
+# Merge one conflicted Russian locale file by key; the English beside it tells
+# which kept fork texts may be out of date.
+resolve_locale() {
+  local path=$1 tmp en
+  tmp=$(mktemp -d)
+  git -C "$work" show ":1:$path" >"$tmp/base.json" 2>/dev/null || echo '{}' >"$tmp/base.json"
+  git -C "$work" show ":2:$path" >"$tmp/ours.json" 2>/dev/null || echo '{}' >"$tmp/ours.json"
+  git -C "$work" show ":3:$path" >"$tmp/theirs.json" || return 1
+  if [[ "$path" == */ru.json ]]; then en=${path%ru.json}en.json; else en=${path/\/ru\//\/en\/}; fi
+  git -C "$work" show "$base:$en" >"$tmp/en-base.json" 2>/dev/null || echo '{}' >"$tmp/en-base.json"
+  git -C "$work" show "$upstream:$en" >"$tmp/en-theirs.json" 2>/dev/null || echo '{}' >"$tmp/en-theirs.json"
+  node "$SCRIPT_DIR/merge-locale-json.mjs" --base "$tmp/base.json" --ours "$tmp/ours.json" \
+    --theirs "$tmp/theirs.json" --out "$work/$path" --en-base "$tmp/en-base.json" \
+    --en-theirs "$tmp/en-theirs.json" --report "$out/locale-kept.tsv" --label "$path" >>"$out/merge.log" 2>&1 || return 1
+  rm -rf "$tmp"
+  git -C "$work" add -- "$path"
+  printf 'locale-merge\t%s\n' "$path" >>"$out/resolutions.tsv"
+}
+
 log "merging upstream/main into $branch"
 if ! git -C "$work" merge --no-ff --no-edit --quiet -X no-renames -m "$message" "$upstream" >"$out/merge.log" 2>&1; then
   if ! git -C "$work" rev-parse --quiet --verify MERGE_HEAD >/dev/null; then
@@ -168,7 +198,14 @@ if ! git -C "$work" merge --no-ff --no-edit --quiet -X no-renames -m "$message" 
       DD)
         git -C "$work" rm --quiet -- "$path"
         ;;
+      AA)
+        if is_ru_locale "$path"; then resolve_locale "$path" || true; fi
+        ;;
       UU)
+        if is_ru_locale "$path"; then
+          resolve_locale "$path" || true
+          continue
+        fi
         for file in "${VERSION_FILES[@]}"; do
           [ "$path" = "$file" ] || continue
           git -C "$work" checkout --conflict=diff3 -- "$path"
@@ -188,7 +225,7 @@ if ! git -C "$work" merge --no-ff --no-edit --quiet -X no-renames -m "$message" 
     cut -f2 "$out/conflicts.tsv" | sed 's/^/    /' >&2
     node "$SCRIPT_DIR/sync-report.mjs" --mode conflict --repo "$work" --base "$base" --upstream "$upstream" \
       --branch "$branch" --date "$date" --conflicts "$out/conflicts.tsv" --resolutions "$out/resolutions.tsv" \
-      --out "$out/report.md" --title-out "$out/title.txt"
+      --locale-kept "$out/locale-kept.tsv" --out "$out/report.md" --title-out "$out/title.txt"
     result status conflict
     exit 3
   fi
@@ -222,7 +259,7 @@ else
 fi
 log "writing the report"
 node "$SCRIPT_DIR/sync-report.mjs" --mode pr --repo "$work" --base "$base" --upstream "$upstream" --head "$head" \
-  --branch "$branch" --date "$date" --resolutions "$out/resolutions.tsv" \
+  --branch "$branch" --date "$date" --resolutions "$out/resolutions.tsv" --locale-kept "$out/locale-kept.tsv" \
   --out "$out/report.md" --title-out "$out/title.txt" ${report_args[@]+"${report_args[@]}"}
 result status merged
 

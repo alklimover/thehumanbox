@@ -91,11 +91,11 @@ function EventLogImpl() {
   return (
     <>
       <div className="section-title" id="event-log-heading">
-        {t('panel.events.title')}
+        {t('panels.events.heading')}
         {scopeKey ? ` · ${scopeKey[0]}` : ''}
         <button
           onClick={() => setDramaOnly((v) => !v)}
-          title={dramaOnly ? t('panel.events.importantTip') : t('panel.events.allTip')}
+          title={dramaOnly ? t('panels.events.showImportant') : t('panels.events.showAll')}
           style={{
             marginLeft: 8,
             fontSize: 9,
@@ -109,7 +109,7 @@ function EventLogImpl() {
             textTransform: 'uppercase',
           }}
         >
-          {dramaOnly ? t('panel.events.important') : t('panel.events.all')}
+          {dramaOnly ? `★ ${t('panels.events.important')}` : `≡ ${t('panels.events.all')}`}
         </button>
       </div>
       <div className="event-log" role="log" aria-live="polite" aria-labelledby="event-log-heading">

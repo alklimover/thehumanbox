@@ -4,12 +4,15 @@ import {
   type LocalWorldReloadDetail,
   reloadAppSafely,
   requestOwnWorldRecovery,
+  getOwnWorldSeed,
   requestOwnWorldReset,
   resolvePlayerWorldKind,
+  setOwnWorldSeed,
   resolveWorldSource,
   shouldUseSimulationApi,
 } from './worldSource'
 import { showNotice } from '../shared/confirm'
+import { loadLocale } from '../i18n'
 
 vi.mock('../shared/confirm', () => ({ showNotice: vi.fn(() => Promise.resolve()) }))
 
@@ -66,6 +69,22 @@ describe('resolveWorldSource', () => {
   it('ignores legacy source preferences', () => {
     expect(resolveWorldSource('native', false)).toBe('wasm')
     expect(resolveWorldSource('wasm', true)).toBe('native')
+  })
+})
+
+describe('setOwnWorldSeed', () => {
+  it("makes a recovered world seed this browser's own, so the seed read afterwards is the restored one", () => {
+    const storage = memoryStorage({ 'thb-wasm-seed': '111' })
+    installReloadWindow(storage)
+    setOwnWorldSeed('2222')
+    expect(getOwnWorldSeed()).toBe('2222')
+  })
+
+  it('ignores a seed that is not a number', () => {
+    const storage = memoryStorage({ 'thb-wasm-seed': '111' })
+    installReloadWindow(storage)
+    setOwnWorldSeed('not a seed')
+    expect(getOwnWorldSeed()).toBe('111')
   })
 })
 
@@ -168,5 +187,26 @@ describe('local-world storage transitions', () => {
     expect(requestOwnWorldRecovery('browser-own:recovery:123')).toBe(false)
     expect(storage.getItem('thb-wasm-reset-pending')).toBe('1')
     expect(storage.getItem('thb-wasm-recovery-pending')).toBeNull()
+  })
+})
+
+describe('checkpoint failures in the active language', () => {
+  it('gives the reason a reset was cancelled, in German', async () => {
+    await loadLocale('de')
+    try {
+      const target = installReloadWindow()
+      const details: LocalWorldReloadDetail[] = []
+      target.addEventListener(LOCAL_WORLD_RELOAD_EVENT, (event) => {
+        details.push((event as CustomEvent<LocalWorldReloadDetail>).detail)
+        event.preventDefault()
+      })
+
+      requestOwnWorldReset()
+      expect(details[0]?.failureMessage).toBe(
+        'Die aktuelle Welt konnte nicht gesichert werden; das Zurücksetzen wurde sicher abgebrochen',
+      )
+    } finally {
+      await loadLocale('en')
+    }
   })
 })

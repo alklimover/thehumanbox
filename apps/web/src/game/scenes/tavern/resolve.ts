@@ -1,9 +1,9 @@
+import { formatNumber, t } from '../../../i18n'
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
-import { t, tn } from '../../../i18n'
-import { sexOf, simText } from '../../../i18n/simtext'
-import { displayName } from '../../../i18n/names'
+import { sexOf, simText } from '../../../fork/i18n/simtext'
+import { displayName } from '../../../fork/i18n/names'
 
 export const TAVERN_RADIUS = 18
 
@@ -61,12 +61,12 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
     if (!eligible) continue
     const role: SceneOccupant['role'] = o.is_leader ? 'host' : hasSpirit ? 'brewer' : 'patron'
     const activity = hasSpirit
-      ? t('map.tavern.serving')
+      ? t('panels.scene.activity.serving')
       : drinkerThought
         ? simText('thought', o.thought!, { sex: sexOf(o) })
         : knowsBrewing
-          ? t('map.tavern.drinking')
-          : t('map.tavern.lookingIn')
+          ? t('panels.scene.activity.drinking')
+          : t('panels.scene.activity.lookingIn')
     const entry: SceneOccupant = { org: o, role, activity }
     if (d <= 3) inside.push(entry)
     else away.push(entry)
@@ -97,16 +97,17 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
   ).length
   const timeOfDay = world.is_day
     ? inside.length > 3
-      ? t('map.tavern.lunch')
-      : t('map.tavern.daytime')
+      ? t('panels.scene.tavern.time.busyLunch')
+      : t('panels.scene.tavern.time.quietDay')
     : inside.length > 3
-      ? t('map.tavern.evening')
-      : t('map.tavern.lateNight')
+      ? t('panels.scene.tavern.time.rowdyEvening')
+      : t('panels.scene.tavern.time.lateNight')
   const subtitle = [
-    t('map.tavern.crowd', { inside: inside.length, away: away.length }),
+    t('panels.scene.drinkingCount', { count: formatNumber(inside.length) }),
+    t('panels.scene.tavern.nearbyCount', { count: formatNumber(away.length) }),
     timeOfDay,
-    brewerCount > 0 ? tn('map.tavern.brewers', brewerCount) : null,
-    totalSpirit > 0 ? t('map.tavern.shelf', { n: totalSpirit }) : null,
+    brewerCount > 0 ? t('panels.scene.tavern.brewers', { count: formatNumber(brewerCount) }) : null,
+    totalSpirit > 0 ? t('panels.scene.tavern.shelf', { count: formatNumber(totalSpirit) }) : null,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -114,7 +115,7 @@ export function resolveTavernScene(world: WorldState, scene: SceneId): SceneCont
   return {
     scene,
     world,
-    title: t('map.tavern.title', { tribe: lineageName }),
+    title: t('panels.scene.tavern.title', { name: lineageName }),
     subtitle,
     isDay: !!world.is_day,
     occupants: inside.slice(0, 8),

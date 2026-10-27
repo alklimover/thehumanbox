@@ -587,6 +587,27 @@ impl Organism {
             life_log,
             conversations: self.conversations.iter().rev().take(25).rev().cloned().collect(),
             memories,
+            // What they know, and any work they dread even if they never got the
+            // hang of it, so the panel can say what they avoid.
+            skills: self
+                .skills
+                .known()
+                .into_iter()
+                .chain(
+                    crate::organism::skills::Skill::ALL
+                        .into_iter()
+                        .filter(|&s| self.skills.level(s) < 0.01 && self.skills.feeling(s) <= -0.3)
+                        .map(|s| (s, self.skills.level(s))),
+                )
+                .map(|(skill, level)| SkillJson {
+                    name: skill.name(),
+                    level: (level * 100.0).round() / 100.0,
+                    feeling: (self.skills.feeling(skill) * 100.0).round() / 100.0,
+                })
+                .collect(),
+            lessons: self.lessons.heeded().into_iter().map(|l| l.name()).collect(),
+            // Filled in by whoever can see the parents (see `family_words`).
+            family_words: Vec::new(),
         }
     }
 
@@ -1009,6 +1030,22 @@ pub struct OrgDetailJson {
     pub life_log: Vec<LifeEventJson>,
     pub conversations: Vec<ConversationEntry>,
     pub memories: Vec<MemoryJson>,
+    /// What this person knows how to do, best first (see `organism::skills`).
+    pub skills: Vec<SkillJson>,
+    /// What deaths they saw taught them, strongest first (see `organism::lessons`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub lessons: Vec<&'static str>,
+    /// The words of this person's parents and grandparents (see `organism::family_words`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub family_words: Vec<crate::organism::family_words::FamilyWordsJson>,
+}
+
+#[derive(Serialize)]
+pub struct SkillJson {
+    pub name: &'static str,
+    pub level: f32,
+    /// How they feel about the work: a liking above 0, dread below.
+    pub feeling: f32,
 }
 
 #[derive(Serialize)]

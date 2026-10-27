@@ -1,0 +1,153 @@
+{
+  "starTitle": "GitHub에서 별 누르기",
+  "starBody": "The Human Box는 무료이며 오픈 소스입니다. 별을 누르면 다른 사람들이 찾기 쉬워집니다.",
+  "starAria": "GitHub에서 The Human Box에 별 누르기",
+  "star": "별",
+  "live": "LIVE",
+  "connecting": "연결 중…",
+  "tickTip": "시뮬레이션 tick {tick}. 600 tick이 세계의 하루입니다. {days}일이 지났습니다.",
+  "tick": "tick {tick}",
+  "moonTitle": "달: {phase}",
+  "moonBody": "{year}년 {day}일.",
+  "eraTitle": "시대: {era}",
+  "eraBody": "자원과 사람들의 행동을 정합니다.",
+  "stats": "통계",
+  "statsBody": "인구 그래프, 출생과 사망, 시간에 따른 혈통의 성장.",
+  "civTitle": "문명",
+  "civ": "문명",
+  "civBody": "시대, 정부, 종교, 건물, 책, 예술, 헤드라인.",
+  "searchTitle": "사람 찾기",
+  "search": "검색",
+  "searchBody": "살아 있거나 죽은 모든 사람을 이름, 생각, 혈통, 발견으로 검색합니다.",
+  "chronicles": "연대기",
+  "chroniclesBody": "일어난 일을 바탕으로 기록한 이 세계의 역사.",
+  "more": "더보기",
+  "moreBody": "도구 찾기, 세계 저장, 필터 설정, 보기 옵션.",
+  "settings": "설정",
+  "settingsBody": "언어, 화면, 성능, 세계.",
+  "worldPanel": "세계 패널",
+  "closeWorldPanel": "세계 패널 닫기",
+  "worldPanelBody": "역사, 혈통, 이벤트 로그.",
+  "openWorldPanelAria": "세계 패널 열기",
+  "closeWorldPanelAria": "세계 패널 닫기",
+  "world": "세계",
+  "peoplePanel": "사람 패널",
+  "closePeoplePanel": "사람 패널 닫기",
+  "peoplePanelBody": "살아 있는 모든 사람과 죽은 사람.",
+  "openPeoplePanelAria": "사람 패널 열기",
+  "closePeoplePanelAria": "사람 패널 닫기",
+  "people": "사람",
+  "fullscreen": "전체 화면",
+  "exitFullscreen": "전체 화면 종료",
+  "enterFullscreenAria": "전체 화면으로 전환",
+  "exitFullscreenAria": "전체 화면 종료",
+  "save": {
+    "loading": "로컬 저장 데이터를 불러오는 중…",
+    "retrying": "로컬 저장소를 다시 시도하는 중…",
+    "restored": "틱 {tick}에서 세계를 복원함",
+    "newWorld": "새 로컬 세계 준비 완료",
+    "saving": "틱 {tick} 저장 중…",
+    "saved": "로컬에 저장됨 · 틱 {tick}",
+    "savingWorld": "세계를 저장하는 중…"
+  },
+  "sandbox": {
+    "seedHint": "땅을 클릭해 새 부족을 세우세요",
+    "guidanceSet": "{strategy} 지침 설정됨",
+    "guidanceFailed": "지침 설정 실패",
+    "followNobody": "따라가기 · 가까이에 아무도 없음",
+    "nameNobody": "이름 짓기 · 가까이에 아무도 없음",
+    "noOnePraying": "기도하는 사람이 없습니다",
+    "noTribeBrink": "벼랑 끝에 선 부족이 없습니다",
+    "taughtSecret": "신들이 그들에게 비밀을 가르쳤다",
+    "cannotTeach": "아직 다시 가르칠 수 없습니다",
+    "layersCleared": "지도 레이어를 지웠습니다",
+    "toolShown": "{tool} 표시됨",
+    "toolHidden": "{tool} 숨김",
+    "toolMapOn": "{tool} 지도 켜짐",
+    "toolMapOff": "{tool} 지도 꺼짐",
+    "toolWorking": "{tool}…",
+    "toolApplied": "{tool} 적용됨",
+    "toolFailed": "{tool} 실패",
+    "toolAt": "{tool} → {x}, {y}",
+    "result": {
+      "none_here": "이 근처에는 아무도 없습니다",
+      "none_hurt": "여기에는 다친 사람이 없었습니다",
+      "none_sick": "여기에는 아픈 사람이 없습니다",
+      "none_dead": "여기에는 되살릴 사람이 없습니다",
+      "revive_cooldown": "이 부족은 최근에 되살아났습니다. 신들이 기다려야 합니다",
+      "world_full": "더 이상 사람을 들일 자리가 없습니다",
+      "animal_full": "더 이상 동물을 들일 자리가 없습니다",
+      "no_room_for_animal": "이 땅에는 그 동물이 머물 자리가 없습니다",
+      "split_small": "부족을 나누기에는 여기 사람이 너무 적습니다",
+      "blocked": "물이나 바위 위에는 설 수 없습니다",
+      "no_government": "이 부족을 이끌 사람이 없습니다",
+      "cannot_teach": "아직 다시 가르칠 수 없습니다",
+      "spawned": {
+        "one": "{name}이(가) 도착했습니다",
+        "other": "{count}명이 도착했습니다"
+      },
+      "family_arrived": "새로운 가족이 도착했습니다",
+      "healed_animals": {
+        "one": "동물 한 마리의 기운을 회복시켰습니다",
+        "other": "동물 {count}마리의 기운을 회복시켰습니다"
+      },
+      "healed": {
+        "one": "{name}을(를) 치유했습니다",
+        "other": "{count}명을 치유했습니다"
+      },
+      "revived": "{name}이(가) 죽음에서 되살아났습니다",
+      "blessed": {
+        "one": "{name}을(를) 축복했습니다",
+        "other": "{count}명을 축복했습니다"
+      },
+      "inspired": {
+        "one": "{name}에게 영감을 주었습니다",
+        "other": "{count}명에게 영감을 주었습니다"
+      },
+      "cured": {
+        "one": "{name}의 병을 낫게 했습니다",
+        "other": "{count}명의 병을 낫게 했습니다"
+      },
+      "cured_tribe": {
+        "one": "부족의 한 사람을 낫게 했습니다",
+        "other": "부족의 {count}명을 낫게 했습니다"
+      },
+      "loved": {
+        "one": "{name}이(가) 사랑에 빠졌습니다",
+        "other": "사랑으로 {count}명의 마음이 가득 찼습니다"
+      },
+      "paired": {
+        "one": "한 쌍을 맺어 주었습니다",
+        "other": "{count}쌍을 맺어 주었습니다"
+      },
+      "mutated": "{name}이(가) 돌연변이가 되었습니다",
+      "cursed": "{name}에게 저주가 내렸습니다",
+      "taught": "{name}의 부족이 비밀을 배웠습니다",
+      "moved": "{name}을(를) 옮겼습니다",
+      "gifted_food": {
+        "one": "{name}에게 음식을 주었습니다",
+        "other": "{count}명에게 음식을 주었습니다"
+      },
+      "gifted_tool": {
+        "one": "{name}에게 도구를 주었습니다",
+        "other": "{count}명에게 도구를 주었습니다"
+      },
+      "crowned": "{name}을(를) 왕으로 세웠습니다",
+      "split": {
+        "other": "{count}명이 떨어져 나가 새 부족을 세웠습니다"
+      },
+      "tamed": {
+        "one": "야생 짐승이 충직한 개가 되었습니다",
+        "other": "야생 짐승 {count}마리가 충직한 개가 되었습니다"
+      },
+      "guardian": "수호견이 {name} 곁에 섰습니다",
+      "smitten": "번개가 {name}을(를) 내리쳤습니다",
+      "struck_beast": "번개가 짐승 하나를 쓰러뜨렸습니다",
+      "struck_roof": "번개가 지붕을 갈라놓았습니다",
+      "animals": {
+        "one": "동물 한 마리가 나타났습니다",
+        "other": "동물 {count}마리가 나타났습니다"
+      }
+    }
+  }
+}

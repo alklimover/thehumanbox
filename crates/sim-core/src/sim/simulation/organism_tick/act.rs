@@ -24,7 +24,12 @@ impl Simulation {
             // flames. Fire is never a valid destination, so route it through
             // the fallback, which picks the best genuinely safe neighbour and
             // returns `None` when the organism is trapped.
-            let destination = if next_tile.walkable() && next_tile != Tile::Fire {
+            let house_exit = walled_exit(&self.grid, ix, iy, action, self.organisms[idx].parched());
+            let destination = if house_exit.is_some() {
+                house_exit
+            } else if (next_tile.walkable() && next_tile != Tile::Fire)
+                || (next_tile == Tile::Hut && self.organisms[idx].parched())
+            {
                 Some((nx, ny))
             } else {
                 fallback_walkable_step(
@@ -93,8 +98,24 @@ impl Simulation {
                 }
             }
         } else if action == 9 {
-            let (cx, cy) = (self.organisms[idx].x as i32, self.organisms[idx].y as i32);
-            if self.grid.get(cx, cy) == Tile::Water {
+            let (ox, oy) = (self.organisms[idx].x as i32, self.organisms[idx].y as i32);
+            // Drink where they stand, or from the bank at the water beside them.
+            let (cx, cy) = if self.grid.get(ox, oy) == Tile::Water {
+                (ox, oy)
+            } else {
+                self.grid.water_beside(ox, oy).unwrap_or((ox, oy))
+            };
+            // A frozen lake is still water: they break the ice to drink.
+            let ice = (self.grid.get(cx, cy) != Tile::Water)
+                .then(|| self.grid.ice_beside(ox, oy))
+                .flatten();
+            if let Some((ix2, iy2)) = ice {
+                action_succeeded = true;
+                self.organisms[idx].hydration = 1.0;
+                let ms = self.organisms[idx].traits.memory_strength;
+                Organism::remember(&mut self.organisms[idx].water_memory, ix2, iy2, 1.0, ms);
+                self.organisms[idx].think("broke the ice to drink", self.tick_count);
+            } else if self.grid.get(cx, cy) == Tile::Water {
                 action_succeeded = true;
                 *self.water_use.entry((cx, cy)).or_insert(0) += 1;
                 self.organisms[idx].hydration = 1.0;
@@ -263,14 +284,21 @@ impl Simulation {
             self.organisms[idx].sleep_debt = (self.organisms[idx].sleep_debt - recovery * 1.4).max(0.0);
             self.organisms[idx].comfort = (self.organisms[idx].comfort + comfort).min(1.0);
             self.organisms[idx].boredom = (self.organisms[idx].boredom - 0.015).max(0.0);
-            self.organisms[idx].think(
-                if sheltered {
-                    "resting under shelter"
-                } else {
-                    "resting in the open"
-                },
-                self.tick_count,
-            );
+            // Keep the reason when there is one (a storm, a death, the shelter
+            // being packed, an evening by the fire): the panel used to call all
+            // of it 'resting under shelter'.
+            // Only a reason given this tick counts: a learned choice to rest
+            // (no new thought) must not keep yesterday's storm or mourning.
+            if !f.new_thought.as_deref().is_some_and(rest_has_reason) {
+                self.organisms[idx].think(
+                    if sheltered {
+                        "resting under shelter"
+                    } else {
+                        "resting in the open"
+                    },
+                    self.tick_count,
+                );
+            }
             signal_reward += if sheltered { 0.012 } else { 0.004 };
             action_succeeded = true;
         } else if action == 18 {
@@ -499,4 +527,22 @@ impl Simulation {
         f.movement_reward = movement_reward;
         f.signal_reward = signal_reward;
     }
+}
+
+/// Thoughts that already say why someone is resting (see `choose_action`).
+fn rest_has_reason(thought: &str) -> bool {
+    matches!(
+        thought,
+        "packing shelter"
+            | "sheltering from storm"
+            | "mourning kin"
+            | "sleeping at home"
+            | "socialising by the fire"
+            | "warming by the fire"
+            | "telling stories"
+            | "resting with kin"
+            | "tending the fire"
+            | "sharing a meal"
+            | "expecting"
+    )
 }

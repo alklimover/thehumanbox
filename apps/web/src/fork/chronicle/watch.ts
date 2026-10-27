@@ -3,7 +3,7 @@
 // the player's choices are kept here and sent to it, and its alerts are read
 // back for the card (ImportantMoment.tsx).
 import { create } from 'zustand'
-import type { MessageKey } from '../../i18n'
+import type { ForkMessageKey } from '../i18n'
 import { API_BASE, sandboxHeaders } from '../../shared/config'
 import type { ChronicleTribeLink } from './model'
 
@@ -27,7 +27,7 @@ export const RULES = [
 
 export type WatchRule = (typeof RULES)[number][0]
 
-export const RULE_LABEL: Record<WatchRule, MessageKey> = {
+export const RULE_LABEL: Record<WatchRule, ForkMessageKey> = {
   world_era: 'watch.rule.world_era',
   focus_era: 'watch.rule.focus_era',
   tribe_era: 'watch.rule.tribe_era',

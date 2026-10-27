@@ -5,7 +5,7 @@ import * as path from "node:path";
 import test from "node:test";
 import * as vm from "node:vm";
 
-type MenuItem = { label?: string; checked?: boolean; submenu?: MenuItem[] };
+type MenuItem = { label?: string; checked?: boolean; enabled?: boolean; click?: () => void; submenu?: MenuItem[] };
 
 function findMenuItem(items: MenuItem[], label: string): MenuItem | null {
   for (const item of items) {
@@ -73,6 +73,7 @@ function harness() {
   class FakeWindow extends EventEmitter {
     destroyed = false;
     visible = true;
+    minimized = false;
     alwaysOnTop = false;
     webContents = {
       send: () => {},
@@ -99,7 +100,11 @@ function harness() {
       return this.visible;
     }
     isMinimized() {
-      return false;
+      return this.minimized;
+    }
+    minimize() {
+      this.minimized = true;
+      this.emit("minimize");
     }
     isAlwaysOnTop() {
       return this.alwaysOnTop;
@@ -117,7 +122,10 @@ function harness() {
       this.emit("always-on-top-changed", value);
     }
     focus() {}
-    restore() {}
+    restore() {
+      this.minimized = false;
+      this.emit("restore");
+    }
     maximize() {}
   }
 
@@ -153,6 +161,10 @@ function harness() {
       }
       if (id === "./startup-lifecycle") return { startWhenReady: () => {} };
       if (id === "./settings") return { loadSettings: () => ({}) };
+      if (id === "./i18n") return require(path.join(__dirname, "i18n"));
+      if (id === "./fork-shell") return require(path.join(__dirname, "fork-shell"));
+      if (id === "./fork-ipc") return { registerForkIpc: () => {} };
+      if (id === "./app-menu") return require(path.join(__dirname, "app-menu"));
       if (id === "./exclusive-operation") {
         return {
           runExclusiveDesktopOperation: async (
@@ -184,6 +196,8 @@ function harness() {
       if (id === "./app-icon") return { appIconPath: () => "/tmp/icon.png" };
       if (id === "node:path") return path;
       if (id === "./i18n") return require(path.join(__dirname, "i18n"));
+      if (id === "./fork-shell") return require(path.join(__dirname, "fork-shell"));
+      if (id === "./fork-ipc") return { registerForkIpc: () => {} };
       if (id === "./renderer-load") return require(path.join(__dirname, "renderer-load"));
       return {};
     },
@@ -239,6 +253,25 @@ test("the tray and the View menu follow the window a restart swaps in", async ()
   assert.equal(trayLabel(trays[0]), "Show window");
 });
 
+test("a minimized game window is offered as Show window, and that item restores it", async () => {
+  const h = harness();
+  const { context, windows, trays } = h;
+  await vm.runInContext("createWindow()", context);
+  vm.runInContext("buildTray()", context);
+  assert.equal(trayLabel(trays[0]), "Hide window");
+
+  // Minimized windows stay visible, so the old label still said "Hide window"
+  // while the click below restored the window.
+  windows[0].minimize();
+  assert.equal(trayLabel(trays[0]), "Show window");
+
+  const show = (trays[0].contextMenu?.template ?? []).find((item) => item.label === "Show window");
+  show?.click?.();
+  assert.equal(windows[0].isMinimized(), false);
+  assert.equal(windows[0].isVisible(), true);
+  assert.equal(trayLabel(trays[0]), "Hide window");
+});
+
 test("closing the last window clears the tray and View state", async () => {
   const h = harness();
   const { context, trays } = h;
@@ -252,4 +285,31 @@ test("closing the last window clears the tray and View state", async () => {
   assert.equal(trayLabel(trays[0]), "Show window");
   assert.equal(viewAlwaysOnTopChecked(h.appMenu), false);
   assert.equal(trayAlwaysOnTopChecked(trays[0]), false);
+});
+
+test("the menu items that act on the game window are disabled while no window is open", async () => {
+  // With no window (macOS keeps the app running after its window closes), Reload,
+  // DevTools and Always on top did nothing when chosen, and Always on top still
+  // showed a tick that it could not apply. They are disabled until a window opens.
+  const h = harness();
+  const { context, trays } = h;
+  const appItem = (label: string): MenuItem | null => findMenuItem(h.appMenu?.template ?? [], label);
+  const trayItem = (): MenuItem | null =>
+    trays[0].contextMenu?.template.find((item) => item.label === "Always on top") ?? null;
+  await vm.runInContext("createWindow()", context);
+  vm.runInContext("buildTray()", context);
+
+  assert.notEqual(appItem("Reload")?.enabled, false);
+  assert.notEqual(trayItem()?.enabled, false);
+
+  (vm.runInContext("mainWindow", context) as { close: () => void }).close();
+  assert.equal(appItem("Reload")?.enabled, false);
+  assert.equal(appItem("Toggle DevTools")?.enabled, false);
+  assert.equal(appItem("Always on top")?.enabled, false);
+  assert.equal(trayItem()?.enabled, false);
+
+  await vm.runInContext("openWindow()", context);
+  assert.notEqual(appItem("Reload")?.enabled, false);
+  assert.notEqual(appItem("Always on top")?.enabled, false);
+  assert.notEqual(trayItem()?.enabled, false);
 });

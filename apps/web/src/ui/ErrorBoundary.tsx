@@ -56,10 +56,10 @@ export class ErrorBoundary extends Component<Props, State> {
           }}
         >
           <h1 style={{ fontSize: 22, margin: 0, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            {t('errors.crash.title')}
+            {t('common.boundaryTitle')}
           </h1>
           <p style={{ fontSize: 13, color: '#7e7568', maxWidth: 480, textAlign: 'center', margin: 0 }}>
-            {t('errors.crash.body')}
+            {t('common.boundaryBody')}
           </p>
           <button
             onClick={() => reloadAppSafely()}
@@ -75,7 +75,7 @@ export class ErrorBoundary extends Component<Props, State> {
               cursor: 'pointer',
             }}
           >
-            {t('errors.crash.reload')}
+            {t('common.boundaryReload')}
           </button>
         </div>
       )

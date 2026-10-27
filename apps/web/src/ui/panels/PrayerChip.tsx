@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { PrayerInfo, WorldState } from '../../shared/types'
 import { prayerRows, prayerRowText, prayerTimeLeft, PRAYER_KINDS } from '../../game/model/prayers'
-import { t, tn } from '../../i18n'
 import { ToolSprite } from '../toolbar/ToolSprite'
 import { Tooltip } from '../toolbar/Tooltip'
+import { formatNumber, t } from '../../i18n'
 
 interface Props {
   world: WorldState
@@ -32,8 +32,23 @@ export function PrayerChip({ world, onAnswer }: Props) {
       if (ref.current?.contains(target) || listRef.current?.contains(target)) return
       setOpen(false)
     }
+    // Escape closes the list the way a click elsewhere does. It is taken on the document, ahead of the
+    // window, where the app's own Escape (which disarms the held tool) listens.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      // A row that had focus is about to unmount: hand focus back to the chip first, or it falls to the body.
+      if (listRef.current?.contains(document.activeElement)) {
+        ref.current?.querySelector<HTMLElement>('.prayer-chip')?.focus({ preventScroll: true })
+      }
+      setOpen(false)
+    }
     document.addEventListener('pointerdown', close)
-    return () => document.removeEventListener('pointerdown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
   useEffect(() => {
@@ -49,8 +64,8 @@ export function PrayerChip({ world, onAnswer }: Props) {
       <Tooltip
         tip={
           <span className="tip-card">
-            <strong>{t('prayers.title')}</strong>
-            <span>{prayers.length === 1 ? t('prayers.tipOne') : tn('prayers.tip', prayers.length)}</span>
+            <strong>{t('panels.prayerChip.tipTitle')}</strong>
+            <span>{t('panels.prayerChip.tipBody', { count: prayers.length })}</span>
           </span>
         }
       >
@@ -67,7 +82,10 @@ export function PrayerChip({ world, onAnswer }: Props) {
             setOpen((v) => !v)
           }}
           aria-expanded={open}
-          aria-label={tn('prayers.aria', prayers.length)}
+          aria-label={t('panels.prayerChip.label', {
+            count: prayers.length,
+            formattedCount: formatNumber(prayers.length),
+          })}
         >
           <ToolSprite icon="🙏" size={16} />
           {prayers.length}

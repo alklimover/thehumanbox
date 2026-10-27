@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../../i18n/locale'
+import { setLocaleForTests } from '../../fork/i18n/locale'
 import type { WorldState } from '../../shared/types'
 import { eraNameOf, goodsOfTribe, territoryCardFacts, tradeOfTribe } from './territory-card'
 
@@ -76,7 +76,7 @@ describe('territory card trade line', () => {
 describe('territory card cargo', () => {
   afterEach(() => setLocaleForTests('en'))
 
-  it("names a practice counter carried as cargo in the player's language", () => {
+  it("names a practice counter carried as cargo in the player's language", async () => {
     const w = {
       trade_routes: [{ id: 1, lineage_a: 'red', lineage_b: 'blue', volume: 3, deliveries: 1 }],
       caravans: [
@@ -91,7 +91,7 @@ describe('territory card cargo', () => {
       ],
     } as unknown as Pick<WorldState, 'trade_routes' | 'caravans'>
     expect(tradeOfTribe(w, 'red')).toContain('buying play cello at 4 each')
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(tradeOfTribe(w, 'red')).toContain('игра на виолончели')
   })
 })

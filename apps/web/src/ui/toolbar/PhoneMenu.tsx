@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from 'react'
-import { t } from '../../i18n'
 import { canUseFullscreen } from '../../shared/fullscreen'
 import { REPO_URL } from '../../shared/links'
 import { trackEvent } from '../../shared/observability'
@@ -7,7 +6,8 @@ import { useUIStore } from '../../state/store'
 import { Modal } from '../modals/Modal'
 import { MoreDropdown } from './MoreDropdown'
 import { ToolSprite } from './ToolSprite'
-import { saveBlocked, saveLabel, type WorldActions } from './world-actions'
+import { saveBlocked, phoneSaveLabel, type WorldActions } from './world-actions'
+import { t } from '../../i18n'
 
 interface Props {
   /** Chronicle entries so far, shown as a count like the desktop button. */
@@ -66,20 +66,20 @@ export function PhoneMenu({ chronicleCount, isFullscreen, onToggleFullscreen, wo
       <button
         type="button"
         className="hdr-btn phone-menu-btn"
-        aria-label={t('phoneMenu.aria')}
+        aria-label={t('dock.phone.menu')}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
         <ToolSprite icon="☰" size={18} />
       </button>
-      <Modal open={open} onClose={close} className="phone-menu-modal" title={t('phoneMenu.aria')} hideTitle>
+      <Modal open={open} onClose={close} className="phone-menu-modal" title={t('dock.phone.menu')} hideTitle>
         <div className="phone-menu-head">
-          <span className="phone-menu-title">{t('phoneMenu.title')}</span>
+          <span className="phone-menu-title">{t('dock.phone.menuHead')}</span>
           <button
             type="button"
             className="phone-menu-close"
-            aria-label={t('phoneMenu.close')}
+            aria-label={t('dock.phone.closeMenu')}
             onClick={close}
           >
             ×
@@ -88,7 +88,7 @@ export function PhoneMenu({ chronicleCount, isFullscreen, onToggleFullscreen, wo
         <div className="phone-menu-body">
           {(worldActions?.findTool || worldActions?.save) && (
             <div className="phone-menu-list phone-menu-world">
-              {worldActions.findTool && row('🔍', t('phoneMenu.findTool'), worldActions.findTool)}
+              {worldActions.findTool && row('🔍', t('dock.phone.findTool'), worldActions.findTool)}
               {worldActions.save && (
                 <button
                   type="button"
@@ -100,7 +100,7 @@ export function PhoneMenu({ chronicleCount, isFullscreen, onToggleFullscreen, wo
                 >
                   <ToolSprite icon="💾" size={20} />
                   <span className="phone-menu-label">
-                    {saveLabel(worldActions.save).toLowerCase()}
+                    {phoneSaveLabel(worldActions.save)}
                     {worldActions.save.status && (
                       <small className="phone-menu-status" role="status">
                         {worldActions.save.status}
@@ -112,28 +112,28 @@ export function PhoneMenu({ chronicleCount, isFullscreen, onToggleFullscreen, wo
             </div>
           )}
           <div className="phone-menu-list">
-            {row('📊', t('header.stats'), openStats)}
-            {row('👑', t('header.civ'), openCiv)}
-            {row('🔍', t('header.findPeople'), openOrgSearch)}
+            {row('📊', t('dock.phone.stats'), openStats)}
+            {row('👑', t('dock.phone.civilization'), openCiv)}
+            {row('🔍', t('dock.phone.findPeople'), openOrgSearch)}
             {row(
               '📖',
-              t('header.chronicles'),
+              t('dock.phone.chronicles'),
               openChronicles,
               chronicleCount > 0 ? <span className="btn-count">{chronicleCount}</span> : null,
             )}
-            {row('◧', t('header.worldPanel'), toggleLeft, null, leftOpen)}
-            {row('◨', t('header.peoplePanel'), togglePanel, null, panelOpen)}
-            {row('⚙️', t('header.settings'), openSettings)}
-            {row('🌼', t('phoneMenu.about'), openAbout)}
-            {row('⭐', t('phoneMenu.star'), openRepo)}
+            {row('◧', t('dock.phone.worldPanel'), toggleLeft, null, leftOpen)}
+            {row('◨', t('dock.phone.peoplePanel'), togglePanel, null, panelOpen)}
+            {row('⚙️', t('dock.phone.settings'), openSettings)}
+            {row('🌼', t('dock.phone.about'), openAbout)}
+            {row('⭐', t('dock.phone.starOnGithub'), openRepo)}
             {canFullscreen &&
               row(
                 '⛶',
-                isFullscreen ? t('header.fullscreen.exit') : t('header.fullscreen'),
+                isFullscreen ? t('dock.phone.exitFullscreen') : t('dock.phone.fullscreen'),
                 onToggleFullscreen,
               )}
           </div>
-          <div className="phone-menu-section">{t('phoneMenu.view')}</div>
+          <div className="phone-menu-section">{t('dock.phone.view')}</div>
           <MoreDropdown onAction={close} />
         </div>
       </Modal>

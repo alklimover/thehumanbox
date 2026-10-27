@@ -2,8 +2,10 @@
 // old age carries `death_cause` "old age" (sim/simulation/organism_tick/mortality.rs),
 // and every age is in ticks.
 
+import { t } from '../../i18n'
 import { ageInYears } from './calendar'
 import { personName } from '../../shared/personName'
+import { displayName } from '../../fork/i18n/names'
 
 export interface LongestLife {
   name: string
@@ -58,7 +60,14 @@ export function longevityLines(longevity: Longevity, lineageName: (lineage: stri
   const { longest, averageAge, deaths } = longevity
   if (deaths === 0 || !longest || averageAge === null) return []
   return [
-    `longest life ${ageInYears(longest.age)} (${longest.name}, ${lineageName(longest.lineage_id)})`,
-    `average ${ageInYears(averageAge)} over ${deaths} old-age ${deaths === 1 ? 'death' : 'deaths'}`,
+    t('model.longevity.longest', {
+      age: ageInYears(longest.age),
+      name: displayName(longest.name),
+      lineage: lineageName(longest.lineage_id),
+    }),
+    t('model.longevity.average', {
+      age: ageInYears(averageAge),
+      deaths: t('model.longevity.deaths', { count: deaths }),
+    }),
   ]
 }

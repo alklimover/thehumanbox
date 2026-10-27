@@ -1,0 +1,99 @@
+{
+  "menu": {
+    "settings": "Настройки…",
+    "file": "Файл",
+    "reload": "Перезагрузить",
+    "restartSimulation": "Перезапустить симуляцию",
+    "view": "Вид",
+    "toggleDevTools": "Инструменты разработчика",
+    "alwaysOnTop": "Поверх всех окон",
+    "screenshot": "Снимок экрана",
+    "help": "Справка",
+    "openGitHub": "Открыть страницу на GitHub",
+    "openWebsite": "Открыть thehumanbox.com",
+    "about": "О программе The Human Box",
+    "services": "Службы",
+    "hide": "Скрыть The Human Box",
+    "hideOthers": "Скрыть остальные",
+    "showAll": "Показать все",
+    "quit": "Выйти",
+    "quitApp": "Завершить The Human Box",
+    "close": "Закрыть окно",
+    "resetZoom": "Фактический размер",
+    "zoomIn": "Увеличить",
+    "zoomOut": "Уменьшить",
+    "fullScreen": "Полноэкранный режим"
+  },
+  "tray": {
+    "showWindow": "Показать окно",
+    "hideWindow": "Скрыть окно",
+    "takeScreenshot": "Сделать снимок экрана",
+    "openWorldsFolder": "Открыть папку миров",
+    "openLogsFolder": "Открыть папку журналов"
+  },
+  "notify": {
+    "screenshotSaved": "Снимок экрана сохранён",
+    "screenshotFailed": "Снимок экрана не сохранён",
+    "worldsFolderUnavailable": "Папка миров недоступна",
+    "logsFolderUnavailable": "Папка журналов недоступна",
+    "shortcutUnavailable": "Сочетание клавиш недоступно",
+    "shortcutUnavailableDetail": "Не удалось назначить {shortcut}. Используйте значок в трее, чтобы показать или скрыть игру.",
+    "shortcutUnavailableTooltip": "Сочетание {shortcut} недоступно. Этот значок показывает или скрывает игру.",
+    "about": "v{version}\nНепрерывная симуляция искусственной жизни.\nthehumanbox.com"
+  },
+  "dialog": {
+    "chooseSaveFolder": "Где The Human Box будет хранить миры",
+    "worldSaveFilter": "Сохранение мира The Human Box",
+    "exportSave": "Экспорт сохранения мира",
+    "exportBeforeReset": "Экспорт текущего мира перед сбросом",
+    "resetWorld": "Начать новый мир?",
+    "resetDetail": "Текущий мир останется в архиве на этом компьютере. Если сначала экспортировать его в отдельный файл, у вас будет ещё и переносимая копия.",
+    "openWindowFailed": "The Human Box не удалось открыть окно"
+  },
+  "buttons": {
+    "ok": "ОК",
+    "cancel": "Отмена",
+    "notNow": "Не сейчас",
+    "later": "Позже",
+    "restartSimulation": "Перезапустить симуляцию",
+    "restartWithoutCheckpoint": "Перезапустить без контрольной точки",
+    "restartAndUpdate": "Перезапустить и обновить",
+    "exportAndStartNew": "Экспортировать и начать",
+    "startNewWithoutExport": "Начать без экспорта"
+  },
+  "restart": {
+    "failed": "Не удалось перезапустить симуляцию",
+    "checkpointDetail": "Симуляция, похоже, зависла. Перезапуск без контрольной точки потеряет до минуты игры."
+  },
+  "simStopped": {
+    "message": "Симуляция неожиданно остановилась",
+    "detail": "Выход: {status}. Мир сохранён на последней контрольной точке (потеряно не больше минуты игры). Перезапустите симуляцию, чтобы продолжить.",
+    "exitCode": "код {code}"
+  },
+  "startFailed": {
+    "title": "The Human Box не удалось запустить",
+    "simHeading": "The Human Box не удалось запустить симуляцию",
+    "simHint": "Подробности — в журналах. Затем перезапустите симуляцию из настроек.",
+    "settingsHeading": "The Human Box не удалось прочитать настройки",
+    "settingsHint": "Исправьте или удалите указанный выше файл и запустите приложение снова. Ваши миры не пострадали.",
+    "pageTitle": "The Human Box — ошибка запуска",
+    "devtools": "Подробнее — в инструментах разработчика: {mac} (macOS) или {win} (Win/Linux).",
+    "rendererFailed": "Не удалось загрузить интерфейс."
+  },
+  "update": {
+    "failedTitle": "Не удалось обновить",
+    "failedMessage": "Обновление не удалось установить.",
+    "readyTitle": "Обновление готово",
+    "readyMessage": "Версия {version} готова к установке.",
+    "readyDetail": "Приложение перезапустится и установит обновление.",
+    "fileMissing": "Скачанный файл обновления пропал. Проверьте обновления ещё раз.",
+    "packagedOnlyCheck": "Проверка обновлений доступна только в установленных сборках.",
+    "packagedOnlyInstall": "Установка обновлений доступна только в установленных сборках.",
+    "nothingReady": "Нет скачанного обновления, готового к установке.",
+    "noAppBundle": "Не удалось найти установленный пакет приложения.",
+    "noPermission": "Нет прав, чтобы заменить приложение в {dir}. Переустановите его с помощью scripts/install-desktop.sh.",
+    "unpackFailed": "Не удалось распаковать обновление: {error}",
+    "noAppInUpdate": "Скачанное обновление не содержит приложения.",
+    "busyMessage": "Дождитесь окончания текущего изменения сохранений или симуляции, затем установите обновление."
+  }
+}

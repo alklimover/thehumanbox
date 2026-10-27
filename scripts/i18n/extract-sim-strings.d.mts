@@ -1,4 +1,4 @@
-// Types for extract-sim-strings.mjs, for the vitest checks in apps/web/src/i18n/simtext.
+// Types for extract-sim-strings.mjs, for the vitest checks in apps/web/src/fork/i18n/simtext.
 export interface ScannedItem {
   kind: 'literal' | 'template' | 'compose'
   text: string

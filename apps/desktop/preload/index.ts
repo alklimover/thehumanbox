@@ -30,8 +30,8 @@ export interface DesktopBridge {
     pickSaveDir(): Promise<string | null>;
     checkForUpdates(): Promise<unknown>;
     installUpdate(): Promise<unknown>;
-    /** Fork: the interface language the game runs in, for the menus and dialogs. */
-    setLocale(locale: string): Promise<void>;
+    /** The language the game shows, e.g. "de" or "pt-BR". */
+    setLocale(code: string): Promise<void>;
   };
 
   world: {
@@ -86,6 +86,18 @@ export interface DesktopBridge {
   ): () => void;
 }
 
+// The events the main process sends to the page (see the `.send(` calls in
+// main/). The page may listen only on these; any other channel is refused.
+const RENDERER_EVENTS: readonly string[] = [
+  "updater:available",
+  "updater:downloaded",
+  "updater:error",
+  "menu:openSettings",
+  "app:visibility",
+  // Fork: the power state also reaches the page through forkPower.onChange.
+  "fork:power:changed",
+];
+
 // Passed by the main process (webPreferences.additionalArguments); see
 // main/app-version-arg.ts, which must keep the same prefix.
 const APP_VERSION_ARG_PREFIX = "--thb-app-version=";
@@ -121,7 +133,7 @@ const bridge: DesktopBridge = {
     pickSaveDir: () => ipcRenderer.invoke("app:pickSaveDir"),
     checkForUpdates: () => ipcRenderer.invoke("app:checkForUpdates"),
     installUpdate: () => ipcRenderer.invoke("app:installUpdate"),
-    setLocale: (locale) => ipcRenderer.invoke("app:setLocale", locale),
+    setLocale: (code) => ipcRenderer.invoke("app:setLocale", code),
   },
 
   world: {
@@ -156,6 +168,9 @@ const bridge: DesktopBridge = {
   },
 
   on(channel, cb) {
+    if (!RENDERER_EVENTS.includes(channel)) {
+      throw new Error(`not a desktop event: ${channel}`);
+    }
     const handler = (_e: unknown, payload: unknown) => cb(payload);
     ipcRenderer.on(channel, handler);
     return () => ipcRenderer.removeListener(channel, handler);

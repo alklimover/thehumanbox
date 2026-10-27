@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 // Drives the web build in Chromium for a few minutes and collects what the
-// untranslated-text check (apps/web/src/i18n/dev) found. Usage and setup:
+// untranslated-text check (apps/web/src/fork/i18n/dev) found. Usage and setup:
 // docs/fork/I18N-CHECK.ru.md.
 //
-//   node scripts/i18n/scan-ui.mjs [--url http://localhost:5173/] [--minutes 3] [--out /tmp/i18n-scan] [--headed]
+//   node scripts/i18n/scan-ui.mjs [--url http://localhost:5173/] [--minutes 3] [--out /tmp/i18n-scan]
+//     [--role god|observer] [--headed]
+//
+// The game starts in Russian (the fork's default); the check covers both
+// upstream's translations (src/i18n/locales/ru) and the fork's own layer.
 //
 // Playwright is not a project dependency: install it anywhere and point
 // PLAYWRIGHT_DIR at that folder (the one holding node_modules/playwright).
@@ -12,7 +16,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 
 function args() {
-  const out = { url: 'http://localhost:5173/', minutes: 3, out: '/tmp/i18n-scan', headed: false }
+  const out = { url: 'http://localhost:5173/', minutes: 3, out: '/tmp/i18n-scan', headed: false, role: 'god' }
   const argv = process.argv.slice(2)
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
@@ -20,6 +24,7 @@ function args() {
     else if (a === '--url') out.url = argv[++i]
     else if (a === '--minutes') out.minutes = Number(argv[++i])
     else if (a === '--out') out.out = argv[++i]
+    else if (a === '--role') out.role = argv[++i]
     else throw new Error(`unknown argument ${a}`)
   }
   return out
@@ -139,6 +144,12 @@ async function main() {
   console.log('check is on, waiting for the world…')
   await page.waitForFunction(() => document.getElementById('thb-splash') === null, null, { timeout: 120_000 })
 
+  // The fork's first screen asks for a role: the god sees the most of the interface (the dock, prayers).
+  const roleCard = page.locator(`.fork-mode-card[data-role="${opts.role}"]`)
+  if (await roleCard.count()) {
+    await roleCard.click()
+    await sleep(300)
+  }
   // The welcome card, then the tour it offers.
   for (let i = 0; i < 10; i++) {
     const primary = page.locator('.welcome-btn--primary')
@@ -148,6 +159,7 @@ async function main() {
     await (isLast ? tour : primary).click()
     await sleep(500)
   }
+  // The tour, or the tips of the chosen role (the same card), read through to the end.
   for (let i = 0; i < 12; i++) {
     const next = page.locator('.thb-tour-card .shepherd-button:not(.shepherd-button-secondary)')
     if (!(await next.count())) break

@@ -21,7 +21,8 @@ import {
   shouldShowLoadError,
 } from "./navigation-guard";
 import { sanitizeWindowState, type WindowState } from "./window-state";
-import { atomicReplaceFile } from "./world-safety";
+import { atomicReplaceFile, atomicWriteNewFile } from "./world-safety";
+import { teeConsoleToLog } from "./main-log";
 import { appVersionArgument } from "./app-version-arg";
 import { loginItemSettings, shouldStartHidden } from "./login-launch";
 import { appIconPath } from "./app-icon";
@@ -49,15 +50,31 @@ import {
   simLifecyclePending,
 } from "./sim-process";
 import { restartFailureStillRelevant, simExitStillRelevant } from "./prompt-relevance";
-import { loadSettings, prepareDataRoot, type Settings } from "./settings";
+import {
+  loadSettings,
+  prepareDataRoot,
+  saveSettings,
+  type Settings,
+} from "./settings";
 import {
   checkForUpdatesNow,
   initUpdater,
   installDownloadedUpdate,
 } from "./updater";
-import { isUiLocale, loadUiLocale, setUiLocale, tr } from "./i18n";
+import { getLocale, matchLocale, setLocale, t } from "./i18n";
+import {
+  FORK_APP_NAME,
+  FORK_DEFAULT_LOCALE,
+  FORK_REPO_URL,
+  UPSTREAM_REPO_URL,
+  shellText,
+  legacyLocale,
+  withTranslatedRoleMenus,
+} from "./fork-shell";
+import { appMenuTemplate } from "./app-menu";
+import { handleSecondLaunch } from "./single-instance";
 
-app.setName("The Human Box RU");
+app.setName(FORK_APP_NAME);
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
@@ -72,6 +89,8 @@ let rebuildTrayMenu: (() => void) | null = null;
 let startHiddenOnce = false;
 // A hidden first window that should be maximized when the user first shows it.
 let pendingMaximize = false;
+// The same for full screen, which is entered when the window is first shown.
+let pendingFullScreen = false;
 
 function windowStateFile(): string {
   return path.join(app.getPath("userData"), "window-state.json");
@@ -121,6 +140,8 @@ function persistWindowState(win: BrowserWindow): void {
       width: bounds.width,
       height: bounds.height,
       maximized: win.isMaximized(),
+      fullscreen: win.isFullScreen(),
+      alwaysOnTop: win.isAlwaysOnTop(),
     };
     atomicReplaceFile(windowStateFile(), JSON.stringify(state, null, 2));
   } catch (e) {
@@ -130,15 +151,19 @@ function persistWindowState(win: BrowserWindow): void {
 
 function renderBootError(
   detail: string,
-  heading = tr("bootSimHeading"),
-  hint = tr("bootSimHint"),
+  heading = t("startFailed.simHeading"),
+  hint = t("startFailed.simHint"),
 ): string {
   const safe = detail.replace(
     /[<>&]/g,
     (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]!,
   );
+  const devtools = t("startFailed.devtools", {
+    mac: "<kbd>Cmd</kbd>+<kbd>Opt</kbd>+<kbd>I</kbd>",
+    win: "<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>",
+  });
   return `data:text/html;charset=utf-8,${encodeURIComponent(`
-<!doctype html><html><head><meta charset="utf-8"><title>${tr("bootTitle")}</title>
+<!doctype html><html><head><meta charset="utf-8"><title>${t("startFailed.pageTitle")}</title>
 <style>
   html,body{margin:0;background:#0c0a08;color:#f5e9d4;font:14px/1.5 ui-monospace,monospace}
   .wrap{padding:24px;max-width:780px;margin:0 auto}
@@ -149,7 +174,7 @@ function renderBootError(
 </style></head><body><div class="wrap">
 <h1>${heading}</h1>
 <pre>${safe}</pre>
-<p>${tr("bootDevTools")}</p>
+<p>${devtools}</p>
 <p>${hint}</p>
 </div></body></html>`)}`;
 }
@@ -172,8 +197,8 @@ async function createWindow(): Promise<void> {
     console.error("[main] could not read settings:", err);
     bootErrorUrl = renderBootError(
       msg,
-      tr("bootSettingsHeading"),
-      tr("bootSettingsHint"),
+      t("startFailed.settingsHeading"),
+      t("startFailed.settingsHint"),
     );
   }
 
@@ -210,27 +235,43 @@ async function createWindow(): Promise<void> {
   });
   mainWindow = win;
   bindWindowMenus(win);
+  if (winState.alwaysOnTop) win.setAlwaysOnTop(true);
   // maximize() would also show a window that is meant to start hidden. A boot
   // failure must never be hidden, so that case shows the window as well.
   pendingMaximize = startHidden && !bootErrorUrl && winState.maximized === true;
+  pendingFullScreen = startHidden && !bootErrorUrl && winState.fullscreen === true;
   if (!startHidden || bootErrorUrl) {
     if (winState.maximized) win.maximize();
     if (startHidden) win.show();
   }
 
-  const persistDebounced = (() => {
+  // A drag fires many move events, so the save waits for a short pause. Closing
+  // saves at once: the pending timer would fire after the window is destroyed,
+  // when its bounds can no longer be read, and the last move would be lost.
+  const persistWindowSoon = (() => {
     let t: NodeJS.Timeout | null = null;
-    return () => {
+    // Only the window the app shows may save. A replaced window stays open
+    // briefly after its replacement has started, and its bounds would overwrite
+    // the state the new window saved. Its pending save is dropped as well.
+    const flush = (): void => {
       if (t) clearTimeout(t);
-      t = setTimeout(() => {
-        if (win) persistWindowState(win);
-      }, 400);
+      t = null;
+      if (mainWindow === win) persistWindowState(win);
     };
+    const schedule = (): void => {
+      if (t) clearTimeout(t);
+      t = setTimeout(flush, 400);
+    };
+    return { schedule, flush };
   })();
-  win.on("resize", persistDebounced);
-  win.on("move", persistDebounced);
-  win.on("maximize", persistDebounced);
-  win.on("unmaximize", persistDebounced);
+  win.on("resize", persistWindowSoon.schedule);
+  win.on("move", persistWindowSoon.schedule);
+  win.on("maximize", persistWindowSoon.schedule);
+  win.on("unmaximize", persistWindowSoon.schedule);
+  win.on("enter-full-screen", persistWindowSoon.schedule);
+  win.on("leave-full-screen", persistWindowSoon.schedule);
+  win.on("always-on-top-changed", persistWindowSoon.schedule);
+  win.on("close", persistWindowSoon.flush);
 
   win.on("minimize", () => {
     win?.webContents.send("app:visibility", "minimized");
@@ -309,11 +350,15 @@ async function createWindow(): Promise<void> {
     if (!shouldShowLoadError(code, url, isMainFrame)) return;
     const shown = redactUrlForDisplay(url);
     console.error(`[main] did-fail-load code=${code} desc=${desc} url=${shown}`);
+    // Electron rejects this load when a newer navigation replaces it. Nothing
+    // awaits it here, so log the failure instead of leaving a rejection behind.
     win?.loadURL(
       renderBootError(
-        `Renderer failed to load.\nURL: ${shown}\nCode: ${code}\n${desc}`,
+        `${t("startFailed.rendererFailed")}\nURL: ${shown}\nCode: ${code}\n${desc}`,
       ),
-    );
+    ).catch((loadError: unknown) => {
+      console.error("[main] could not show the load failure page:", loadError);
+    });
   });
 
   if (bootErrorUrl) {
@@ -328,6 +373,9 @@ async function createWindow(): Promise<void> {
   if (isQuitting || win.isDestroyed()) return;
   if (!startHidden || bootErrorUrl) {
     if (winState.maximized) win.maximize();
+    // Full screen is entered once the page has loaded, so the transition runs
+    // on a visible window; a hidden start does this in revealWindow.
+    if (winState.fullscreen) win.setFullScreen(true);
     win.show();
   }
 
@@ -379,6 +427,9 @@ function bindWindowMenus(win: BrowserWindow): void {
   };
   win.on("show", update);
   win.on("hide", update);
+  // A minimized window stays visible, so the show/hide item needs these too.
+  win.on("minimize", update);
+  win.on("restore", update);
   win.on("always-on-top-changed", update);
   update();
 }
@@ -389,7 +440,9 @@ function rebuildWindowMenus(): void {
 }
 
 function buildMenu(): void {
-  const isMac = process.platform === "darwin";
+  // Items that act on the game window are disabled while none is open, rather
+  // than doing nothing when chosen (macOS keeps the app running after its window closes).
+  const hasGameWindow = mainWindow !== null;
 
   const toggleDevTools = (): void => {
     if (!mainWindow) return;
@@ -400,136 +453,32 @@ function buildMenu(): void {
     }
   };
 
-  const template: Electron.MenuItemConstructorOptions[] = [
-    ...(isMac
-      ? [
-          {
-            label: tr("appName"),
-            submenu: [
-              { role: "about" as const, label: tr("menuAbout") },
-              { type: "separator" as const },
-              {
-                label: tr("menuSettings"),
-                accelerator: "Cmd+,",
-                click: () => mainWindow?.webContents.send("menu:openSettings"),
-              },
-              { type: "separator" as const },
-              { role: "services" as const, label: tr("menuServices") },
-              { type: "separator" as const },
-              { role: "hide" as const, label: tr("menuHide") },
-              { role: "hideOthers" as const, label: tr("menuHideOthers") },
-              { role: "unhide" as const, label: tr("menuShowAll") },
-              { type: "separator" as const },
-              { role: "quit" as const, label: tr("menuQuit") },
-            ],
-          },
-        ]
-      : []),
-    {
-      label: tr("menuFile"),
-      submenu: [
-        {
-          label: tr("menuReload"),
-          accelerator: isMac ? "Cmd+R" : "Ctrl+R",
-          click: () => mainWindow?.reload(),
-        },
-        {
-          label: tr("menuRestartSim"),
-          click: () =>
-            void restartSimulationFromMenu().catch((err) =>
-              console.error("[main] restart menu failed:", err),
-            ),
-        },
-        isMac
-          ? { role: "close" as const, label: tr("menuCloseWindow") }
-          : { role: "quit" as const, label: tr("menuQuit") },
-      ],
+  const template = appMenuTemplate({
+    platform: process.platform,
+    label: shellText,
+    hasGameWindow,
+    alwaysOnTop: mainWindow ? mainWindow.isAlwaysOnTop() : false,
+    actions: {
+      openSettings: () => mainWindow?.webContents.send("menu:openSettings"),
+      reload: () => mainWindow?.reload(),
+      restartSimulation: () =>
+        void restartSimulationFromMenu().catch((err) =>
+          console.error("[main] restart menu failed:", err),
+        ),
+      toggleDevTools,
+      setAlwaysOnTop: (on) => {
+        if (!mainWindow) return;
+        mainWindow.setAlwaysOnTop(on);
+      },
+      takeScreenshot: () => takeScreenshotForPlayer(),
+      openGitHub: () => void shell.openExternal(FORK_REPO_URL),
+      openWebsite: () => void shell.openExternal(UPSTREAM_REPO_URL),
     },
-    {
-      role: "editMenu",
-      label: tr("menuEdit"),
-      submenu: [
-        { role: "undo", label: tr("menuUndo") },
-        { role: "redo", label: tr("menuRedo") },
-        { type: "separator" },
-        { role: "cut", label: tr("menuCut") },
-        { role: "copy", label: tr("menuCopy") },
-        { role: "paste", label: tr("menuPaste") },
-        { role: "selectAll", label: tr("menuSelectAll") },
-      ],
-    },
-    {
-      label: tr("menuView"),
-      submenu: [
-        {
-          label: tr("menuDevTools"),
-          accelerator: isMac ? "Cmd+Alt+I" : "Ctrl+Shift+I",
-          click: toggleDevTools,
-        },
-        { type: "separator" },
-        { role: "resetZoom", label: tr("menuActualSize") },
-        { role: "zoomIn", label: tr("menuZoomIn") },
-        { role: "zoomOut", label: tr("menuZoomOut") },
-        { type: "separator" },
-        { role: "togglefullscreen", label: tr("menuFullScreen") },
-        { type: "separator" },
-        {
-          label: tr("menuAlwaysOnTop"),
-          type: "checkbox",
-          checked: mainWindow ? mainWindow.isAlwaysOnTop() : false,
-          accelerator: isMac ? "Cmd+Shift+T" : "Ctrl+Shift+T",
-          click: (item) => {
-            if (!mainWindow) return;
-            mainWindow.setAlwaysOnTop(item.checked);
-          },
-        },
-        {
-          label: tr("menuScreenshot"),
-          accelerator: isMac ? "Cmd+Shift+S" : "Ctrl+Shift+S",
-          click: () => {
-            void captureScreenshot().then((fp) => {
-              if (fp) {
-                notifyMilestone(tr("screenshotSaved"), fp);
-                shell.showItemInFolder(fp);
-              }
-            });
-          },
-        },
-      ],
-    },
-    {
-      role: "windowMenu",
-      label: tr("menuWindow"),
-      submenu: [
-        { role: "minimize", label: tr("menuMinimize") },
-        { role: "zoom", label: tr("menuZoom") },
-        ...(isMac
-          ? [
-              { type: "separator" as const },
-              { role: "front" as const, label: tr("menuFront") },
-            ]
-          : [{ role: "close" as const, label: tr("menuCloseWindow") }]),
-      ],
-    },
-    {
-      role: "help",
-      label: tr("menuHelp"),
-      submenu: [
-        {
-          label: tr("menuOpenGitHub"),
-          click: () =>
-            void shell.openExternal("https://github.com/alklimover/thehumanbox"),
-        },
-        {
-          label: tr("menuOriginal"),
-          click: () =>
-            void shell.openExternal("https://github.com/1homsi/thehumanbox"),
-        },
-      ],
-    },
-  ];
+  });
 
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate(withTranslatedRoleMenus(template, process.platform === "darwin")),
+  );
 }
 
 async function createWindowReplace(): Promise<void> {
@@ -561,45 +510,39 @@ function buildTray(): void {
     tray.setToolTip("The Human Box");
     const update = (): void => {
       if (!tray) return;
+      const hasGameWindow = mainWindow !== null;
       tray.setContextMenu(
         Menu.buildFromTemplate([
           {
-            label:
-              mainWindow && mainWindow.isVisible()
-                ? tr("trayHide")
-                : tr("trayShow"),
+            // A minimized window is still visible, but toggling it restores it, so
+            // the item offers to show it rather than hide it.
+            label: gameWindowShown() ? t("tray.hideWindow") : t("tray.showWindow"),
             click: () => toggleWindow(),
           },
           { type: "separator" },
           {
-            label: tr("trayScreenshot"),
-            click: () =>
-              void captureScreenshot().then((fp) => {
-                if (fp) {
-                  notifyMilestone(tr("screenshotSaved"), fp);
-                  shell.showItemInFolder(fp);
-                }
-              }),
+            label: t("tray.takeScreenshot"),
+            click: () => takeScreenshotForPlayer(),
           },
           {
-            label: tr("trayWorlds"),
+            label: t("tray.openWorldsFolder"),
             click: () => {
               void openWorldsFolder().catch((error) => {
                 console.error("[main] could not open worlds folder:", error);
                 notifyMilestone(
-                  tr("worldsUnavailable"),
+                  t("notify.worldsFolderUnavailable"),
                   (error as Error).message,
                 );
               });
             },
           },
           {
-            label: tr("trayLogs"),
+            label: t("tray.openLogsFolder"),
             click: () => {
               void openLogsFolder().catch((error) => {
                 console.error("[main] could not open logs folder:", error);
                 notifyMilestone(
-                  tr("logsUnavailable"),
+                  t("notify.logsFolderUnavailable"),
                   (error as Error).message,
                 );
               });
@@ -607,25 +550,27 @@ function buildTray(): void {
           },
           { type: "separator" },
           {
-            label: tr("menuAlwaysOnTop"),
+            label: t("menu.alwaysOnTop"),
             type: "checkbox",
             checked: mainWindow ? mainWindow.isAlwaysOnTop() : false,
+            enabled: hasGameWindow,
             click: (item) => {
               if (!mainWindow) return;
               mainWindow.setAlwaysOnTop(item.checked);
             },
           },
           {
-            label: tr("trayAbout"),
+            label: shellText("menu.about"),
             click: () => {
+              const ver = app.getVersion();
               notifyMilestone(
-                tr("appName"),
-                tr("trayAboutBody", { version: app.getVersion() }),
+                "The Human Box",
+                shellText("notify.about", { version: ver }),
               );
             },
           },
           { type: "separator" },
-          { label: tr("trayQuit"), role: "quit" },
+          { label: shellText("menu.quitApp"), role: "quit" },
         ]),
       );
     };
@@ -642,6 +587,10 @@ function revealWindow(win: BrowserWindow): void {
     pendingMaximize = false;
     win.maximize();
   }
+  if (pendingFullScreen) {
+    pendingFullScreen = false;
+    win.setFullScreen(true);
+  }
   win.show();
   win.focus();
 }
@@ -654,7 +603,7 @@ function openWindowOrReport(): Promise<void> {
     console.error("[main] could not open the window:", err);
     if (!isQuitting) {
       dialog.showErrorBox(
-        tr("windowOpenFailed"),
+        t("dialog.openWindowFailed"),
         (err as Error)?.message ?? String(err),
       );
     }
@@ -685,6 +634,17 @@ function openWindow(): Promise<void> {
   return windowCreation;
 }
 
+// True when the game window is on screen and not minimized: the state in which
+// the tray and the toggle hide it rather than show it.
+function gameWindowShown(): boolean {
+  return (
+    mainWindow !== null &&
+    !mainWindow.isDestroyed() &&
+    mainWindow.isVisible() &&
+    !mainWindow.isMinimized()
+  );
+}
+
 function toggleWindow(): void {
   if (!mainWindow) {
     void openWindowOrReport();
@@ -702,49 +662,145 @@ function toggleWindow(): void {
   }
 }
 
-function notifyMilestone(title: string, body: string): void {
-  if (!Notification.isSupported()) return;
+// `onUnshown` runs when the notification cannot be shown: the platform has no
+// notification support, or the OS rejects it. Callers that must reach the player
+// use it for a fallback.
+function notifyMilestone(title: string, body: string, onUnshown?: () => void): void {
+  if (!Notification.isSupported()) {
+    onUnshown?.();
+    return;
+  }
   const n = new Notification({ title, body, silent: false });
   // A click brings the game forward. It must not hide a window that is
   // already visible, which is what the tray and hotkey toggle does.
   n.on("click", () => showExistingWindow());
-  // Electron 42+ shows macOS notifications through UNNotification, which needs
-  // a code-signed app; on this unsigned build a failure would be invisible.
-  n.on("failed", (_e, error) => console.warn("[main] notification failed:", error));
+  // macOS only shows notifications from code-signed apps (Electron 42+), and
+  // the mac build is unsigned; bounce the dock so the milestone still shows.
+  n.on("failed", (_e, error) => {
+    console.warn("[main] notification failed:", error);
+    if (process.platform === "darwin") app.dock?.bounce("informational");
+    onUnshown?.();
+  });
   n.show();
 }
 
-function applyAutoLaunch(): void {
-  try {
-    const s = loadSettings();
-    app.setLoginItemSettings(loginItemSettings(s.autoLaunch, s.startMinimized));
-  } catch (e) {
-    console.warn("[main] setLoginItemSettings failed:", e);
-  }
+// Throws when the OS refuses the login item. The settings form awaits this call
+// and shows the failure; swallowing it reported success for a launch-at-login
+// setting the system never applied. Startup catches it instead (see boot).
+// The global show/hide shortcut. Another app may already hold it, and then
+// pressing it does nothing. Say so once; the tray icon still works.
+function toggleShortcutLabel(): string {
+  return process.platform === "darwin" ? "Cmd+Alt+Shift+H" : "Ctrl+Alt+Shift+H";
 }
 
-async function captureScreenshot(): Promise<string | null> {
-  if (!mainWindow) return null;
+// Returns whether the shortcut is registered. A failure is not announced here:
+// boot calls announceShortcutUnavailable once the window is open.
+function registerToggleShortcut(): boolean {
+  const shortcut = toggleShortcutLabel();
+  let registered = false;
   try {
-    const img = await mainWindow.webContents.capturePage();
-    const root = path.join(app.getPath("pictures"), "TheHumanBox");
-    fs.mkdirSync(root, { recursive: true });
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const fp = path.join(root, `thb-${stamp}.png`);
-    fs.writeFileSync(fp, img.toPNG());
-    return fp;
-  } catch (e) {
-    console.warn("[main] capturePage failed:", e);
-    return null;
+    registered = globalShortcut.register(shortcut, toggleWindow);
+  } catch (error) {
+    console.error(`[main] global shortcut ${shortcut} was rejected:`, error);
+  }
+  if (!registered) console.warn(`[main] could not register global shortcut ${shortcut}`);
+  return registered;
+}
+
+// The player is told the shortcut is unavailable. Electron gives no reason for a
+// failed registration, so the text does not name one. The tray tooltip carries
+// the message where a notification cannot be shown.
+function announceShortcutUnavailable(): void {
+  const shortcut = toggleShortcutLabel();
+  const title = t("notify.shortcutUnavailable");
+  const body = t("notify.shortcutUnavailableDetail", { shortcut });
+  // The tooltip has its own short text: Windows cuts a tooltip off at 127 units.
+  notifyMilestone(title, body, () =>
+    tray?.setToolTip(t("notify.shortcutUnavailableTooltip", { shortcut })),
+  );
+}
+
+function applyAutoLaunch(): void {
+  const s = loadSettings();
+  app.setLoginItemSettings(loginItemSettings(s.autoLaunch, s.startMinimized));
+}
+
+// Rejects with the reason when nothing was saved. The menu, tray and renderer
+// all report that rejection to the player.
+async function captureScreenshot(): Promise<string> {
+  if (!mainWindow) throw new Error("the game window is not open");
+  const img = await mainWindow.webContents.capturePage();
+  // A hidden window (tray mode) captures as an empty image. Writing that would
+  // leave an empty PNG that is reported as a screenshot.
+  if (img.isEmpty()) {
+    throw new Error("the window has nothing to capture; show it and try again");
+  }
+  const root = path.join(app.getPath("pictures"), "TheHumanBox");
+  fs.mkdirSync(root, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const fp = path.join(root, `thb-${stamp}.png`);
+  // Written under a temporary name and renamed, so a failed write cannot leave
+  // a partial PNG at the reported path.
+  atomicWriteNewFile(fp, img.toPNG());
+  return fp;
+}
+
+// A screenshot from the View menu or the tray: the player hears either way.
+function takeScreenshotForPlayer(): void {
+  captureScreenshot().then(
+    (fp) => {
+      notifyMilestone(t("notify.screenshotSaved"), fp);
+      shell.showItemInFolder(fp);
+    },
+    (error: unknown) => {
+      console.warn("[main] screenshot failed:", error);
+      notifyMilestone(
+        t("notify.screenshotFailed"),
+        error instanceof Error ? error.message : String(error),
+      );
+    },
+  );
+}
+
+// The shell speaks the saved language from the first menu on; with nothing
+// saved yet, the operating system's. The renderer then reports the language it
+// shows (see app:setLocale), which can differ from the OS.
+function initLocale(): void {
+  let saved: string | null = null;
+  try {
+    saved = loadSettings().locale;
+  } catch {
+    // An unreadable settings file is reported when the window opens.
+  }
+  // Fork: the language the fork's shell kept in its own file, once; then Russian, not the OS language.
+  if (!saved) saved = legacyLocale(app.getPath("userData"));
+  setLocale([saved, FORK_DEFAULT_LOCALE]);
+}
+
+// The renderer reports the player's language. The menus and tray are rebuilt
+// when it differs from the shell's, and the choice is kept for the next start.
+async function applyLocale(requested: unknown): Promise<void> {
+  const code = typeof requested === "string" ? matchLocale(requested) : null;
+  if (!code) return;
+  if (code !== getLocale()) {
+    setLocale([code]);
+    rebuildWindowMenus();
+  }
+  try {
+    // Under the guard settings:set and the save-folder move use, so this
+    // read-modify-write cannot overwrite a save folder being moved. Skipped
+    // while one of them runs; the renderer reports again on the next start.
+    await runExclusiveDesktopOperation("save the language", () => {
+      const settings = loadSettings();
+      if (settings.locale !== code) saveSettings({ ...settings, locale: code });
+    });
+  } catch (error) {
+    console.warn("[main] could not save the language:", error);
   }
 }
 
 function registerAppIpcHandlers(): void {
-  // The game reports the interface language it runs in (apps/web/src/i18n);
-  // the menus, tray and dialogs follow it.
-  ipcMain.handle("app:setLocale", (_e, locale: unknown) => {
-    if (isUiLocale(locale) && setUiLocale(locale)) rebuildWindowMenus();
-  });
+  ipcMain.handle("app:setLocale", (_e, code: unknown) => applyLocale(code));
 
   ipcMain.handle(
     "app:notify",
@@ -755,12 +811,11 @@ function registerAppIpcHandlers(): void {
 
   ipcMain.handle("app:trayToggle", () => toggleWindow());
 
+  // A failed capture rejects, and the renderer shows the reason.
   ipcMain.handle("app:screenshot", async () => {
     const fp = await captureScreenshot();
-    if (fp) {
-      notifyMilestone(tr("screenshotSaved"), fp);
-      shell.showItemInFolder(fp);
-    }
+    notifyMilestone(t("notify.screenshotSaved"), fp);
+    shell.showItemInFolder(fp);
     return fp;
   });
 
@@ -782,7 +837,7 @@ function registerAppIpcHandlers(): void {
   ipcMain.handle("app:pickSaveDir", async () => {
     if (!mainWindow) return null;
     const res = await dialog.showOpenDialog(mainWindow, {
-      title: tr("pickSaveDirTitle"),
+      title: t("dialog.chooseSaveFolder"),
       properties: ["openDirectory", "createDirectory"],
       defaultPath:
         loadSettings().saveLocationOverride ?? app.getPath("userData"),
@@ -834,7 +889,7 @@ async function showRestartFailure(error: unknown): Promise<void> {
       await restartSimulation({ requireCheckpoint: false });
     } catch (retryError) {
       dialog.showErrorBox(
-        tr("restartFailed"),
+        t("restart.failed"),
         (retryError as Error)?.message ?? String(retryError),
       );
     }
@@ -879,12 +934,20 @@ async function offerSimRestart(
     const options: Electron.MessageBoxOptions = {
       type: "error",
       title: "The Human Box",
-      message: tr("simStopped"),
-      detail: tr("simStoppedDetail", { exit: signal ?? tr("exitCode", { code: String(code) }) }),
-      buttons: [tr("restartSim"), tr("notNow")],
+      message: t("simStopped.message"),
+      detail: t("simStopped.detail", {
+        status: signal ?? t("simStopped.exitCode", { code: String(code) }),
+      }),
+      buttons: [t("buttons.restartSimulation"), t("buttons.notNow")],
       defaultId: 0,
       cancelId: 1,
     };
+    // The prompt is attached to the game window. A game kept in the tray has a
+    // hidden window, and a sheet attached to it may never reach the player, so
+    // the window comes up first.
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      revealWindow(mainWindow);
+    }
     const { response } =
       mainWindow && !mainWindow.isDestroyed()
         ? await dialog.showMessageBox(mainWindow, options)
@@ -892,7 +955,7 @@ async function offerSimRestart(
     if (response === 0 && !isQuitting) {
       await restartSimulation().catch((err) => {
         dialog.showErrorBox(
-          tr("restartFailed"),
+          t("restart.failed"),
           (err as Error)?.message ?? String(err),
         );
       });
@@ -923,7 +986,9 @@ async function offerSimRestart(
 }
 
 async function boot(): Promise<void> {
-  loadUiLocale(app.getPath("userData"));
+  // First, so the shell's warnings and errors from the rest of boot are kept.
+  // A packaged app has no terminal to show them in.
+  teeConsoleToLog(console, path.join(app.getPath("logs"), "main.log"));
   // Before any renderer load: the file:// page gets a CSP so injected script
   // cannot reach the network or the preload bridge.
   installRendererCsp(session.defaultSession);
@@ -942,23 +1007,25 @@ async function boot(): Promise<void> {
     startHiddenOnce = false;
   }
 
+  initLocale();
   // Set up controls and update checks before the simulation load begins.
   buildTray();
-  applyAutoLaunch();
+  try {
+    applyAutoLaunch();
+  } catch (e) {
+    console.warn("[main] setLoginItemSettings failed:", e);
+  }
   initUpdater(() => mainWindow);
   onUnexpectedSimExit(({ code, signal }) =>
     void offerSimRestart(code, signal).catch((err) =>
       console.error("[main] sim exit prompt failed:", err),
     ),
   );
-  const toggleKey =
-    process.platform === "darwin" ? "Cmd+Alt+Shift+H" : "Ctrl+Alt+Shift+H";
-  if (!globalShortcut.register(toggleKey, toggleWindow)) {
-    console.warn(`[main] could not register global shortcut ${toggleKey}`);
-  }
+  const shortcutRegistered = registerToggleShortcut();
 
   await openWindow();
   if (isQuitting) return;
+  if (!shortcutRegistered) announceShortcutUnavailable();
   // Hidden start needs the tray as the way back; without it show the window.
   if (!tray && mainWindow && !mainWindow.isVisible()) revealWindow(mainWindow);
 }
@@ -988,7 +1055,7 @@ async function fatalStartupFailure(err: unknown): Promise<void> {
     if (stopTimeout) clearTimeout(stopTimeout);
   }
   try {
-    dialog.showErrorBox(tr("startFailed"), msg);
+    dialog.showErrorBox(t("startFailed.title"), msg);
   } catch {
     // No GUI available (e.g. headless CI); the log line above is all we have.
   }
@@ -1003,7 +1070,15 @@ function reportStartupFailure(err: unknown): Promise<void> {
 // the data-root lock and show a startup error. Quit it and focus the running
 // window instead.
 if (app.requestSingleInstanceLock()) {
-  app.on("second-instance", showExistingWindow);
+  // The arguments of the second launch are deliberately ignored.
+  app.on("second-instance", () =>
+    handleSecondLaunch({
+      isReady: () => app.isReady(),
+      whenReady: () => app.whenReady(),
+      showWindow: showExistingWindow,
+      onError: (error) => console.error("[main] second launch could not focus the window:", error),
+    }),
+  );
   startWhenReady(app.whenReady(), boot, reportStartupFailure);
 } else {
   app.quit();

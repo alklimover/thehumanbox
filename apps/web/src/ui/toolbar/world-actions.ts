@@ -21,11 +21,27 @@ export interface WorldActions {
   save?: WorldSave
 }
 
+/** Where the save is: the item says so, and a retry is offered only after a failure that can be retried. */
+function saveState(save: WorldSave): 'saving' | 'retry' | 'save' {
+  if (save.busy) return 'saving'
+  if (save.error && save.retryable) return 'retry'
+  return 'save'
+}
+
 /** The save item's label for where the save is. */
 export function saveLabel(save: WorldSave): string {
-  if (save.busy) return t('tools.save.busy')
-  if (save.error && save.retryable) return t('tools.save.retry')
-  return t('tools.save.idle')
+  const state = saveState(save)
+  if (state === 'saving') return t('dock.save.saving')
+  if (state === 'retry') return t('dock.save.retry')
+  return t('dock.save.saveWorld')
+}
+
+/** The phone menu's lower-case label for the same state. */
+export function phoneSaveLabel(save: WorldSave): string {
+  const state = saveState(save)
+  if (state === 'saving') return t('dock.phone.saving')
+  if (state === 'retry') return t('dock.phone.retry')
+  return t('dock.phone.saveWorld')
 }
 
 /** A save in progress, or one that failed for good, cannot be started again. */

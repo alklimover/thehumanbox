@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../i18n/locale'
+import { setLocaleForTests } from './i18n/locale'
 import type { DesktopBridge } from '../shared/desktop'
 import { PopulationLoadSlider } from './PopulationLoad'
 import { type DeviceProfile, REFERENCE_BENCH_MS } from './population-load'
@@ -12,17 +12,17 @@ import { type DeviceProfile, REFERENCE_BENCH_MS } from './population-load'
 let container: HTMLDivElement
 let root: Root
 
-beforeEach(() => {
-  setLocaleForTests('ru')
+beforeEach(async () => {
+  await setLocaleForTests('ru')
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
 })
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount())
   container.remove()
-  setLocaleForTests('en')
+  await setLocaleForTests('en')
 })
 
 const m1: DeviceProfile = {

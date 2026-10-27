@@ -1,20 +1,28 @@
-import { t, type MessageKey } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
 import type { PerilCause, TribePeril, WorldState } from '../../shared/types'
+import { t, type MessageKey } from '../../i18n'
+import { simWordFallback } from '../../fork/i18n/sim'
 
-/** What is killing a tribe, and the power that helps most. */
-export const PERIL_HELP: Record<PerilCause, { reason: string; tool: string; action: string }> = {
-  sickness: { reason: t('peril.reason.sickness'), tool: 'cure', action: t('peril.action.cure') },
-  hunger: { reason: t('peril.reason.hunger'), tool: 'harvest', action: t('peril.action.harvest') },
-  thirst: { reason: t('peril.reason.thirst'), tool: 'rain', action: t('peril.action.rain') },
-  no_children: { reason: t('peril.reason.no_children'), tool: 'spawn1', action: t('peril.action.newcomer') },
-  old_age: { reason: t('peril.reason.old_age'), tool: 'spawn1', action: t('peril.action.youngBlood') },
-  dwindling: { reason: t('peril.reason.dwindling'), tool: 'bless', action: t('peril.action.bless') },
-  war: { reason: t('peril.reason.war'), tool: 'peace', action: t('peril.action.peace') },
-  beasts: { reason: t('peril.reason.beasts'), tool: 'banish', action: t('peril.action.banish') },
-  drowning: { reason: t('peril.reason.drowning'), tool: 'grass', action: t('peril.action.land') },
-  fire: { reason: t('peril.reason.fire'), tool: 'douse', action: t('peril.action.douse') },
-  disaster: { reason: t('peril.reason.disaster'), tool: 'bless', action: t('peril.action.bless') },
+/** What is killing a tribe, and the power that helps most. The text is a key, read with t() where it is shown. */
+export const PERIL_HELP: Record<PerilCause, { reason: MessageKey; tool: string; action: MessageKey }> = {
+  sickness: { reason: 'model.peril.sickness.reason', tool: 'cure', action: 'model.peril.sickness.action' },
+  hunger: { reason: 'model.peril.hunger.reason', tool: 'harvest', action: 'model.peril.hunger.action' },
+  thirst: { reason: 'model.peril.thirst.reason', tool: 'rain', action: 'model.peril.thirst.action' },
+  no_children: {
+    reason: 'model.peril.noChildren.reason',
+    tool: 'spawn1',
+    action: 'model.peril.noChildren.action',
+  },
+  old_age: { reason: 'model.peril.oldAge.reason', tool: 'spawn1', action: 'model.peril.oldAge.action' },
+  dwindling: {
+    reason: 'model.peril.dwindling.reason',
+    tool: 'bless',
+    action: 'model.peril.dwindling.action',
+  },
+  war: { reason: 'model.peril.war.reason', tool: 'peace', action: 'model.peril.war.action' },
+  beasts: { reason: 'model.peril.beasts.reason', tool: 'banish', action: 'model.peril.beasts.action' },
+  drowning: { reason: 'model.peril.drowning.reason', tool: 'grass', action: 'model.peril.drowning.action' },
+  fire: { reason: 'model.peril.fire.reason', tool: 'douse', action: 'model.peril.fire.action' },
+  disaster: { reason: 'model.peril.disaster.reason', tool: 'bless', action: 'model.peril.disaster.action' },
 }
 
 export function perilOf(world: Pick<WorldState, 'tribes_in_peril'>, lineage: string): TribePeril | null {
@@ -23,8 +31,7 @@ export function perilOf(world: Pick<WorldState, 'tribes_in_peril'>, lineage: str
 
 /** "only 3 left", "the last one" */
 export function remainingLine(population: number): string {
-  // "The last one" is about exactly one person, so this is not a plural form (Russian "one" also covers 21).
-  return population === 1 ? t('peril.lastOne') : t('peril.onlyLeft', { n: population })
+  return population === 1 ? t('model.peril.lastOne') : t('model.peril.left', { count: population })
 }
 
 /** Rows to show in the panel: every tribe on the brink, then the largest. */
@@ -57,15 +64,15 @@ export function tribeHome(
 /** How each cause of death reads on a tribe card. */
 const LOSS_WORDS: Record<string, MessageKey> = {
   war: 'model.loss.war',
-  combat: 'model.loss.combat',
+  combat: 'model.loss.fights',
   beasts: 'model.loss.beasts',
   drowning: 'model.loss.drowning',
   fire: 'model.loss.fire',
   disaster: 'model.loss.disaster',
   sickness: 'model.loss.sickness',
-  starvation: 'model.loss.starvation',
-  dehydration: 'model.loss.dehydration',
-  old_age: 'model.loss.old_age',
+  starvation: 'model.loss.hunger',
+  dehydration: 'model.loss.thirst',
+  old_age: 'model.loss.oldAge',
 }
 
 /** "3 to war · 1 to old age", worst first; null when nobody died lately. */
@@ -77,8 +84,9 @@ export function lossLine(losses: Record<string, number> | undefined): string | n
   return rows
     .slice(0, 3)
     .map(([cause, n]) => {
-      const word = LOSS_WORDS[cause]
-      return t('model.loss.item', { n, cause: word ? t(word) : simLabel('deathCause', cause) })
+      const key = LOSS_WORDS[cause]
+      const word = key ? t(key) : simWordFallback('deathCause', cause, cause.replace(/_/g, ' '))
+      return t('model.loss.to', { count: n, cause: word })
     })
     .join(' · ')
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { t } from '../../i18n'
 import { getDesktop } from '../../shared/desktop'
 import type { UpdateInfo } from '../../shared/desktop'
+import { t } from '../../i18n'
 
 type State =
   { kind: 'idle' } | { kind: 'available'; info: UpdateInfo } | { kind: 'downloaded'; info: UpdateInfo }
@@ -28,7 +28,7 @@ export function DesktopUpdateToast() {
     // Surface updater failures instead of leaving the app silently stuck.
     const offError = desktop.on('updater:error', (payload) => {
       if (!payload?.message) return
-      setError(t('toast.desktop.error', { message: payload.message }))
+      setError(t('dialogs.toast.updateFailed', { message: payload.message }))
       setInstalling(false)
       setDismissed(false)
     })
@@ -44,10 +44,10 @@ export function DesktopUpdateToast() {
   if (dismissed) return null
 
   const isReady = state.kind === 'downloaded'
-  const title = isReady ? t('toast.desktop.ready') : t('toast.desktop.available')
+  const title = isReady ? t('dialogs.toast.updateReady') : t('dialogs.toast.updateAvailable')
   const subtitle = isReady
-    ? t('toast.desktop.downloaded', { version: state.info.version })
-    : t('toast.desktop.downloading', { version: state.info.version })
+    ? t('dialogs.toast.updateReadySub', { version: state.info.version })
+    : t('dialogs.toast.updateDownloading', { version: state.info.version })
 
   return (
     <div style={wrap}>
@@ -67,22 +67,24 @@ export function DesktopUpdateToast() {
               desktop.app
                 .installUpdate()
                 .then((result) => {
-                  if (result.status !== 'downloaded') {
-                    setInstalling(false)
-                    setError(result.message ?? t('toast.desktop.notReady'))
-                  }
+                  // A plain "downloaded" result means the app is restarting. A deferred or
+                  // failed install can still come back as "downloaded" with a message: show
+                  // it and re-enable the button, keeping the update held.
+                  if (result.status === 'downloaded' && !result.message) return
+                  setInstalling(false)
+                  setError(result.message ?? t('dialogs.toast.updateNotReady'))
                 })
                 .catch((err: unknown) => {
                   setInstalling(false)
-                  setError(err instanceof Error ? err.message : t('toast.desktop.restartFailed'))
+                  setError(err instanceof Error ? err.message : t('dialogs.toast.restartFailed'))
                 })
             }}
-            title={t('toast.desktop.restartTip')}
+            title={t('dialogs.toast.restartTitle')}
           >
-            {installing ? t('toast.desktop.restarting') : t('toast.desktop.restart')}
+            {installing ? t('dialogs.toast.restarting') : t('dialogs.toast.restart')}
           </button>
         )}
-        <button style={dismissBtn} onClick={() => setDismissed(true)} aria-label={t('toast.dismiss')}>
+        <button style={dismissBtn} onClick={() => setDismissed(true)} aria-label={t('dialogs.toast.dismiss')}>
           ✕
         </button>
       </div>

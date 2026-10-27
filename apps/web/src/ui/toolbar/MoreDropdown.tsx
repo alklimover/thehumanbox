@@ -1,11 +1,16 @@
 import clsx from 'clsx'
+import { useEffect } from 'react'
 import { useUIStore, useViewFlag } from '../../state/store'
 import { SHORTCUT_HELP } from '../../game/model/shortcuts'
-import { t } from '../../i18n'
 import { saveMapPicture } from '../../shared/mapPicture'
 import { useWorldStore } from '../../state/worldStore'
 import { Tooltip } from './Tooltip'
 import { saveBlocked, saveLabel, saveShortcutLabel, type WorldActions } from './world-actions'
+import { shortcutKeys, shortcutWhat } from './shortcut-text'
+import { t } from '../../i18n'
+import { pauseTriggersHere } from '../../fork/chronicle/pause-split'
+import { ft } from '../../fork/i18n'
+import { isDesktop } from '../../shared/desktop'
 
 /**
  * `onAction` runs whenever the dropdown closes (an action or a toggle). `worldActions` puts
@@ -26,8 +31,8 @@ export function MoreDropdown({
   const openGoals = useUIStore((s) => s.openGoals)
   const openScenarios = useUIStore((s) => s.openScenarios)
   const openNotable = useUIStore((s) => s.openNotable)
-  const pauseOnPeril = useUIStore((s) => s.pauseOnPeril)
-  const setPauseOnPeril = useUIStore((s) => s.setPauseOnPeril)
+  const pauseOn = useUIStore((s) => s.pauseOn)
+  const setPauseOn = useUIStore((s) => s.setPauseOn)
 
   const lineageDot = useViewFlag('lineageDot')
   const health = useViewFlag('health')
@@ -47,6 +52,21 @@ export function MoreDropdown({
     onAction?.()
   }
 
+  // Escape closes the menu, as a click elsewhere does, and hands focus back to the ⋯ button: a key pressed
+  // inside the menu would otherwise leave focus on the body, where the map's keys stop working. It is taken on
+  // the document, ahead of the window, where the app's own Escape (which disarms the held tool) listens.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      const trigger = document.querySelector<HTMLElement>('[data-tour="more-btn"][aria-expanded="true"]')
+      useUIStore.setState({ showMore: false })
+      trigger?.focus({ preventScroll: true })
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+
   const { findTool, save } = worldActions ?? {}
 
   return (
@@ -63,7 +83,7 @@ export function MoreDropdown({
                   findTool()
                 }}
               >
-                <span>{t('more.findTool')}</span>
+                <span>⌕ {t('dock.more.findTool')}</span>
                 <kbd>/</kbd>
               </button>
             )}
@@ -89,180 +109,180 @@ export function MoreDropdown({
           <div className="more-dropdown-divider" />
         </>
       )}
-      <div className="more-dropdown-section">{t('more.focus')}</div>
+      <div className="more-dropdown-section">{t('dock.more.focus')}</div>
       <div className="more-dropdown-grid">
-        <Tooltip tip={t('more.focus.all.tip')}>
+        <Tooltip tip={t('dock.more.showAllTip')}>
           <button
             className={clsx('lang-btn', focus === 'all' && 'active')}
             aria-pressed={!!(focus === 'all')}
             onClick={() => setFocus('all')}
           >
-            {t('more.focus.all')}
+            · {t('dock.more.all')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.focus.sick.tip')}>
+        <Tooltip tip={t('dock.more.sickTip')}>
           <button
             className={clsx('lang-btn', focus === 'sick' && 'active')}
             aria-pressed={!!(focus === 'sick')}
             onClick={() => setFocus(focus === 'sick' ? 'all' : 'sick')}
           >
-            {t('more.focus.sick')}
+            🤒 {t('dock.more.sick')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.focus.hungry.tip')}>
+        <Tooltip tip={t('dock.more.hungryTip')}>
           <button
             className={clsx('lang-btn', focus === 'hungry' && 'active')}
             aria-pressed={!!(focus === 'hungry')}
             onClick={() => setFocus(focus === 'hungry' ? 'all' : 'hungry')}
           >
-            {t('more.focus.hungry')}
+            😫 {t('dock.more.hungry')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.focus.elders.tip')}>
+        <Tooltip tip={t('dock.more.eldersTip')}>
           <button
             className={clsx('lang-btn', focus === 'elders' && 'active')}
             aria-pressed={!!(focus === 'elders')}
             onClick={() => setFocus(focus === 'elders' ? 'all' : 'elders')}
           >
-            {t('more.focus.elders')}
+            👴 {t('dock.more.elders')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.focus.builders.tip')}>
+        <Tooltip tip={t('dock.more.buildersTip')}>
           <button
             className={clsx('lang-btn', focus === 'builders' && 'active')}
             aria-pressed={!!(focus === 'builders')}
             onClick={() => setFocus(focus === 'builders' ? 'all' : 'builders')}
           >
-            {t('more.focus.builders')}
+            🏗 {t('dock.more.builders')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.focus.thriving.tip')}>
+        <Tooltip tip={t('dock.more.thrivingTip')}>
           <button
             className={clsx('lang-btn', focus === 'thriving' && 'active')}
             aria-pressed={!!(focus === 'thriving')}
             onClick={() => setFocus(focus === 'thriving' ? 'all' : 'thriving')}
           >
-            {t('more.focus.thriving')}
+            ✦ {t('dock.more.thriving')}
           </button>
         </Tooltip>
       </div>
 
       <div className="more-dropdown-divider" />
-      <div className="more-dropdown-section">{t('more.decorations')}</div>
+      <div className="more-dropdown-section">{t('dock.more.decorations')}</div>
       <div className="more-dropdown-grid">
-        <Tooltip tip={t('more.lineage.tip')}>
+        <Tooltip tip={t('dock.more.lineageTip')}>
           <button
             className={clsx('lang-btn', lineageDot && 'active')}
             aria-pressed={!!lineageDot}
             onClick={() => setViewFlag('lineageDot', !lineageDot)}
           >
-            {t('more.lineage')}
+            ⬤ {t('dock.more.lineage')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.health.tip')}>
+        <Tooltip tip={t('dock.more.healthTip')}>
           <button
             className={clsx('lang-btn', health && 'active')}
             aria-pressed={!!health}
             onClick={() => setViewFlag('health', !health)}
           >
-            {t('more.health')}
+            ♥ {t('dock.more.health')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.age.tip')}>
+        <Tooltip tip={t('dock.more.ageTip')}>
           <button
             className={clsx('lang-btn', age && 'active')}
             aria-pressed={!!age}
             onClick={() => setViewFlag('age', !age)}
           >
-            {t('more.age')}
+            ⏳ {t('dock.more.age')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.fear.tip')}>
+        <Tooltip tip={t('dock.more.fearTip')}>
           <button
             className={clsx('lang-btn', fear && 'active')}
             aria-pressed={!!fear}
             onClick={() => setViewFlag('fear', !fear)}
           >
-            {t('more.fear')}
+            ⚠ {t('dock.more.fear')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.pairs.tip')}>
+        <Tooltip tip={t('dock.more.pairsTip')}>
           <button
             className={clsx('lang-btn', partners && 'active')}
             aria-pressed={!!partners}
             onClick={() => setViewFlag('partners', !partners)}
           >
-            {t('more.pairs')}
+            ♥♥ {t('dock.more.pairs')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.pregnant.tip')}>
+        <Tooltip tip={t('dock.more.pregnantTip')}>
           <button
             className={clsx('lang-btn', pregnancy && 'active')}
             aria-pressed={!!pregnancy}
             onClick={() => setViewFlag('pregnancy', !pregnancy)}
           >
-            {t('more.pregnant')}
+            ◯ {t('dock.more.pregnant')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.trails.tip')}>
+        <Tooltip tip={t('dock.more.trailsTip')}>
           <button
             className={clsx('lang-btn', trails && 'active')}
             aria-pressed={!!trails}
             onClick={() => setViewFlag('trails', !trails)}
           >
-            {t('more.trails')}
+            ⋯ {t('dock.more.trails')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.builds.tip')}>
+        <Tooltip tip={t('dock.more.buildsTip')}>
           <button
             className={clsx('lang-btn', structures && 'active')}
             aria-pressed={!!structures}
             onClick={() => setViewFlag('structures', !structures)}
           >
-            {t('more.builds')}
+            ⌂ {t('dock.more.builds')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.fertility.tip')}>
+        <Tooltip tip={t('dock.more.fertilityTip')}>
           <button
             className={clsx('lang-btn', fertility && 'active')}
             aria-pressed={!!fertility}
             onClick={() => setViewFlag('fertility', !fertility)}
           >
-            {t('more.fertility')}
+            ✿ {t('dock.more.fertility')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.hazard.tip')}>
+        <Tooltip tip={t('dock.more.hazardTip')}>
           <button
             className={clsx('lang-btn', hazard && 'active')}
             aria-pressed={!!hazard}
             onClick={() => setViewFlag('hazard', !hazard)}
           >
-            {t('more.hazard')}
+            ✶ {t('dock.more.hazard')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.history.tip')}>
+        <Tooltip tip={t('dock.more.historyTip')}>
           <button
             className={clsx('lang-btn', history && 'active')}
             aria-pressed={!!history}
             onClick={() => setViewFlag('history', !history)}
           >
-            {t('more.history')}
+            ↝ {t('dock.more.history')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.perf.tip')}>
+        <Tooltip tip={t('dock.more.perfTip')}>
           <button
             className={clsx('lang-btn', fps && 'active')}
             aria-pressed={!!fps}
             onClick={() => setViewFlag('fps', !fps)}
           >
-            {t('more.perf')}
+            ⏱ {t('dock.more.perf')}
           </button>
         </Tooltip>
       </div>
 
       <div className="more-dropdown-divider" />
       <div className="more-dropdown-grid">
-        <Tooltip tip={t('more.languages.tip')}>
+        <Tooltip tip={t('dock.more.langTip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -270,10 +290,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.languages')}
+            ⌖ {t('dock.more.lang')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.scenes.tip')}>
+        <Tooltip tip={t('dock.more.scenesTip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -281,10 +301,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.scenes')}
+            ✦ {t('dock.more.scenes')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.feats.tip')}>
+        <Tooltip tip={t('dock.more.featsTip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -292,10 +312,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.feats')}
+            ★ {t('dock.more.feats')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.goals.tip')}>
+        <Tooltip tip={t('dock.more.goalsTip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -303,10 +323,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.goals')}
+            ◎ {t('dock.more.goals')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.tree.tip')}>
+        <Tooltip tip={t('dock.more.treeTip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -314,10 +334,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.tree')}
+            ⬡ {t('dock.more.tree')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.world.tip')}>
+        <Tooltip tip={t('dock.more.worldTip')}>
           <button
             className={clsx('lang-btn', leftOpen && 'active')}
             aria-pressed={!!leftOpen}
@@ -326,33 +346,40 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.world')}
+            ⊞ {t('dock.more.world')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.onBrink.tip')}>
-          <button
-            className={clsx('lang-btn', pauseOnPeril && 'active')}
-            aria-pressed={pauseOnPeril}
-            onClick={() => setPauseOnPeril(!pauseOnPeril)}
-          >
-            {t('more.onBrink')}
-          </button>
-        </Tooltip>
+        <div className="more-pause" role="group" aria-label={t('dock.more.pauseOnTip')}>
+          <span className="more-pause-label">⏸ {t('dock.more.pauseOn')}</span>
+          {pauseTriggersHere().map((trigger) => (
+            <Tooltip key={trigger} tip={t(`dock.more.pauseTip.${trigger}`)}>
+              <button
+                className={clsx('lang-btn', pauseOn[trigger] && 'active')}
+                aria-pressed={pauseOn[trigger]}
+                onClick={() => setPauseOn(trigger, !pauseOn[trigger])}
+              >
+                {t(`dock.more.pause.${trigger}`)}
+              </button>
+            </Tooltip>
+          ))}
+          {/* Fork: on the desktop eras, wars and dying tribes are left to the fork's watch (fork/chronicle). */}
+          {isDesktop() && <span className="more-pause-note">{ft('watch.pauseElsewhere')}</span>}
+        </div>
         <Tooltip
           tip={
             <span className="tip-card">
-              <strong>{t('more.keys.title')}</strong>
+              <strong>{t('dock.more.keys')}</strong>
               {SHORTCUT_HELP.map(([key, what]) => (
                 <span key={key}>
-                  <b>{key}</b> {what}
+                  <b>{shortcutKeys(key)}</b> {shortcutWhat(key, what)}
                 </span>
               ))}
             </span>
           }
         >
-          <button className="lang-btn">{t('more.keys')}</button>
+          <button className="lang-btn">⌨ {t('dock.more.keys')}</button>
         </Tooltip>
-        <Tooltip tip={t('more.picture.tip')}>
+        <Tooltip tip={t('dock.more.pictureTip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -360,10 +387,10 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.picture')}
+            ▣ {t('dock.more.picture')}
           </button>
         </Tooltip>
-        <Tooltip tip={t('more.notable.tip')}>
+        <Tooltip tip={t('dock.more.notableTip')}>
           <button
             className="lang-btn"
             onClick={() => {
@@ -371,7 +398,7 @@ export function MoreDropdown({
               closeMore()
             }}
           >
-            {t('more.notable')}
+            ✦ {t('dock.more.notable')}
           </button>
         </Tooltip>
       </div>

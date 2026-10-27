@@ -3,7 +3,7 @@
 // (apps/desktop/main/fork-worlds.ts); opening or creating a world restarts the
 // simulation and reloads this page, so success needs no message here.
 import { useCallback, useEffect, useState } from 'react'
-import { t, tn } from '../i18n'
+import { ft, ftn } from './i18n'
 import type { DesktopBridge, WorldSlot } from '../shared/desktop'
 import { PopulationLoadSlider } from './PopulationLoad'
 import { worldFacts, worldTitle } from './worlds-text'
@@ -40,7 +40,7 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
       await action()
       if (label) setMessage(null)
     } catch (error) {
-      setMessage(t('worlds.failed', { error: errorText(error) }))
+      setMessage(ft('worlds.failed', { error: errorText(error) }))
     } finally {
       setBusy(null)
     }
@@ -59,10 +59,10 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
 
   return (
     <section className="settings-section fork-worlds">
-      <h3 className="settings-section-title">{t('worlds.title')}</h3>
-      <div className="settings-note">{t('worlds.note')}</div>
-      {list === null && <div className="settings-note">{t('worlds.loading')}</div>}
-      {list?.length === 0 && <div className="settings-note">{t('worlds.empty')}</div>}
+      <h3 className="settings-section-title">{ft('worlds.title')}</h3>
+      <div className="settings-note">{ft('worlds.note')}</div>
+      {list === null && <div className="settings-note">{ft('worlds.loading')}</div>}
+      {list?.length === 0 && <div className="settings-note">{ft('worlds.empty')}</div>}
       <ul className="fork-worlds-list">
         {list?.map((w) => (
           <li key={w.hash} className={'fork-worlds-row' + (w.live ? ' live' : '')}>
@@ -73,8 +73,8 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
                   autoFocus
                   maxLength={60}
                   value={renaming.name}
-                  placeholder={t('worlds.namePlaceholder')}
-                  aria-label={t('worlds.namePlaceholder')}
+                  placeholder={ft('worlds.namePlaceholder')}
+                  aria-label={ft('worlds.namePlaceholder')}
                   onChange={(e) => setRenaming({ hash: w.hash, name: e.target.value })}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') setRenaming(null)
@@ -88,11 +88,11 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
               ) : (
                 <div className="settings-row-title">
                   {worldTitle(w)}
-                  {w.live && <span className="settings-beta">{t('worlds.playing')}</span>}
+                  {w.live && <span className="settings-beta">{ft('worlds.playing')}</span>}
                   {w.role && (
                     <span className="fork-mode-badge">
                       <ToolSprite icon={ROLE_ICONS[w.role]} size={10} />
-                      {w.role === 'god' ? t('modes.badge.god') : t('modes.badge.observer')}
+                      {w.role === 'god' ? ft('modes.badge.god') : ft('modes.badge.observer')}
                     </span>
                   )}
                 </div>
@@ -111,7 +111,7 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
                     })
                   }
                 >
-                  {t('worlds.renameSave')}
+                  {ft('worlds.renameSave')}
                 </button>
               ) : (
                 <button
@@ -119,7 +119,7 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
                   disabled={busy !== null}
                   onClick={() => setRenaming({ hash: w.hash, name: w.name ?? '' })}
                 >
-                  {t('worlds.rename')}
+                  {ft('worlds.rename')}
                 </button>
               )}
               {w.live && w.seed && (
@@ -128,20 +128,20 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
                   onClick={() =>
                     void navigator.clipboard
                       .writeText(w.seed ?? '')
-                      .then(() => setMessage(t('worlds.seedCopied')))
-                      .catch((error: unknown) => setMessage(t('worlds.failed', { error: errorText(error) })))
+                      .then(() => setMessage(ft('worlds.seedCopied')))
+                      .catch((error: unknown) => setMessage(ft('worlds.failed', { error: errorText(error) })))
                   }
                 >
-                  {t('worlds.copySeed')}
+                  {ft('worlds.copySeed')}
                 </button>
               )}
               {!w.live && (
                 <button
                   className="lang-btn active"
                   disabled={busy !== null}
-                  onClick={() => void run(t('worlds.opening'), () => api.open(w.hash))}
+                  onClick={() => void run(ft('worlds.opening'), () => api.open(w.hash))}
                 >
-                  {t('worlds.open')}
+                  {ft('worlds.open')}
                 </button>
               )}
               {!w.live && (
@@ -158,7 +158,7 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
                   }}
                   onBlur={() => setTrashing((h) => (h === w.hash ? null : h))}
                 >
-                  {trashing === w.hash ? t('worlds.trashSure') : t('worlds.trash')}
+                  {trashing === w.hash ? ft('worlds.trashSure') : ft('worlds.trash')}
                 </button>
               )}
             </div>
@@ -166,31 +166,31 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
         ))}
       </ul>
 
-      <h3 className="settings-section-title">{t('worlds.new.title')}</h3>
-      <div className="settings-note">{t('worlds.new.desc')}</div>
+      <h3 className="settings-section-title">{ft('worlds.new.title')}</h3>
+      <div className="settings-note">{ft('worlds.new.desc')}</div>
       <div className="settings-field">
-        <div className="settings-field-label">{t('worlds.new.name')}</div>
+        <div className="settings-field-label">{ft('worlds.new.name')}</div>
         <input
           className="fork-worlds-input"
           maxLength={60}
           value={name}
-          placeholder={t('worlds.namePlaceholder')}
+          placeholder={ft('worlds.namePlaceholder')}
           onChange={(e) => setName(e.target.value)}
         />
       </div>
       <div className="settings-field">
-        <div className="settings-field-label">{t('worlds.new.seed')}</div>
+        <div className="settings-field-label">{ft('worlds.new.seed')}</div>
         <input
           className="fork-worlds-input"
           maxLength={64}
           value={seed}
-          placeholder={t('worlds.new.seedPlaceholder')}
+          placeholder={ft('worlds.new.seedPlaceholder')}
           onChange={(e) => setSeed(e.target.value)}
         />
       </div>
       <div className="settings-field">
-        <div className="settings-field-label">{t('modes.worlds.role')}</div>
-        <div className="fork-mode-cards compact" role="radiogroup" aria-label={t('modes.worlds.role')}>
+        <div className="settings-field-label">{ft('modes.worlds.role')}</div>
+        <div className="fork-mode-cards compact" role="radiogroup" aria-label={ft('modes.worlds.role')}>
           {ROLES.map((r) => (
             <button
               key={r}
@@ -202,10 +202,10 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
             >
               <ToolSprite icon={ROLE_ICONS[r]} size={20} />
               <span className="fork-mode-card-name">
-                {r === 'god' ? t('modes.god.name') : t('modes.observer.name')}
+                {r === 'god' ? ft('modes.god.name') : ft('modes.observer.name')}
               </span>
               <span className="fork-mode-card-promise">
-                {r === 'god' ? t('modes.god.promise') : t('modes.observer.promise')}
+                {r === 'god' ? ft('modes.god.promise') : ft('modes.observer.promise')}
               </span>
             </button>
           ))}
@@ -213,7 +213,7 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
       </div>
       {cap !== null && (
         <div className="settings-field">
-          <div className="settings-field-label">{tn('settings.sim.capacity', cap)}</div>
+          <div className="settings-field-label">{ftn('settings.sim.capacity', cap)}</div>
           <PopulationLoadSlider
             desktop={desktop}
             min={CAP_MIN}
@@ -230,12 +230,12 @@ export function WorldsSection({ desktop }: { desktop: DesktopBridge }) {
           className="lang-btn active"
           disabled={busy !== null}
           onClick={() =>
-            void run(t('worlds.new.creating'), () =>
+            void run(ft('worlds.new.creating'), () =>
               api.create({ name: name.trim() || null, seed: seed.trim() || null, populationCap: cap, role }),
             )
           }
         >
-          {busy === t('worlds.new.creating') ? t('worlds.new.creating') : t('worlds.new.create')}
+          {busy === ft('worlds.new.creating') ? ft('worlds.new.creating') : ft('worlds.new.create')}
         </button>
       </div>
       {message && <div className="settings-note">{message}</div>}

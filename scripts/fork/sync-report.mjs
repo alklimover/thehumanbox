@@ -3,7 +3,10 @@
 // body for a clean merge, or the issue body when the sync needs a human.
 //
 //   --mode pr         commits, changed areas, rules applied and the new strings
-//                     that still need a Russian translation
+//                     that still need a Russian translation: upstream's new and
+//                     changed interface keys (locales/en) whose Russian is
+//                     missing or still English, simulation ids the fork's tables
+//                     lack, and new simulation texts
 //   --mode conflict   commits and the conflicted files
 //   --mode workflows  commits and the workflow files GITHUB_TOKEN cannot push
 //
@@ -33,6 +36,7 @@ const { values: args } = parseArgs({
     date: { type: 'string', default: new Date().toISOString().slice(0, 10) },
     conflicts: { type: 'string' },
     resolutions: { type: 'string' },
+    'locale-kept': { type: 'string' },
     'skip-guards': { type: 'string' },
     out: { type: 'string' },
     'title-out': { type: 'string' },
@@ -102,7 +106,8 @@ const AREAS = [
   ['crates/sim-core/', 'Симуляция (`crates/sim-core`)'],
   ['crates/', 'Прочие крейты (`crates/`)'],
   ['apps/server/', 'Сервер (`apps/server`)'],
-  ['apps/web/src/i18n/', 'Перевод (`apps/web/src/i18n`)'],
+  ['apps/web/src/i18n/', 'Переводы автора (`apps/web/src/i18n`)'],
+  ['apps/web/src/fork/i18n/', 'Слой перевода форка (`apps/web/src/fork/i18n`)'],
   ['apps/web/', 'Интерфейс (`apps/web`)'],
   ['apps/desktop/', 'Десктоп (`apps/desktop`)'],
   ['.github/', 'CI (`.github`)'],
@@ -161,6 +166,8 @@ function areaSection(files) {
 const RULE_TEXT = {
   'keep-deleted': 'изменён в оригинале, в форке удалён: оставлен удалённым',
   'upstream-version': 'конфликт только в `version`: взята версия оригинала',
+  'locale-merge':
+    'русский перевод слит по ключам (`scripts/fork/merge-locale-json.mjs`): ключи и тексты автора, поверх — правки форка',
 }
 
 function rulesSection() {
@@ -171,6 +178,18 @@ function rulesSection() {
   } else {
     for (const [rule, path] of applied) lines.push(`- ${code(path)}: ${RULE_TEXT[rule] ?? rule}`)
   }
+  const kept = tsv(args['locale-kept'])
+  if (kept.length > 0) {
+    const stale = kept.filter(([, , kind]) => kind === 'en-changed')
+    lines.push(
+      '',
+      `Тексты форка, оставленные поверх нового перевода автора: ${kept.length}.` +
+        (stale.length > 0
+          ? ` У ${stale.length} из них автор изменил и английский — перевод форка мог устареть, проверьте:`
+          : ''),
+    )
+    for (const [file, key] of stale.slice(0, LIST_LIMIT)) lines.push(`- ${code(file)}: ${code(key)}`)
+  }
   return lines
 }
 
@@ -178,11 +197,11 @@ function rulesSection() {
 
 /** The i18n tests that read the Rust sources and compare them with the Russian tables. */
 function guardFiles() {
-  const dir = join(repo, 'apps/web/src/i18n')
+  const dir = join(repo, 'apps/web/src/fork/i18n')
   return readdirSync(dir, { recursive: true })
     .filter((file) => /\.test\.tsx?$/.test(file))
     .filter((file) => readFileSync(join(dir, file), 'utf8').includes('crates/sim-core'))
-    .map((file) => join('src/i18n', file))
+    .map((file) => join('src/fork/i18n', file))
     .sort()
 }
 
@@ -256,7 +275,106 @@ function guardSection() {
   }
   lines.push(
     '',
-    'Тест останавливается на первой непрошедшей проверке, поэтому после добавления этих переводов могут всплыть следующие. Переводы добавляются в `apps/web/src/i18n/sim/*.ts`.',
+    'Тест останавливается на первой непрошедшей проверке, поэтому после добавления этих переводов могут всплыть следующие. Названия добавляются в таблицы форка `apps/web/src/fork/i18n/sim/*.ts`: интерфейс сначала берёт слово из `locales/ru` автора, а если там его нет — из таблицы форка.',
+  )
+  return lines
+}
+
+// ---------------------------------------------------------------- upstream's locale files
+
+/** Upstream's locale files: the web app's (one folder per language, one file per area) and the desktop shell's. */
+const LOCALE_SETS = [
+  { en: 'apps/web/src/i18n/locales/en', ru: 'apps/web/src/i18n/locales/ru', label: 'интерфейс' },
+  { en: 'apps/desktop/main/locales/en.json', ru: 'apps/desktop/main/locales/ru.json', label: 'десктоп' },
+]
+
+/** A plural form object ({ one, few, many, other }) is one text, not a branch. */
+const isLeaf = (node) => typeof node === 'string' || (node && typeof node === 'object' && typeof node.other === 'string')
+
+function flattenJson(node, prefix, out) {
+  for (const [key, value] of Object.entries(node ?? {})) {
+    const full = prefix ? `${prefix}.${key}` : key
+    if (isLeaf(value)) out.set(full, value)
+    else flattenJson(value, full, out)
+  }
+  return out
+}
+
+/** Every text of one locale at a commit, as `area.key -> text` (a folder) or `key -> text` (one file). */
+function localeAt(sha, path) {
+  const out = new Map()
+  const show = (p) => {
+    const run = spawnSync('git', ['-C', repo, 'show', `${sha}:${p}`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    return run.status === 0 ? run.stdout : null
+  }
+  if (path.endsWith('.json')) {
+    const text = show(path)
+    if (text) flattenJson(JSON.parse(text), '', out)
+    return out
+  }
+  const ls = spawnSync('git', ['-C', repo, 'ls-tree', '--name-only', `${sha}:${path}`], { encoding: 'utf8' })
+  if (ls.status !== 0) return out
+  for (const file of ls.stdout.split('\n').filter((f) => f.endsWith('.json'))) {
+    const text = show(`${path}/${file}`)
+    if (text) flattenJson(JSON.parse(text), file.slice(0, -'.json'.length), out)
+  }
+  return out
+}
+
+const shownText = (v) => (typeof v === 'string' ? v : Object.values(v).join(' / '))
+const sameText = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+/** Russian that is still the English text, when that text has words to translate (not "{a} & {b}" or "2×"). */
+const sameAsEnglish = (ru, en) => {
+  const english = typeof en === 'string' ? en : en.other
+  if (!/[A-Za-z]{2,}/.test(english.replace(/\{\w+\}/g, ''))) return false
+  return (typeof ru === 'string' ? [ru] : Object.values(ru)).some((form) => form.trim() === english.trim())
+}
+
+function localeSection() {
+  const lines = ['### Ключи интерфейса автора (`locales/en`)', '']
+  const problems = []
+  const review = []
+  let added = 0
+  let changed = 0
+  for (const set of LOCALE_SETS) {
+    const before = localeAt(args.base, set.en)
+    const after = localeAt(args.head, set.en)
+    const ru = localeAt(args.head, set.ru)
+    for (const [key, en] of after) {
+      const old = before.get(key)
+      if (old !== undefined && sameText(old, en)) continue
+      if (old === undefined) added++
+      else changed++
+      const text = ru.get(key)
+      const where = `${set.label}: ${key}`
+      if (text === undefined) problems.push(`- ${code(where)} — нет русского текста (${code(shownText(en).slice(0, 120))})`)
+      else if (sameAsEnglish(text, en))
+        problems.push(`- ${code(where)} — русский совпадает с английским: ${code(shownText(text).slice(0, 120))}`)
+      else review.push(`- ${code(where)}: ${code(shownText(en).slice(0, 100))} → ${code(shownText(text).slice(0, 140))}`)
+    }
+  }
+  if (added + changed === 0) return [...lines, 'Новых и изменённых ключей нет.']
+  lines.push(`Новых ключей: **${added}**, изменённых: **${changed}**.`, '')
+  if (problems.length > 0) {
+    lines.push(`❌ Без русского перевода: ${problems.length}.`, '', ...problems.slice(0, LIST_LIMIT))
+    if (problems.length > LIST_LIMIT) lines.push(`- …и ещё ${problems.length - LIST_LIMIT}`)
+  } else {
+    lines.push('✅ У каждого нового и изменённого ключа есть русский текст.')
+  }
+  if (review.length > 0) {
+    lines.push(
+      '',
+      '<details><summary>Русские тексты новых и изменённых ключей — для сверки с глоссарием (<code>docs/fork/GLOSSARY.ru.md</code>)</summary>',
+      '',
+      ...review.slice(0, LIST_LIMIT * 2),
+      ...(review.length > LIST_LIMIT * 2 ? [`- …и ещё ${review.length - LIST_LIMIT * 2}`] : []),
+      '',
+      '</details>',
+    )
+  }
+  lines.push(
+    '',
+    'Правка перевода — прямо в `apps/web/src/i18n/locales/ru/*.json` (и `apps/desktop/main/locales/ru.json`): ключи там авторские, тексты форк может переписывать. При следующей синхронизации такие правки сохраняются поверх авторских (`scripts/fork/merge-locale-json.mjs`).',
   )
   return lines
 }
@@ -283,11 +401,11 @@ function addedLines(from, to, pathspec) {
   return files
 }
 
-const UI_SKIP_FILE = /(\.test\.|\.spec\.|__tests__\/|\/test-utils?\/|\.d\.ts$|^apps\/web\/src\/(i18n|wasm)\/)/
+const UI_SKIP_FILE = /(\.test\.|\.spec\.|__tests__\/|\/test-utils?\/|\.d\.ts$|^apps\/web\/src\/(i18n|wasm|fork\/i18n)\/)/
 const UI_SKIP_LINE = /^\s*(\/\/|\/\*|\*|import\b|export\s.*\bfrom\b)|console\.|classList|querySelector/
 const JS_WORDS = /^(return|const|let|var|if|else|import|export|type|interface|case|default|await|yield|function|new|throw|async|for|while|switch|break|continue)\b/
 // A literal right after one of these is a translation key or a class list.
-const NOT_TEXT = /(\b(t|tn|simLabel|clsx|cn)\(|\bclass(Name)?=\{?)\s*$/
+const NOT_TEXT = /(\b(t|tn|ft|ftn|simLabel|simText|clsx|cn)\(|\bclass(Name)?=\{?)\s*$/
 
 /** Looks like English prose: two or more words, at least one in lowercase, no Cyrillic. */
 function englishText(raw) {
@@ -335,10 +453,10 @@ function uiSection() {
     }
   }
   if (hits.length === 0) {
-    return [...lines, '✅ Новых английских строк вне `t()` / `tn()` / `simLabel()` не найдено.']
+    return [...lines, '✅ Новых английских строк вне `t()` / `ft()` / `simLabel()` не найдено.']
   }
   lines.push(
-    `Найдено ${hits.length}: строковые литералы и текст JSX с английскими словами в добавленных строках, не обёрнутые в \`t()\` / \`tn()\` / \`simLabel()\`. Это эвристика: среди них могут быть служебные строки.`,
+    `Найдено ${hits.length}: строковые литералы и текст JSX с английскими словами в добавленных строках, не обёрнутые в \`t()\` автора или \`ft()\` / \`simLabel()\` форка. Это эвристика: среди них могут быть служебные строки. Строку, которую автор не перевёл, форк переводит своим каталогом (\`apps/web/src/fork/i18n/catalog\`, \`ft()\`).`,
     '',
   )
   for (const hit of hits.slice(0, LIST_LIMIT)) {
@@ -414,6 +532,8 @@ function prBody() {
       ...rulesSection(),
       '',
       '## Новые непереведённые строки',
+      '',
+      ...localeSection(),
       '',
       ...guardSection(),
       '',

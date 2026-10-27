@@ -1,6 +1,6 @@
 import type { WorldState } from '../../shared/types'
 import { eraTier } from './era-tier'
-import { simLabel } from '../../i18n/sim'
+import { simLabel } from '../../fork/i18n/sim'
 
 export interface WorldEpitaph {
   years: number

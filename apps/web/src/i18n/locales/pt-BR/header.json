@@ -1,0 +1,153 @@
+{
+  "starTitle": "Dar estrela no GitHub",
+  "starBody": "The Human Box é gratuito e de código aberto. Uma estrela ajuda outras pessoas a encontrá-lo.",
+  "starAria": "Dar estrela ao The Human Box no GitHub",
+  "star": "estrela",
+  "live": "LIVE",
+  "connecting": "conectando…",
+  "tickTip": "Tick da simulação {tick}. 600 ticks são um dia no mundo. Já se passaram {days} dias.",
+  "tick": "tick {tick}",
+  "moonTitle": "lua: {phase}",
+  "moonBody": "Ano {year}, dia {day}.",
+  "eraTitle": "era: {era}",
+  "eraBody": "Molda os recursos e o comportamento das pessoas.",
+  "stats": "estatísticas",
+  "statsBody": "Gráficos de população, nascimentos e mortes, e o crescimento das linhagens ao longo do tempo.",
+  "civTitle": "civilização",
+  "civ": "civ",
+  "civBody": "Eras, governos, religiões, construções, livros, arte e manchetes.",
+  "searchTitle": "encontrar pessoas",
+  "search": "buscar",
+  "searchBody": "Busque todos, vivos ou mortos, por nome, pensamento, linhagem ou descoberta.",
+  "chronicles": "crônicas",
+  "chroniclesBody": "A história deste mundo, escrita a partir do que aconteceu.",
+  "more": "mais",
+  "moreBody": "Encontre uma ferramenta, salve o mundo, ajuste filtros e opções de visualização.",
+  "settings": "configurações",
+  "settingsBody": "Idioma, tela, desempenho e seu mundo.",
+  "worldPanel": "painel do mundo",
+  "closeWorldPanel": "fechar painel do mundo",
+  "worldPanelBody": "Histórico, linhagens e o registro de eventos.",
+  "openWorldPanelAria": "Abrir painel do mundo",
+  "closeWorldPanelAria": "Fechar painel do mundo",
+  "world": "mundo",
+  "peoplePanel": "painel de pessoas",
+  "closePeoplePanel": "fechar painel de pessoas",
+  "peoplePanelBody": "Todos os vivos, além dos mortos.",
+  "openPeoplePanelAria": "Abrir painel de pessoas",
+  "closePeoplePanelAria": "Fechar painel de pessoas",
+  "people": "pessoas",
+  "fullscreen": "tela cheia",
+  "exitFullscreen": "sair da tela cheia",
+  "enterFullscreenAria": "Entrar em tela cheia",
+  "exitFullscreenAria": "Sair da tela cheia",
+  "save": {
+    "loading": "carregando o salvamento local…",
+    "retrying": "tentando o armazenamento local de novo…",
+    "restored": "mundo restaurado no tick {tick}",
+    "newWorld": "novo mundo local pronto",
+    "saving": "salvando o tick {tick}…",
+    "saved": "salvo localmente · tick {tick}",
+    "savingWorld": "salvando o mundo…"
+  },
+  "sandbox": {
+    "seedHint": "clique na terra para fundar uma nova tribo",
+    "guidanceSet": "orientação {strategy} definida",
+    "guidanceFailed": "falha na orientação",
+    "followNobody": "seguir · ninguém ao alcance",
+    "nameNobody": "nomear · ninguém ao alcance",
+    "noOnePraying": "ninguém está rezando",
+    "noTribeBrink": "nenhuma tribo está à beira",
+    "taughtSecret": "os deuses lhes ensinaram um segredo",
+    "cannotTeach": "ainda não podem ser ensinados de novo",
+    "layersCleared": "camadas do mapa limpas",
+    "toolShown": "{tool} exibido",
+    "toolHidden": "{tool} oculto",
+    "toolMapOn": "mapa de {tool} ligado",
+    "toolMapOff": "mapa de {tool} desligado",
+    "toolWorking": "{tool}…",
+    "toolApplied": "{tool} aplicado",
+    "toolFailed": "{tool} falhou",
+    "toolAt": "{tool} → {x}, {y}",
+    "result": {
+      "none_here": "ninguém ao alcance aqui",
+      "none_hurt": "ninguém aqui estava ferido",
+      "none_sick": "ninguém aqui está doente",
+      "none_dead": "não há ninguém para reviver aqui",
+      "revive_cooldown": "esta tribo foi revivida há pouco; os deuses precisam esperar",
+      "world_full": "não há espaço para mais pessoas",
+      "animal_full": "não há espaço para mais animais",
+      "no_room_for_animal": "não há espaço neste chão para esse animal",
+      "split_small": "há poucas pessoas aqui para separar uma tribo",
+      "blocked": "ninguém pode ficar em água ou pedra",
+      "no_government": "essa tribo não tem quem a lidere",
+      "cannot_teach": "eles ainda não podem ser ensinados de novo",
+      "spawned": {
+        "one": "{name} chegou",
+        "other": "{count} pessoas chegaram"
+      },
+      "family_arrived": "chegou uma nova família",
+      "healed_animals": {
+        "one": "um animal recuperou as forças",
+        "other": "{count} animais recuperaram as forças"
+      },
+      "healed": {
+        "one": "{name} foi curado",
+        "other": "{count} pessoas curadas"
+      },
+      "revived": "{name} voltou da morte",
+      "blessed": {
+        "one": "{name} abençoado",
+        "other": "{count} pessoas abençoadas"
+      },
+      "inspired": {
+        "one": "{name} inspirado",
+        "other": "{count} pessoas inspiradas"
+      },
+      "cured": {
+        "one": "{name} curado",
+        "other": "{count} pessoas curadas"
+      },
+      "cured_tribe": {
+        "one": "uma pessoa da tribo curada",
+        "other": "{count} pessoas da tribo curadas"
+      },
+      "loved": {
+        "one": "{name} se apaixonou",
+        "other": "{count} corações cheios de amor"
+      },
+      "paired": {
+        "one": "um casal unido",
+        "other": "{count} casais unidos"
+      },
+      "mutated": "{name} sofreu uma mutação",
+      "cursed": "{name} foi amaldiçoado",
+      "taught": "a tribo de {name} aprendeu um segredo",
+      "moved": "{name} foi transportado",
+      "gifted_food": {
+        "one": "comida dada a {name}",
+        "other": "comida dada a {count} pessoas"
+      },
+      "gifted_tool": {
+        "one": "uma ferramenta dada a {name}",
+        "other": "ferramentas dadas a {count} pessoas"
+      },
+      "crowned": "{name} foi coroado",
+      "split": {
+        "other": "{count} pessoas se separaram para fundar uma tribo"
+      },
+      "tamed": {
+        "one": "um animal selvagem virou um cão leal",
+        "other": "{count} animais selvagens viraram cães leais"
+      },
+      "guardian": "um cão guardião ficou ao lado de {name}",
+      "smitten": "um raio atingiu {name}",
+      "struck_beast": "um raio derrubou um animal",
+      "struck_roof": "um raio rachou um telhado",
+      "animals": {
+        "one": "um animal apareceu",
+        "other": "{count} animais apareceram"
+      }
+    }
+  }
+}

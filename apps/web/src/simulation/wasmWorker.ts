@@ -16,6 +16,7 @@ import {
   runStorageRetry,
   type StorageRetry,
 } from './wasmPersistence'
+import { FAILED_OUTCOME, parseCommandOutcome } from './command-outcome'
 import {
   MAX_RUNTIME_SPEED,
   MIN_RUNTIME_SPEED,
@@ -23,8 +24,8 @@ import {
   WASM_BASE_TICK_MS,
   wasmTickDelay,
 } from './runtimeControls'
-import { t } from '../i18n'
-import { isLocale, setWorkerLocale } from '../i18n/locale'
+import { ft } from '../fork/i18n'
+import { isLocale, setWorkerLocale } from '../fork/i18n/locale'
 
 type StartMsg = {
   type: 'start'
@@ -42,7 +43,7 @@ type InMsg =
   | StartMsg
   | { type: 'pause'; requestId?: number }
   | { type: 'resume'; requestId?: number }
-  | { type: 'visibility'; hidden: boolean }
+  | { type: 'visibility'; hidden: boolean; keepRunning?: boolean }
   | { type: 'save'; requestId?: number }
   | { type: 'retry_storage'; requestId?: number }
   | { type: 'prepare_reload'; requestId: number; deadlineAt: number; requireLocalWorld?: boolean }
@@ -82,6 +83,18 @@ let lastDeepFullAt = -Infinity
 let started = false
 let manuallyPaused = false
 let hiddenPaused = false
+// Hidden but still simulating ("keep running in background"): ticks and autosaves
+// continue, but no frames go out since nothing draws them. A full frame resyncs on return.
+let hiddenRunning = false
+let resyncOnReturn = false
+// Browsers may throttle a hidden tab's timers to once a second or slower, so while hidden the
+// world runs by wall clock: each wake-up runs the ticks owed since the last one. Capped so a
+// machine waking from sleep does not replay hours of world at once.
+const MAX_BACKGROUND_OWED_MS = 60_000
+const MIN_BACKGROUND_SLICE_MS = 50
+const MAX_BACKGROUND_SLICE_MS = 500
+let backgroundOwedMs = 0
+let backgroundClockAt = 0
 let reloadPreparing = false
 let tickTimer: ReturnType<typeof setTimeout> | null = null
 let saveTimer: ReturnType<typeof setInterval> | null = null
@@ -143,7 +156,7 @@ async function acquireWorldLock(id: string): Promise<boolean> {
       if (wait.signal.aborted) return
       post({
         type: 'error',
-        message: t('errors.worker.lockFailed', { error: errorText(error) }),
+        message: ft('errors.worker.lockFailed', { error: errorText(error) }),
       })
     })
 
@@ -176,7 +189,8 @@ function errorText(error: unknown): string {
 }
 
 function emit(deepFull: boolean) {
-  if (!sim) return
+  // Nothing draws a hidden tab; a full frame resyncs it on return.
+  if (!sim || hiddenRunning) return
   frameId += 1
   const now = Date.now()
   lastEmittedAt = performance.now()
@@ -190,7 +204,7 @@ function rememberRetry(next: StorageRetry<SavedWorld>) {
 }
 
 function restoreSavedWorld(saved: SavedWorld): Sim {
-  if (saved.blob.byteLength === 0) throw new Error(t('errors.worker.saveEmpty'))
+  if (saved.blob.byteLength === 0) throw new Error(ft('errors.worker.saveEmpty'))
   const candidate = Sim.fromSerialized(BigInt(saved.seed), saved.blob)
   const restoredTick = Number(candidate.tickCount())
   if (restoredTick !== saved.tick) {
@@ -206,7 +220,7 @@ function tickMismatch(
   actual: number,
 ): string {
   // Raw tick numbers, as in the save, not grouped for reading.
-  return t(key, { expected: String(expected), actual: String(actual) })
+  return ft(key, { expected: String(expected), actual: String(actual) })
 }
 
 function replaceSimulation(candidate: Sim, nextSeed: string) {
@@ -238,7 +252,7 @@ async function persist(): Promise<boolean> {
         const tick = Number(sim.tickCount())
         post({ type: 'saving', tick })
         const blob = sim.serialize()
-        if (blob.byteLength === 0) throw new Error(t('errors.worker.serializedEmpty'))
+        if (blob.byteLength === 0) throw new Error(ft('errors.worker.serializedEmpty'))
         const savedAt = Date.now()
         await saveWorld(worldId, { blob, seed, tick, savedAt })
         post({ type: 'saved', tick, savedAt })
@@ -248,7 +262,7 @@ async function persist(): Promise<boolean> {
       post({
         type: 'error',
         retryable: true,
-        message: t('errors.worker.autosaveFailed', { error: errorText(e) }),
+        message: ft('errors.worker.autosaveFailed', { error: errorText(e) }),
       })
       return false
     }
@@ -281,7 +295,7 @@ async function retryReadStorage(): Promise<boolean> {
       post({
         type: 'error',
         retryable: true,
-        message: t('errors.worker.restoreFailedKept', { error: errorText(restoreError) }),
+        message: ft('errors.worker.restoreFailedKept', { error: errorText(restoreError) }),
       })
     }
   }
@@ -319,7 +333,7 @@ async function resumeAfterUnavailableRecovery(message: string): Promise<boolean>
 
 async function retryRestoreStorage(recoveryId: string): Promise<boolean> {
   if (!recoveryId.startsWith(recoveryPrefix(worldId))) {
-    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryInvalid'))
+    return resumeAfterUnavailableRecovery(ft('errors.worker.recoveryInvalid'))
   }
 
   // Re-read the recovery index rather than trusting a stale settings entry.
@@ -328,26 +342,32 @@ async function retryRestoreStorage(recoveryId: string): Promise<boolean> {
   const recoveries = await listRecoveryWorlds(worldId)
   const current = findRequestedRecovery(recoveryId, recoveries)
   if (!current) {
-    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryGone'))
+    return resumeAfterUnavailableRecovery(ft('errors.worker.recoveryGone'))
   }
 
   const recovery = await loadWorld(current.id)
   if (!recovery) {
-    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryGone'))
+    return resumeAfterUnavailableRecovery(ft('errors.worker.recoveryGone'))
   }
 
   let candidate: Sim
   try {
     candidate = restoreSavedWorld(recovery)
   } catch (error) {
-    return resumeAfterUnavailableRecovery(t('errors.worker.recoveryUnusable', { error: errorText(error) }))
+    return resumeAfterUnavailableRecovery(ft('errors.worker.recoveryUnusable', { error: errorText(error) }))
   }
 
   try {
     const previousBackupId = await restoreRecoveryWorld(worldId, current.id)
     replaceSimulation(candidate, recovery.seed)
     markStorageReady(true)
-    post({ type: 'recovery_done', recoveryId: current.id, previousBackupId, tick: recovery.tick })
+    post({
+      type: 'recovery_done',
+      recoveryId: current.id,
+      previousBackupId,
+      tick: recovery.tick,
+      seed: recovery.seed,
+    })
     emit(true)
     return persist()
   } catch (error) {
@@ -366,13 +386,13 @@ function storageRetryMessage(retry: StorageRetry<SavedWorld> | null, error: unkn
   const params = { error: errorText(error) }
   switch (retry?.kind) {
     case 'reset':
-      return t('errors.worker.resetFailed', params)
+      return ft('errors.worker.resetFailed', params)
     case 'restore':
-      return t('errors.worker.recoveryFailed', params)
+      return ft('errors.worker.recoveryFailed', params)
     case 'preserve':
-      return t('errors.worker.preserveFailed', params)
+      return ft('errors.worker.preserveFailed', params)
     default:
-      return t('errors.worker.readFailed', params)
+      return ft('errors.worker.readFailed', params)
   }
 }
 
@@ -417,13 +437,42 @@ function stopTimers() {
   }
 }
 
+function msPerTick() {
+  return tickMs / stepsPerEmit
+}
+
+/** Run the ticks a hidden world owes for the real time since the last wake-up. */
+function catchUpInBackground(running: Sim, startedAt: number) {
+  const sinceLastMs = startedAt - backgroundClockAt
+  backgroundOwedMs = Math.min(MAX_BACKGROUND_OWED_MS, backgroundOwedMs + sinceLastMs)
+  backgroundClockAt = startedAt
+  // Work at most half the gap, so a throttled timer still leaves the CPU half idle.
+  const sliceMs = Math.min(MAX_BACKGROUND_SLICE_MS, Math.max(MIN_BACKGROUND_SLICE_MS, sinceLastMs / 2))
+  while (backgroundOwedMs >= msPerTick() && performance.now() - startedAt < sliceMs) {
+    running.tickN(1)
+    backgroundOwedMs -= msPerTick()
+  }
+}
+
 function tickOnce() {
   const startedAt = performance.now()
   let completed = 0
-  if (!manuallyPaused && !hiddenPaused && !reloadPreparing && sim) {
+  const running = manuallyPaused || hiddenPaused || reloadPreparing ? null : sim
+  if (running && hiddenRunning) {
+    catchUpInBackground(running, startedAt)
+    const workMs = performance.now() - startedAt
+    const behind = backgroundOwedMs >= msPerTick()
+    // Still behind: come straight back, idling at least as long as the slice took.
+    const delay = behind ? Math.max(MIN_WASM_TICK_MS, workMs) : msPerTick() - backgroundOwedMs
+    tickTimer = setTimeout(tickOnce, delay)
+    return
+  }
+  backgroundOwedMs = 0
+  backgroundClockAt = startedAt
+  if (running) {
     // Bound a fast-forward batch, yielding between slices for pause/save/input.
     do {
-      sim.tickN(1)
+      running.tickN(1)
       completed += 1
     } while (completed < stepsPerEmit && performance.now() - startedAt < 16)
     if (tickMs >= WASM_BASE_TICK_MS || performance.now() - lastEmittedAt >= WASM_BASE_TICK_MS) {
@@ -466,7 +515,7 @@ async function start(msg: StartMsg) {
     post({
       type: 'error',
       fatal: true,
-      message: t('errors.worker.initFailed', { error: errorText(e) }),
+      message: ft('errors.worker.initFailed', { error: errorText(e) }),
     })
     return
   }
@@ -482,7 +531,7 @@ async function start(msg: StartMsg) {
     storageReady = false
     post({
       type: 'error',
-      message: t('errors.worker.otherTab'),
+      message: ft('errors.worker.otherTab'),
     })
   }
 
@@ -501,19 +550,19 @@ async function start(msg: StartMsg) {
       post({
         type: 'error',
         retryable: true,
-        message: t('errors.worker.resetFailed', { error: errorText(e) }),
+        message: ft('errors.worker.resetFailed', { error: errorText(e) }),
       })
     }
   }
   if (!resetApplied && msg.recoveryId && storageReady) {
     try {
       if (!msg.recoveryId.startsWith(recoveryPrefix(worldId))) {
-        throw new Error(t('errors.worker.recoveryIdInvalid'))
+        throw new Error(ft('errors.worker.recoveryIdInvalid'))
       }
       const recovery = await loadWorld(msg.recoveryId)
       if (reloadPreparing) return
-      if (!recovery) throw new Error(t('errors.worker.recoveryMissing'))
-      if (recovery.blob.byteLength === 0) throw new Error(t('errors.worker.recoveryEmpty'))
+      if (!recovery) throw new Error(ft('errors.worker.recoveryMissing'))
+      if (recovery.blob.byteLength === 0) throw new Error(ft('errors.worker.recoveryEmpty'))
       const candidate = Sim.fromSerialized(BigInt(recovery.seed), recovery.blob)
       const recoveredTick = Number(candidate.tickCount())
       candidate.free()
@@ -528,6 +577,7 @@ async function start(msg: StartMsg) {
         recoveryId: msg.recoveryId,
         previousBackupId,
         tick: recovery.tick,
+        seed: recovery.seed,
       })
     } catch (e) {
       storageReady = false
@@ -535,7 +585,7 @@ async function start(msg: StartMsg) {
       post({
         type: 'error',
         retryable: true,
-        message: t('errors.worker.recoveryFailed', { error: errorText(e) }),
+        message: ft('errors.worker.recoveryFailed', { error: errorText(e) }),
       })
     }
   }
@@ -554,13 +604,13 @@ async function start(msg: StartMsg) {
     post({
       type: 'error',
       retryable: worldLockAcquired,
-      message: t('errors.worker.readFailed', { error: errorText(e) }),
+      message: ft('errors.worker.readFailed', { error: errorText(e) }),
     })
   }
   if (reloadPreparing) return
   if (saved) {
     try {
-      if (saved.blob.byteLength === 0) throw new Error(t('errors.worker.saveEmpty'))
+      if (saved.blob.byteLength === 0) throw new Error(ft('errors.worker.saveEmpty'))
       post({ type: 'boot', stage: 'restoring', tick: saved.tick })
       sim = Sim.fromSerialized(BigInt(saved.seed), saved.blob)
       const restoredTick = Number(sim.tickCount())
@@ -594,14 +644,14 @@ async function start(msg: StartMsg) {
           post({
             type: 'error',
             retryable: true,
-            message: t('errors.worker.preserveFailed', { error: errorText(recoveryError) }),
+            message: ft('errors.worker.preserveFailed', { error: errorText(recoveryError) }),
           })
         }
       }
       post({
         type: 'error',
         retryable: storageReady || storageRetry !== null,
-        message: t(recoverySaved ? 'errors.worker.restoreFailedKept' : 'errors.worker.restoreFailed', {
+        message: ft(recoverySaved ? 'errors.worker.restoreFailedKept' : 'errors.worker.restoreFailed', {
           error: errorText(e),
         }),
       })
@@ -662,9 +712,23 @@ self.onmessage = (e: MessageEvent) => {
         })
       }
       break
-    case 'visibility':
-      hiddenPaused = msg.hidden
+    case 'visibility': {
+      const wasHiddenRunning = hiddenRunning
+      hiddenPaused = msg.hidden && msg.keepRunning !== true
+      hiddenRunning = msg.hidden && msg.keepRunning === true
+      // Frames held back while hidden (even if the setting is turned off before return) need a resync.
+      if (hiddenRunning) resyncOnReturn = true
+      if (wasHiddenRunning && !msg.hidden && sim && !manuallyPaused && !reloadPreparing) {
+        // A throttled timer may not have fired since the last catch-up: run what is owed up
+        // to now (within one slice) so the resync frame shows the world on time.
+        catchUpInBackground(sim, performance.now())
+      }
+      if (resyncOnReturn && !msg.hidden) {
+        resyncOnReturn = false
+        emit(true)
+      }
       break
+    }
     case 'save':
       void persist().then((ok) => {
         if (msg.requestId !== undefined) post({ type: 'save_result', requestId: msg.requestId, ok })
@@ -722,16 +786,16 @@ self.onmessage = (e: MessageEvent) => {
       break
     case 'command':
       if (sim && !reloadPreparing) {
-        const ok = sim.command(msg.json)
-        if (ok) {
+        const outcome = parseCommandOutcome(sim.command(msg.json)) ?? FAILED_OUTCOME
+        if (outcome.applied) {
           emit(true)
           // Player actions are important checkpoints. Save them immediately
           // so terrain edits, disasters, and spawned life survive a reload.
           void persist()
         }
-        post({ type: 'command_result', requestId: msg.requestId, ok })
+        post({ type: 'command_result', requestId: msg.requestId, ok: outcome.applied, outcome })
       } else {
-        post({ type: 'command_result', requestId: msg.requestId, ok: false })
+        post({ type: 'command_result', requestId: msg.requestId, ok: false, outcome: FAILED_OUTCOME })
       }
       break
     case 'org_detail':

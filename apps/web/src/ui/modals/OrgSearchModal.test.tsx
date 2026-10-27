@@ -57,6 +57,18 @@ describe('OrgSearchModal', () => {
     expect(list.scrollTop).toBe(0)
   })
 
+  it('finds a renamed person by the name their card shows', () => {
+    render([{ ...organism('a'), name: 'Ada', custom_name: 'Bob' } as OrganismState, organism('b')])
+    const search = el<HTMLInputElement>('.org-search-input')
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(search, 'bob')
+      search.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const names = [...document.querySelectorAll('.org-search-entry')].map((e) => e.textContent ?? '')
+    expect(names).toHaveLength(1)
+    expect(names[0]).toContain('Bob')
+  })
+
   it('a desktop deselect of the row under the pointer keeps the list where it was', () => {
     render([organism('a'), organism('b')])
     const list = el('.org-search-list')
@@ -64,5 +76,47 @@ describe('OrgSearchModal', () => {
     act(() => el('.org-search-entry').click())
     act(() => el('.org-search-entry').click())
     expect(list.scrollTop).toBe(240)
+  })
+
+  it('shows a founder as generation 1, as the card does', () => {
+    render([{ ...organism('a'), generation: 0 } as OrganismState])
+    const meta = el('.org-search-meta').textContent ?? ''
+    expect(meta).toContain('g1')
+    expect(meta).not.toContain('g0')
+  })
+
+  it('an Escape with the tribe list open closes the list and keeps the search open', () => {
+    const onClose = vi.fn()
+    const root = createRoot(document.createElement('div'))
+    roots.push(root)
+    act(() => root.render(<OrgSearchModal organisms={[organism('a')]} onClose={onClose} />))
+    act(() => el('.tribe-dropdown-btn').click())
+    expect(el('.tribe-dropdown-menu')).not.toBeNull()
+
+    act(() => {
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(el('.tribe-dropdown-menu')).toBeNull()
+    expect(el('.org-search-input')).not.toBeNull()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('a second Escape closes the search', () => {
+    const onClose = vi.fn()
+    const root = createRoot(document.createElement('div'))
+    roots.push(root)
+    act(() => root.render(<OrgSearchModal organisms={[organism('a')]} onClose={onClose} />))
+    act(() => el('.tribe-dropdown-btn').click())
+    const escape = () =>
+      act(() => {
+        document.body.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+        )
+      })
+    escape()
+    escape()
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

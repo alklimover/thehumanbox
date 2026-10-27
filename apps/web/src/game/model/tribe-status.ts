@@ -1,5 +1,4 @@
 import type { OrganismState, PrayerInfo, WorldState } from '../../shared/types'
-import { simLabel } from '../../i18n/sim'
 
 /** At or below this faith a tribe has given up on its gods (matches the sim). */
 export const LOST_FAITH = -6
@@ -26,14 +25,24 @@ export interface TribeStatus {
   /** Gave up on the gods: rarely prays until helped unasked. */
   lostFaith: boolean
   prayer: PrayerInfo | null
-  /** What stands between the tribe and its next age, if there is one. */
-  nextAge: {
-    era: string
-    known: number
-    required: number
-    missing: string[]
-    peopleNeeded: number
-  } | null
+  /** What stands between the tribe and its next age, if there is one (see `era-guide.ts`). */
+  nextAge: NextAge | null
+}
+
+export interface NextAge {
+  era: string
+  /** Secrets the tribe knows of those its next age needs. */
+  known: number
+  required: number
+  /** The secrets it still lacks, all of them, in the sim's order. */
+  missing: string[]
+  /** People the world still needs before the age comes; 0 once it has them. */
+  peopleNeeded: number
+  /** People in the world now, and how many the next age needs of the world. */
+  worldPeople: number
+  worldPeopleRequired: number
+  /** False for an older frame without the world's totals: the people guidance is then unknown, not zero. */
+  worldKnown: boolean
 }
 
 function eraOf(world: WorldState, id: string): string | null {
@@ -43,15 +52,38 @@ function eraOf(world: WorldState, id: string): string | null {
   return eras[id] ?? null
 }
 
-function nextAgeOf(world: WorldState, id: string): TribeStatus['nextAge'] {
+import { eraWord } from '../../shared/era-words'
+import { discoveryWord } from '../../ui/sim-words'
+import { displayName } from '../../fork/i18n/names'
+
+/**
+ * The next age as the sim gates it. The age needs the secrets across the tribe's living people AND enough
+ * people in the whole world (`update_lineage_eras` counts the world's population, not the tribe's). The
+ * `pop_*` fields are the tribe's own count, kept for older clients; the world fields are the ones to read.
+ */
+function nextAgeOf(world: WorldState, id: string): NextAge | null {
   const p = world.lineage_era_progress?.find((e) => e.lineage_id === id)
   if (!p?.next_era) return null
-  return {
-    era: simLabel('era', p.next_era),
+  const base = {
+    era: eraWord(p.next_era),
     known: p.known.length,
     required: p.required.length,
-    missing: p.missing.map((d) => simLabel('discovery', d)),
-    peopleNeeded: p.pop_ready ? 0 : Math.max(0, p.pop_required - p.pop),
+    missing: p.missing.map(discoveryWord),
+  }
+  // Frames from before the world totals carry only the tribe's own count. That is not the world's, so the
+  // people guidance is marked unknown instead of being worked out from it.
+  if (p.world_population == null || p.world_population_required == null) {
+    return { ...base, peopleNeeded: 0, worldPeople: 0, worldPeopleRequired: 0, worldKnown: false }
+  }
+  const worldPeople = p.world_population
+  const worldPeopleRequired = p.world_population_required
+  const peopleReady = p.world_population_ready ?? false
+  return {
+    ...base,
+    peopleNeeded: peopleReady ? 0 : Math.max(0, worldPeopleRequired - worldPeople),
+    worldPeople,
+    worldPeopleRequired,
+    worldKnown: true,
   }
 }
 
@@ -66,8 +98,8 @@ export function tribeStatus(world: WorldState, id: string): TribeStatus | null {
     stores: Math.max(0, world.lineage_food_stores?.find((r) => r.lineage_id === id)?.stock ?? 0),
     bread: Math.max(0, world.lineage_bread_stores?.find((r) => r.lineage_id === id)?.loaves ?? 0),
     livestock: Math.max(0, world.lineage_livestock?.find((r) => r.lineage_id === id)?.head ?? 0),
-    name: world.lineage_names?.[id] ?? id.slice(0, 6),
-    era: simLabel('era', eraOf(world, id)) || null,
+    name: displayName(world.lineage_names?.[id]) || id.slice(0, 6),
+    era: eraWord(eraOf(world, id)) || null,
     people: members.length,
     food: Math.max(
       0,
@@ -90,7 +122,8 @@ export function tribeStatus(world: WorldState, id: string): TribeStatus | null {
         avg((o) => o.health),
       ),
     ),
-    sick: members.filter((o) => o.infection > 0.3).length,
+    // The same line the person card, the population count and the simulation call sick (0.15).
+    sick: members.filter((o) => o.infection > 0.15).length,
     faith: faith?.by_lineage[id] ?? 0,
     blessed: !!faith?.blessed.includes(id),
     despairing: !!faith?.despairing.includes(id),

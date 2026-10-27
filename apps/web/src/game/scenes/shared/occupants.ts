@@ -1,8 +1,8 @@
+import { t } from '../../../i18n'
 import type { OrganismState, WorldState } from '../../../shared/types'
 import { hasRuinedBuildingAtWorldTile } from '../../model/building-state'
 import type { OccupantRole, SceneOccupant } from '../core/types'
-import { t } from '../../../i18n'
-import { sexOf, simText } from '../../../i18n/simtext'
+import { sexOf, simText } from '../../../fork/i18n/simtext'
 
 const INSIDE_RADIUS = 1
 const HOUSEHOLD_RADIUS = 6
@@ -70,8 +70,8 @@ export function householdAround(world: WorldState, host: OrganismState): Househo
     activity: host.thought
       ? simText('thought', host.thought, { sex: sexOf(host) })
       : hostInside
-        ? t('map.home.atHome')
-        : t('map.home.away'),
+        ? t('panels.scene.activity.atHome')
+        : t('panels.scene.out'),
   }
   if (hostInside) inside.push(hostEntry)
   else away.push(hostEntry)
@@ -83,7 +83,9 @@ export function householdAround(world: WorldState, host: OrganismState): Househo
     const manhattan = Math.abs(dx) + Math.abs(dy)
     if (manhattan > HOUSEHOLD_RADIUS) continue
     const role = roleFor(host, o)
-    const activity = o.thought ? simText('thought', o.thought, { sex: sexOf(o) }) : t('map.scene.idling')
+    const activity = o.thought
+      ? simText('thought', o.thought, { sex: sexOf(o) })
+      : t('panels.scene.activity.idling')
     const entry: SceneOccupant = { org: o, role, activity }
     if (isInsideHome({ ...o, home_x: host.home_x, home_y: host.home_y } as OrganismState, world)) {
       inside.push(entry)

@@ -80,13 +80,13 @@
   - `stories.ts` — сюжеты и выбор строк;
   - `guide.ts` — подсказки;
   - `ModeChoice.tsx`, `StoryPanel.tsx`, `ModeSetting.tsx`, `ForkModes.tsx` — интерфейс.
-- Строки лежат в каталоге `apps/web/src/i18n/catalog/modes.ts`, стили — в `styles/fork.css`.
+- Строки лежат в каталоге форка `apps/web/src/fork/i18n/catalog/modes.ts` (`ft()`), стили — в `styles/fork.css`.
 - Вставки в оригинальные файлы:
   - `App.tsx`: `<ForkModes/>` вместо `<WelcomeModal/>`, `<ModePrayerHint/>` вместо `<PrayerHint/>`;
   - `DesktopSettingsModal.tsx`: строка режима на вкладке «мир»;
   - `ui/tour/tour.ts`: `startTour` ведёт на подсказки режима, когда режим выбран;
   - `ui/tour/tour-runner.ts`: принимает готовые шаги.
-- `WelcomeModal.tsx` остаётся в коде, но не подключается.
+- `WelcomeModal.tsx` остаётся в коде, но не подключается. Выбор языка, который автор добавил в эту карточку (upstream #844), в форке — в настройках, вкладка «язык»; по умолчанию игра на русском.
 - Десктоп: `apps/desktop/main/fork-worlds.ts`, мост `forkWorlds.setRole` в `preload/index.ts`.
 
 ## Позже

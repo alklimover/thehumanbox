@@ -1,8 +1,8 @@
 import { personName } from '../../../shared/personName'
-import { t } from '../../../i18n'
-import { roleLabel } from '../shared/role-label'
 import type { SceneContext } from '../core/types'
 import { useUIStore } from '../../../state/store'
+import { t } from '../../../i18n'
+import { roleWord } from '../shared/occupant-words'
 import { HomeCanvas } from './HomeCanvas'
 
 interface Props {
@@ -18,8 +18,8 @@ export function HomeInterior({ ctx, onExit, onFocusOrg }: Props) {
   return (
     <div className="scene-shell">
       <div className="scene-head">
-        <button className="scene-back" onClick={onExit} aria-label={t('map.scene.backAria')}>
-          {t('map.scene.back')}
+        <button className="scene-back" onClick={onExit} aria-label={t('common.backToMap')}>
+          ← {t('common.backToMap')}
         </button>
         <div className="scene-title-wrap">
           <div className="scene-title">{title}</div>
@@ -27,12 +27,10 @@ export function HomeInterior({ ctx, onExit, onFocusOrg }: Props) {
         </div>
         <div className="scene-meta">
           {occupants.length === 0
-            ? t('map.home.empty')
-            : occupants.length === 1
-              ? t('map.home.alone')
-              : t('map.home.inside', { n: occupants.length })}
+            ? t('panels.scene.noOneHome')
+            : t('panels.scene.insideCount', { count: occupants.length })}
           {' · '}
-          {isDay ? t('map.scene.day') : t('map.scene.night')}
+          {isDay ? `☀ ${t('panels.scene.day')}` : `☾ ${t('panels.scene.night')}`}
         </div>
       </div>
 
@@ -48,7 +46,7 @@ export function HomeInterior({ ctx, onExit, onFocusOrg }: Props) {
               className={'scene-occupant-chip' + (o.org.id === selectedOrgId ? ' active' : '')}
               onClick={() => onFocusOrg(o.org.id)}
             >
-              <span className="scene-occupant-role">{roleLabel(o.role)}</span>
+              <span className="scene-occupant-role">{roleWord(o.role)}</span>
               <span className="scene-occupant-name">{personName(o.org)}</span>
               <span className="scene-occupant-act">{o.activity}</span>
             </button>
@@ -61,9 +59,11 @@ export function HomeInterior({ ctx, onExit, onFocusOrg }: Props) {
                 (o.org.id === selectedOrgId ? ' active' : '')
               }
               onClick={() => onFocusOrg(o.org.id)}
-              title={t('map.home.outTip')}
+              title={t('panels.scene.homeOut')}
             >
-              <span className="scene-occupant-role">{t('map.scene.out', { role: roleLabel(o.role) })}</span>
+              <span className="scene-occupant-role">
+                {roleWord(o.role)} · {t('panels.scene.out')}
+              </span>
               <span className="scene-occupant-name">{personName(o.org)}</span>
               <span className="scene-occupant-act">{o.activity}</span>
             </button>

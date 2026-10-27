@@ -7,14 +7,21 @@ use crate::world::{
     tiles::Tile,
 };
 
-use super::decision_bias::{directive_action_boost, directive_aligns_action, preferred_action_boost};
-use super::organism::{Organism, QRowExt, ACTION_ID_SPACE, N_ACTIONS};
+use super::decision_bias::{directive_action_boost, preferred_action_boost, Directive};
+use super::lessons::Lesson;
+use super::organism::{Hot, Organism, QRowExt, ACTION_ID_SPACE, N_ACTIONS};
+use super::skills::Skill;
 
 /// Farthest a person walks home at night, in tiles (Manhattan). Routes to
 /// farther homes outrun the route planner's window and search budget, so the
 /// walk fell back to greedy steps and people paced in front of obstacles. Beyond
 /// this, people sleep in the nearest shelter instead.
 const NIGHT_HOME_REACH: f32 = 16.0;
+
+/// Ticks in the water after which a wading crossing counts as stuck. A shallow
+/// strip takes a few steps; someone still in it this long is going nowhere and
+/// must get out before the cold and panic set in (from 12 ticks).
+const CROSSING_PATIENCE: u32 = 8;
 
 fn survival_relevant_action(
     action: usize,
@@ -180,12 +187,14 @@ impl Organism {
         // along the bank. Deep water still gets people out.
         let crossing = {
             let route = self.route.borrow();
-            !deep && route.steps.len() > route.next
+            !deep && route.steps.len() > route.next && self.water_ticks <= CROSSING_PATIENCE
         };
+        // Someone who saw a drowning gets out of the water sooner.
+        let water_wary = self.lessons.heeds(Lesson::Water);
         if grid.is_wet(tile, ix, iy)
             && !crossing
-            && ((deep && self.hydration >= 0.75)
-                || self.water_ticks > 5
+            && ((deep && self.hydration >= 0.75 - 0.35 * water_wary)
+                || self.water_ticks > 5 - (3.0 * water_wary) as u32
                 || self.energy < 0.55
                 || self.health < 0.90)
         {
@@ -199,14 +208,21 @@ impl Organism {
             return (8, thought);
         }
 
-        let flee_r = (2.0 + 2.0 * self.traits.fear) as i32;
+        // Fear makes people keep further from fire, and so does having seen someone burn.
+        let flee_r = (2.0 + 2.0 * self.traits.fear + 2.0 * self.lessons.heeds(Lesson::Fire)) as i32;
         let fire_tile = self.nearest_visible(grid, Tile::Fire, flee_r);
-        let fire_dangerous = tile == Tile::Fire || (!night && fire_tile.is_some());
+        // By night a fire is for warmth, unless they have seen someone burn.
+        let fire_dangerous =
+            tile == Tile::Fire || (fire_tile.is_some() && (!night || self.lessons.heeds(Lesson::Fire) > 0.0));
         let critical = self.energy < 0.2 || self.hydration < 0.2;
-        if !critical && fire_dangerous {
+        // Heat hurts only on the fire itself. A hungry person turns back from a
+        // fire's ring only when standing on the fire: turning back at the edge of
+        // the ring walked them out of it and straight back in, until they starved.
+        let hungry = self.energy < 0.42;
+        if !critical && fire_dangerous && (tile == Tile::Fire || !hungry) {
             set_thought!("heat dangerous");
             if let Some((fx, fy)) = fire_tile {
-                if !night {
+                if !night || self.lessons.heeds(Lesson::Fire) > 0.0 {
                     let tdx = ix - fx;
                     let tdy = iy - fy;
                     return (self.toward((ix + tdx * 3, iy + tdy * 3), grid), thought);
@@ -262,8 +278,36 @@ impl Organism {
             } else {
                 14
             };
-            if let Some(v) = self.nearest_visible(grid, Tile::Water, scan_r) {
-                set_thought!("moving to water");
+            // At the bank: kneel and drink. Wading in for it left people dying of
+            // thirst a step from deep water they would not step into.
+            if grid.water_beside(ix, iy).is_some() {
+                set_thought!("drinking at the water's edge");
+                return (9, thought);
+            }
+            // In winter the lake freezes over; they break the ice.
+            if grid.ice_beside(ix, iy).is_some() {
+                set_thought!("breaking the ice to drink");
+                return (9, thought);
+            }
+            // Open water and frozen water are one source. Looked for as two kinds, the goal flipped
+            // from ice to open water at the edge of the search radius and back again on the next step,
+            // so people paced between two tiles beside a frozen lake until they died of thirst.
+            let open = self.nearest_visible(grid, Tile::Water, scan_r);
+            let frozen = self.nearest_visible(grid, Tile::Ice, scan_r);
+            let nearest = match (open, frozen) {
+                (Some(w), Some(i)) => {
+                    if i.0.abs_diff(ix) + i.1.abs_diff(iy) < w.0.abs_diff(ix) + w.1.abs_diff(iy) {
+                        Some((i, "heading for the frozen water"))
+                    } else {
+                        Some((w, "moving to water"))
+                    }
+                }
+                (Some(w), None) => Some((w, "moving to water")),
+                (None, Some(i)) => Some((i, "heading for the frozen water")),
+                (None, None) => None,
+            };
+            if let Some((v, label)) = nearest {
+                set_thought!(label);
                 return (self.toward(v, grid), thought);
             }
             let urgency = (0.38 - self.hydration) / 0.38;
@@ -304,22 +348,68 @@ impl Organism {
             } else {
                 9
             };
-            if let Some(v) = self.nearest_visible(grid, Tile::Food, scan_r) {
+            // Food across water is out of reach for someone this weak: the
+            // first step would put them in the water, and being too tired to
+            // swim sends them straight back to the bank. They went back and
+            // forth like that until they starved. Such food is passed over
+            // for the next, and set aside for a while when nothing else is
+            // within reach. A crossing already planned along a route still goes
+            // ahead: once wading, they keep to it.
+            let on_land = !grid.is_wet(tile, ix, iy);
+            let rejected: std::cell::RefCell<Vec<(i32, i32)>> = std::cell::RefCell::new(Vec::new());
+            let step_dry = |target: (i32, i32)| {
+                let planned = {
+                    let route = self.route.borrow();
+                    route.goal == target && route.steps.len() > route.next
+                };
+                let action = self.toward(target, grid);
+                let (dx, dy) = crate::organism::organism::DIRECTIONS[action % 8];
+                let next = (ix + dx, iy + dy);
+                let wades = action < 8 && grid.is_wet(grid.get(next.0, next.1), next.0, next.1);
+                if on_land && wades && self.energy < 0.55 && !planned {
+                    // `toward` may just have planned this very crossing; drop
+                    // it, or the next look would take it for one under way.
+                    let mut route = self.route.borrow_mut();
+                    if route.goal == target {
+                        route.steps.clear();
+                        route.next = 0;
+                    }
+                    drop(route);
+                    rejected.borrow_mut().push(target);
+                    None
+                } else {
+                    Some(action)
+                }
+            };
+            let open =
+                |t: (i32, i32)| !self.route.borrow().recently_blocked(t) && !rejected.borrow().contains(&t);
+            let mut choice = None;
+            for _ in 0..3 {
+                let Some(t) = self.nearest_visible_where(grid, Tile::Food, scan_r, open) else {
+                    break;
+                };
+                if let Some(action) = step_dry(t) {
+                    choice = Some(action);
+                    break;
+                }
+            }
+            if let Some(action) = choice {
                 set_thought!("moving to food");
-                return (self.toward(v, grid), thought);
+                return (action, thought);
             }
             let urgency = (0.42 - self.energy) / 0.42;
-            if let Some(t) = Self::best_remembered_with_danger(
+            if let Some(action) = Self::best_remembered_with_danger(
                 &self.food_memory,
                 self.x,
                 self.y,
                 &self.danger_memory,
                 urgency,
             )
-            .filter(|&t| !self.route.borrow().recently_blocked(t))
+            .filter(|&t| open(t))
+            .and_then(step_dry)
             {
                 set_thought!("moving to known food");
-                return (self.toward(t, grid), thought);
+                return (action, thought);
             }
             let kin_eating = nearby_people()
                 .filter(|o| {
@@ -328,16 +418,43 @@ impl Organism {
                         && o.lineage_id == self.lineage_id
                         && (o.x - self.x).abs() + (o.y - self.y).abs() <= 14.0
                 })
-                .find(|o| matches!(grid.get(o.x as i32, o.y as i32), Tile::Food));
-            if let Some(k) = kin_eating {
+                .map(|o| (o.x as i32, o.y as i32))
+                .filter(|&at| matches!(grid.get(at.0, at.1), Tile::Food) && open(at))
+                .find_map(step_dry);
+            if let Some(action) = kin_eating {
                 set_thought!("following kin to food");
-                return (self.toward((k.x as i32, k.y as i32), grid), thought);
+                return (action, thought);
             }
-            if let Some(t) = self.find_trail_target(grid, TrailKind::Food, 12) {
+            if let Some(action) = self
+                .find_trail_target(grid, TrailKind::Food, 12)
+                .filter(|&t| open(t))
+                .and_then(step_dry)
+            {
                 set_thought!("following food trail");
-                return (self.toward(t, grid), thought);
+                return (action, thought);
             }
+            // Nothing within reach on dry land: what lay across the water is
+            // set aside for a while, so they stop turning back toward it.
+            if let Some(&first) = rejected.borrow().first() {
+                self.route.borrow_mut().mark_blocked(first);
+            }
+            // No food in sight, in memory or on a trail. Roots are under any
+            // grass: they dig where they stand or walk to the nearest green
+            // ground, instead of drifting off to look for ore or stack cairns
+            // while they starve.
             set_thought!("hungry - searching");
+            if tile == Tile::Grass {
+                set_thought!("digging for roots");
+                return (32, thought);
+            }
+            // Grass across the water is as far out of reach as food across it.
+            if let Some(action) = self
+                .nearest_visible_where(grid, Tile::Grass, 8, open)
+                .and_then(step_dry)
+            {
+                set_thought!("looking for roots");
+                return (action, thought);
+            }
         }
 
         let needs_easy = self.hydration > 0.55 && self.energy > 0.50 && self.health > 0.55;
@@ -350,6 +467,24 @@ impl Organism {
         let journeying = self.journey.as_ref().is_some_and(|journey| {
             tick < journey.expires_at && (journey.target.0 - ix).abs().max((journey.target.1 - iy).abs()) > 2
         });
+
+        // A stint of everyday work (`sim::agents::daily_work`): walk out to
+        // the spot, then do the work there until the stint ends.
+        if let Some(plan) = self
+            .work
+            .filter(|p| needs_easy && !night && !fire_dangerous && !journeying && tick < p.until)
+        {
+            // Work is done from dry land: someone who waded in on the way walks out first.
+            if plan.at_spot((ix, iy)) && !grid.is_wet(tile, ix, iy) {
+                let (action, doing) = plan.action();
+                set_thought!(doing);
+                return (action, thought);
+            }
+            if !self.route.borrow().recently_blocked(plan.spot) {
+                set_thought!(plan.walking_thought());
+                return (self.toward(plan.spot, grid), thought);
+            }
+        }
 
         if needs_easy && !night && !fire_dangerous {
             // A home no route reaches (walled in by other huts or water) is not worth carrying wood toward.
@@ -364,7 +499,10 @@ impl Organism {
                     // Next to home counts: a hut on the home tile can't be
                     // walked onto, which left builders circling it forever.
                     let on_home = (ix - hx).abs() <= 2 && (iy - hy).abs() <= 2;
-                    if !on_home {
+                    // Nobody packs a shelter standing in the water: a home on
+                    // the shore had builders packing in the shallows until they
+                    // drowned. Off the water first.
+                    if !on_home || grid.is_wet(tile, ix, iy) {
                         set_thought!("building shelter");
                         return (self.toward((hx, hy), grid), thought);
                     }
@@ -399,34 +537,50 @@ impl Organism {
                     return (self.toward(t, grid), thought);
                 }
             }
-            if self.energy < 0.78 && self.energy > 0.42 {
+            // Someone who saw a death by hunger eats sooner and goes further for it.
+            let hunger_wary = self.lessons.heeds(Lesson::Hunger);
+            if self.energy < 0.78 + 0.12 * hunger_wary && self.energy > 0.42 {
                 if let Some(v) = self.nearest_visible(grid, Tile::Food, 8) {
                     let dist = (v.0 - ix).abs() + (v.1 - iy).abs();
-                    if dist <= 6 {
+                    if dist <= 6 + (2.0 * hunger_wary) as i32 {
                         set_thought!("topping up food");
                         return (self.toward(v, grid), thought);
                     }
                 }
             }
-            if self.hydration < 0.82 && self.hydration > 0.45 {
-                if let Some(v) = self.nearest_visible(grid, Tile::Water, 6) {
+            // And one who saw a death by thirst drinks sooner and goes further for it.
+            let thirst_wary = self.lessons.heeds(Lesson::Thirst);
+            if self.hydration < 0.82 + 0.1 * thirst_wary && self.hydration > 0.45 {
+                if grid.water_beside(ix, iy).is_some() {
+                    set_thought!("drinking at the water's edge");
+                    return (9, thought);
+                }
+                if grid.ice_beside(ix, iy).is_some() {
+                    set_thought!("breaking the ice to drink");
+                    return (9, thought);
+                }
+                if let Some(v) = self.nearest_visible(grid, Tile::Water, 6 + (2.0 * thirst_wary) as i32) {
                     let dist = (v.0 - ix).abs() + (v.1 - iy).abs();
-                    if dist <= 4 {
+                    if dist <= 4 + (2.0 * thirst_wary) as i32 {
                         set_thought!("topping up water");
                         return (self.toward(v, grid), thought);
                     }
                 }
             }
-            let has_blade = self.discoveries.contains("stone_tools")
-                || self.discoveries.contains("axe")
-                || self.discoveries.contains("tool_making");
+            let has_blade = self.discoveries.has(Hot::StoneTools)
+                || self.discoveries.has(Hot::Axe)
+                || self.discoveries.has(Hot::ToolMaking);
             if has_blade
                 && !journeying
                 && self.inv_wood < 3
                 && self.energy > 0.55
+                // Someone hurt felling trees leaves the trees alone for a while;
+                // someone who likes the work goes more often.
+                && !self.skills.dreads(Skill::Woodcutting)
                 // A started trip continues; re-rolling every tick made people
                 // zig-zag between this and their other targets.
-                && (self.thought == "heading to the trees" || rng.random::<f32>() < 0.30)
+                && (self.thought == "heading to the trees"
+                    || rng.random::<f32>() < 0.30 + self.skills.feeling(Skill::Woodcutting).max(0.0) * 0.5)
             {
                 if tile == Tile::Grass {
                     set_thought!("chopping wood");
@@ -447,8 +601,13 @@ impl Organism {
                 && !journeying
                 && self.inv_stone < if fetching_stone { 4 } else { 2 }
                 && self.energy > 0.55
+                // Dread keeps them from the quarry unless the tribe is waiting on stone.
+                && (fetching_stone || !self.skills.dreads(Skill::Quarrying))
+                // As with the trees, someone who likes the quarry goes more often.
                 && (self.thought == "heading to the quarry"
-                    || rng.random::<f32>() < if fetching_stone { 0.55 } else { 0.15 })
+                    || rng.random::<f32>()
+                        < if fetching_stone { 0.55 } else { 0.15 }
+                            + self.skills.feeling(Skill::Quarrying).max(0.0) * 0.5)
             {
                 let rock_adjacent = crate::organism::organism::DIRECTIONS
                     .iter()
@@ -467,7 +626,7 @@ impl Organism {
                     return (self.toward(t, grid), thought);
                 }
             }
-            if self.discoveries.contains("forestry")
+            if self.discoveries.has(Hot::Forestry)
                 && !journeying
                 && self.inv_wood == 0
                 && dist_home < 8.0
@@ -482,10 +641,14 @@ impl Organism {
 
         if !self.danger_memory.is_empty() {
             let danger_thresh = (3.0 + 2.0 * self.traits.fear) as i32;
+            // Fleeing a danger remembered on the very tile someone stands on
+            // aims at that same tile, so they stood still. That froze people
+            // in the shallows, where struggling marks the water as dangerous,
+            // until they drowned. Flee the nearest danger elsewhere instead.
             if let Some((&(cx, cy), _)) = self
                 .danger_memory
                 .iter()
-                .filter(|(_, v)| **v > 0.4)
+                .filter(|(&p, v)| **v > 0.4 && p != (ix, iy))
                 .min_by_key(|(&(cx, cy), _)| (cx - ix).abs() + (cy - iy).abs())
             {
                 let dist = (cx - ix).abs() + (cy - iy).abs();
@@ -940,9 +1103,9 @@ impl Organism {
                 return (148, thought);
             }
 
-            let has_blade = self.discoveries.contains("knife")
-                || self.discoveries.contains("axe")
-                || self.discoveries.contains("spear");
+            let has_blade = self.discoveries.has(Hot::Knife)
+                || self.discoveries.has(Hot::Axe)
+                || self.discoveries.has(Hot::Spear);
             if has_blade
                 && self.boredom > 0.50
                 && self.near_shelter(grid, buildings)
@@ -1036,12 +1199,29 @@ impl Organism {
             self.sleep_debt,
         );
         let decision_pool = context_pool.as_deref().unwrap_or(available);
+        // Work that cannot be done where they stand is not chosen: mining or
+        // quarrying with no rock beside them, fishing with no water near,
+        // digging roots off the grass. Before, a good share of everyone's day
+        // went on "looking for ore" and "looking for water to fish" in open
+        // country, learning nothing and gathering nothing.
+        let rock_beside = crate::organism::organism::DIRECTIONS
+            .iter()
+            .any(|&(dx, dy)| matches!(grid.get(ix + dx, iy + dy), Tile::Rock | Tile::Mineral));
+        let water_near =
+            (-2i32..=2).any(|dx| (-2i32..=2).any(|dy| grid.get(ix + dx, iy + dy) == Tile::Water));
+        let workable = |a: usize| match a {
+            26 | 29 => rock_beside,
+            28 => water_near,
+            32 => tile == Tile::Grass,
+            _ => true,
+        };
         let q_row = self.q_table.get(cached_perception);
         let active_directive = if tick < self.directive_until {
             self.directive.as_str()
         } else {
             ""
         };
+        let directive = Directive::parse(active_directive);
 
         let age_decay = 1.0 / (1.0 + self.age as f32 / 2000.0);
         let eff_eps = (epsilon * (0.5 + self.traits.curiosity) * age_decay).clamp(0.02, 0.80);
@@ -1107,13 +1287,19 @@ impl Organism {
                     9 => on_water,
                     15 => self.carrying > 0 && self.carrying_type != 2,
                     14 => self.carrying == 0,
-                    _ => true,
+                    // Trying things out never means going back to work that hurt them.
+                    _ => workable(a) && !Skill::of_action(a).is_some_and(|s| self.skills.dreads(s)),
                 })
                 .collect();
-            let pool: &[usize] = if filtered.is_empty() {
-                decision_pool
-            } else {
+            // Nothing in the pool can be done here: they walk on instead of
+            // trying what cannot work.
+            const STEPS: [usize; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
+            let pool: &[usize] = if !filtered.is_empty() {
                 &filtered
+            } else if decision_pool.iter().any(|&a| !workable(a)) {
+                &STEPS
+            } else {
+                decision_pool
             };
             // Guidance should shape experimentation as well as exploitation.
             // Previously epsilon exploration ignored the player's strategy,
@@ -1124,7 +1310,7 @@ impl Organism {
             } else {
                 pool.iter()
                     .copied()
-                    .filter(|&action| directive_aligns_action(active_directive, action))
+                    .filter(|&action| directive.is_some_and(|d| d.aligns(action)))
                     .collect()
             };
             let guided_pool: &[usize] = if directed.is_empty() { pool } else { &directed };
@@ -1189,16 +1375,23 @@ impl Organism {
                 };
                 let learned = if tried { v } else { novelty_seed };
                 let directed = if has_directive {
-                    directive_action_boost(active_directive, a)
+                    directive_action_boost(directive, a)
                 } else {
                     0.0
                 };
-                learned + directed + preferred_action_boost(active_wander_action, a)
+                if !workable(a) {
+                    return f32::NEG_INFINITY;
+                }
+                learned + directed + preferred_action_boost(active_wander_action, a) + self.skills.pull(a)
             };
             let mut best_avail: Option<usize> = None;
             let mut best_score = f32::NEG_INFINITY;
             let mut equal_best_seen = 0u32;
             for &a in decision_pool {
+                // Work that cannot be done here is never the pick, even when nothing else is on offer.
+                if !workable(a) {
+                    continue;
+                }
                 let s = lookup(a);
                 if best_avail.is_none() || s > best_score + f32::EPSILON {
                     best_score = s;
@@ -1240,10 +1433,14 @@ impl Organism {
             }
             return (best_idx, thought);
         }
+        // Nothing on offer can be done here: they walk on.
+        const STEPS: [usize; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
         let pool = if decision_pool.is_empty() {
             &[][..]
-        } else {
+        } else if decision_pool.iter().any(|&a| workable(a)) {
             decision_pool
+        } else {
+            &STEPS
         };
         let pick = if pool.is_empty() {
             rng.random_range(0..N_ACTIONS)

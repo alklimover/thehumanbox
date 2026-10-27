@@ -96,10 +96,36 @@ describe('the time control', () => {
     expect(q('.time-speed-list')).toBeNull()
   })
 
+  it('an Escape that closes the speed list does not also disarm the held tool', () => {
+    // The app's own Escape handler listens on the window and disarms the tool unless something took the key.
+    const disarm = vi.fn()
+    const app = (event: KeyboardEvent) => {
+      if (!event.defaultPrevented) disarm()
+    }
+    window.addEventListener('keydown', app)
+    try {
+      render()
+      click(q('.time-speed-value'))
+      act(() => {
+        document.body.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+        )
+      })
+      expect(q('.time-speed-list')).toBeNull()
+      expect(disarm).not.toHaveBeenCalled()
+    } finally {
+      window.removeEventListener('keydown', app)
+    }
+  })
+
   it('closes the list on Escape and on a click elsewhere', () => {
     render()
     click(q('.time-speed-value'))
-    key('Escape')
+    act(() => {
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+    })
     expect(q('.time-speed-list')).toBeNull()
     click(q('.time-speed-value'))
     act(() => {
@@ -133,6 +159,21 @@ describe('the lagging mark', () => {
     ])
     expect(q('.time-control')?.classList.contains('lagging')).toBe(true)
     expect(q('.time-lag')).not.toBeNull()
+  })
+
+  it('does not carry a lag from before a pause into the run after it', () => {
+    render({ speed: 40 })
+    runTicks([
+      [0, 0],
+      [1000, 50],
+      [2000, 100],
+    ])
+    expect(q('.time-lag')).not.toBeNull()
+
+    render({ speed: 40, paused: true })
+    render({ speed: 40, paused: false })
+    // No new ticks yet: the run has not been measured, so there is nothing to say about it.
+    expect(q('.time-lag')).toBeNull()
   })
 
   it('stays quiet while the world keeps up', () => {

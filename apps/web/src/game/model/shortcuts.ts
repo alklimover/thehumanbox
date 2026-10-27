@@ -1,5 +1,3 @@
-import { t } from '../../i18n'
-
 /** What a game key does, or null for keys the game does not use. */
 export type ShortcutAction =
   | { kind: 'speed'; tool: 'normal' | 'fast2' | 'fast4' | 'fast10' }
@@ -76,17 +74,18 @@ export function mapOwnsZoomKeys(target: EventTarget | null): boolean {
 }
 
 export const SHORTCUT_HELP: ReadonlyArray<[string, string]> = [
-  ['1 2 3 4', t('shortcuts.speed')],
-  [', .', t('shortcuts.slowerFaster')],
-  [t('shortcuts.key.space'), t('shortcuts.pause')],
-  ['/', t('shortcuts.findTool')],
-  ['⌘S', t('shortcuts.save')],
-  ['P', t('shortcuts.prayer')],
-  ['B', t('shortcuts.brink')],
-  ['[ ]', t('shortcuts.person')],
-  ['- =', t('shortcuts.brush')],
-  ['?', t('shortcuts.help')],
-  ['H', t('shortcuts.hideUI')],
-  ['0', t('shortcuts.fit')],
-  ['Q E R T Y U I O F G', t('shortcuts.tools')],
+  ['1 2 3 4', 'speed 1× 2× 4× 10×'],
+  [', .', 'slower or faster'],
+  ['space', 'pause or play'],
+  ['/', 'find a tool'],
+  ['⌘S', 'save the world (Ctrl+S off a Mac)'],
+  ['P', 'answer the most urgent prayer'],
+  ['B', 'go to the next tribe on the brink'],
+  ['[ ]', 'previous or next person'],
+  ['- =', 'smaller or larger brush (zoom out or in while the map has focus)'],
+  ['?', 'show or hide this list'],
+  ['H', 'hide the interface'],
+  ['0', 'fit the world'],
+  ['double-click', 'zoom in on that spot (with Shift, zoom out)'],
+  ['Q E R T Y U I O F G', 'pick the first ten tools on the bar'],
 ]

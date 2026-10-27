@@ -3,13 +3,19 @@
 // the prayer hint waits for it the same way (ui/panels/PrayerHint.tsx).
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
-import { t, type MessageKey } from '../../i18n'
+import { ft, type ForkMessageKey } from '../i18n'
 import { ToolSprite } from '../../ui/toolbar/ToolSprite'
 import { ROLE_ICONS, ROLES, type Role } from './role'
 
 const CARDS: Record<
   Role,
-  { icon: string; name: MessageKey; promise: MessageKey; points: MessageKey[]; go: MessageKey }
+  {
+    icon: string
+    name: ForkMessageKey
+    promise: ForkMessageKey
+    points: ForkMessageKey[]
+    go: ForkMessageKey
+  }
 > = {
   observer: {
     icon: ROLE_ICONS.observer,
@@ -64,9 +70,9 @@ export function ModeChoice({ onChoose }: { onChoose: (role: Role) => void }) {
     >
       <div className="welcome-modal fork-mode-choice" ref={cardRef}>
         <h2 id="fork-mode-choice-title" className="welcome-title">
-          {t('modes.choice.title')}
+          {ft('modes.choice.title')}
         </h2>
-        <p className="fork-mode-choice-sub">{t('modes.choice.sub')}</p>
+        <p className="fork-mode-choice-sub">{ft('modes.choice.sub')}</p>
         <div className="fork-mode-cards" role="radiogroup" aria-labelledby="fork-mode-choice-title">
           {ROLES.map((role) => {
             const card = CARDS[role]
@@ -82,11 +88,11 @@ export function ModeChoice({ onChoose }: { onChoose: (role: Role) => void }) {
                 onDoubleClick={() => onChoose(role)}
               >
                 <ToolSprite icon={card.icon} size={32} />
-                <span className="fork-mode-card-name">{t(card.name)}</span>
-                <span className="fork-mode-card-promise">{t(card.promise)}</span>
+                <span className="fork-mode-card-name">{ft(card.name)}</span>
+                <span className="fork-mode-card-promise">{ft(card.promise)}</span>
                 <span className="fork-mode-card-points">
                   {card.points.map((point) => (
-                    <span key={point}>{t(point)}</span>
+                    <span key={point}>{ft(point)}</span>
                   ))}
                 </span>
               </button>
@@ -94,14 +100,14 @@ export function ModeChoice({ onChoose }: { onChoose: (role: Role) => void }) {
           })}
         </div>
         <div className="fork-mode-choice-foot">
-          <span>{t('modes.choice.note')}</span>
+          <span>{ft('modes.choice.note')}</span>
           <button
             type="button"
             className="welcome-btn welcome-btn--primary"
             onClick={() => onChoose(picked)}
             autoFocus
           >
-            {t(CARDS[picked].go)}
+            {ft(CARDS[picked].go)}
           </button>
         </div>
       </div>

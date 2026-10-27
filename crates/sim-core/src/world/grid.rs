@@ -74,6 +74,28 @@ pub struct WorldGrid {
 }
 
 impl WorldGrid {
+    /// The open-water tiles in the ring of tiles around a `width` by `height` footprint at (x, y),
+    /// edges and corners.
+    pub fn open_water_around(&self, x: i32, y: i32, width: u8, height: u8) -> usize {
+        let (w, h) = (i32::from(width), i32::from(height));
+        (y - 1..=y + h)
+            .flat_map(|ty| (x - 1..=x + w).map(move |tx| (tx, ty)))
+            .filter(|&(tx, ty)| tx < x || tx >= x + w || ty < y || ty >= y + h)
+            .filter(|&(tx, ty)| self.get(tx, ty) == Tile::Water)
+            .count()
+    }
+
+    /// The open-water tiles that share an edge with a footprint (the ring without its corners).
+    pub fn open_water_on_sides(&self, x: i32, y: i32, width: u8, height: u8) -> usize {
+        let (w, h) = (i32::from(width), i32::from(height));
+        let above_below = (x..x + w).flat_map(|tx| [(tx, y - 1), (tx, y + h)]);
+        let left_right = (y..y + h).flat_map(|ty| [(x - 1, ty), (x + w, ty)]);
+        above_below
+            .chain(left_right)
+            .filter(|&(tx, ty)| self.get(tx, ty) == Tile::Water)
+            .count()
+    }
+
     pub fn new(seed: u64) -> Self {
         Self::new_sized::<WIDTH, HEIGHT>(seed, false)
     }
@@ -424,6 +446,27 @@ impl WorldGrid {
         best
     }
 
+    /// Whether any trail of `kind` within `radius` (a square) is stronger than `threshold`: the same as
+    /// `detect_trail(..) > threshold`, but walking the rows of the trail array and stopping at the first such
+    /// cell. Perception asks this for everyone every tick.
+    pub fn trail_above(&self, x: i32, y: i32, kind: TrailKind, radius: i32, threshold: f32) -> bool {
+        let trail = match kind {
+            TrailKind::Food => &self.food_trail,
+            TrailKind::Water => &self.water_trail,
+            TrailKind::Path => &self.path_trail,
+        };
+        let x0 = (x - radius).max(0);
+        let x1 = (x + radius).min(WIDTH as i32 - 1);
+        if x0 > x1 {
+            return false;
+        }
+        ((y - radius).max(0)..=(y + radius).min(HEIGHT as i32 - 1)).any(|row| {
+            trail[Self::idx(x0, row)..=Self::idx(x1, row)]
+                .iter()
+                .any(|&v| v > threshold)
+        })
+    }
+
     // Cells with a trail value below this clip to zero so they drop
     // out of `trail_dirty`. Below this the value is invisible to all
     // queries (perception thresholds are ≥ 0.05).
@@ -564,6 +607,42 @@ impl WorldGrid {
         } else {
             0.0
         }
+    }
+
+    /// Water someone standing at (x, y) can drink from without wading: the
+    /// shallowest water tile among the eight around them.
+    /// Ice underfoot or beside (x, y), to break for a drink.
+    pub fn ice_beside(&self, x: i32, y: i32) -> Option<(i32, i32)> {
+        std::iter::once((0, 0))
+            .chain([
+                (0, -1),
+                (0, 1),
+                (-1, 0),
+                (1, 0),
+                (-1, -1),
+                (1, -1),
+                (-1, 1),
+                (1, 1),
+            ])
+            .map(|(dx, dy)| (x + dx, y + dy))
+            .find(|&(nx, ny)| self.get(nx, ny) == Tile::Ice)
+    }
+
+    pub fn water_beside(&self, x: i32, y: i32) -> Option<(i32, i32)> {
+        [
+            (0, -1),
+            (0, 1),
+            (-1, 0),
+            (1, 0),
+            (-1, -1),
+            (1, -1),
+            (-1, 1),
+            (1, 1),
+        ]
+        .into_iter()
+        .map(|(dx, dy)| (x + dx, y + dy))
+        .filter(|&(nx, ny)| self.get(nx, ny) == Tile::Water)
+        .min_by(|a, b| self.depth_at(a.0, a.1).total_cmp(&self.depth_at(b.0, b.1)))
     }
 
     pub fn decay_world_layers(&mut self) {
@@ -892,17 +971,9 @@ impl WorldGrid {
         include_static: bool,
         include_terrain: bool,
     ) -> GridJson {
-        let ox = (cx - vw as i32 / 2).clamp(0, (WIDTH as i32 - vw as i32).max(0)) as usize;
-        let oy = (cy - vh as i32 / 2).clamp(0, (HEIGHT as i32 - vh as i32).max(0)) as usize;
+        let (ox, oy) = viewport_origin(cx, cy, vw, vh);
 
-        let slice_row = |vec: &[i8], y: usize| vec[y * WIDTH + ox..y * WIDTH + ox + vw].to_vec();
-        let slice_u8 = |vec: &[u8], y: usize| vec[y * WIDTH + ox..y * WIDTH + ox + vw].to_vec();
-
-        let tiles = if include_tiles {
-            Some((oy..oy + vh).map(|y| slice_row(&self.tiles, y)).collect())
-        } else {
-            None
-        };
+        let tiles = include_tiles.then(|| self.tile_bytes(ox, oy, vw, vh));
 
         let window = Window { ox, oy, vw, vh };
         let mut fire: Vec<[u16; 3]> = Vec::new();
@@ -976,24 +1047,7 @@ impl WorldGrid {
         };
 
         let (biomes, depth_map) = if include_terrain {
-            let b = (oy..oy + vh).map(|y| slice_u8(&self.biome, y)).collect();
-            let d = (oy..oy + vh)
-                .map(|y| {
-                    let row_tiles = &self.tiles[y * WIDTH + ox..y * WIDTH + ox + vw];
-                    let row_depth = &self.depth[y * WIDTH + ox..y * WIDTH + ox + vw];
-                    row_tiles
-                        .iter()
-                        .zip(row_depth.iter())
-                        .map(|(&t, &d)| {
-                            if t == Tile::Water as i8 {
-                                ((1.0 - d) * 200.0) as u8
-                            } else {
-                                255u8
-                            }
-                        })
-                        .collect()
-                })
-                .collect();
+            let (b, d) = self.terrain_bytes(ox, oy, vw, vh);
             (Some(b), Some(d))
         } else {
             (None, None)
@@ -1030,17 +1084,9 @@ impl WorldGrid {
         include_static: bool,
         include_terrain: bool,
     ) -> GridJson {
-        let ox = (cx - vw as i32 / 2).clamp(0, (WIDTH as i32 - vw as i32).max(0)) as usize;
-        let oy = (cy - vh as i32 / 2).clamp(0, (HEIGHT as i32 - vh as i32).max(0)) as usize;
+        let (ox, oy) = viewport_origin(cx, cy, vw, vh);
 
-        let slice_row = |vec: &[i8], y: usize| vec[y * WIDTH + ox..y * WIDTH + ox + vw].to_vec();
-        let slice_u8 = |vec: &[u8], y: usize| vec[y * WIDTH + ox..y * WIDTH + ox + vw].to_vec();
-
-        let tiles = if include_tiles {
-            Some((oy..oy + vh).map(|y| slice_row(&self.tiles, y)).collect())
-        } else {
-            None
-        };
+        let tiles = include_tiles.then(|| self.tile_bytes(ox, oy, vw, vh));
 
         let mut fire: Vec<[u16; 3]> = Vec::new();
         for y in oy..oy + vh {
@@ -1132,24 +1178,7 @@ impl WorldGrid {
         };
 
         let (biomes, depth_map) = if include_terrain {
-            let b = (oy..oy + vh).map(|y| slice_u8(&self.biome, y)).collect();
-            let d = (oy..oy + vh)
-                .map(|y| {
-                    let row_tiles = &self.tiles[y * WIDTH + ox..y * WIDTH + ox + vw];
-                    let row_depth = &self.depth[y * WIDTH + ox..y * WIDTH + ox + vw];
-                    row_tiles
-                        .iter()
-                        .zip(row_depth.iter())
-                        .map(|(&t, &d)| {
-                            if t == Tile::Water as i8 {
-                                ((1.0 - d) * 200.0) as u8
-                            } else {
-                                255u8
-                            }
-                        })
-                        .collect()
-                })
-                .collect();
+            let (b, d) = self.terrain_bytes(ox, oy, vw, vh);
             (Some(b), Some(d))
         } else {
             (None, None)
@@ -1172,6 +1201,43 @@ impl WorldGrid {
             hazard,
             roads,
         }
+    }
+
+    /// The tile ids of a window, row-major, one byte each (the `i8` id's bit pattern).
+    fn tile_bytes(&self, ox: usize, oy: usize, vw: usize, vh: usize) -> Vec<u8> {
+        let mut out = Vec::with_capacity(vw * vh);
+        for y in oy..oy + vh {
+            out.extend(
+                self.tiles[y * WIDTH + ox..y * WIDTH + ox + vw]
+                    .iter()
+                    .map(|&t| t as u8),
+            );
+        }
+        out
+    }
+
+    /// The biome and sea-depth bytes of a window, row-major. Depth is `(1 - depth) * 200` on
+    /// water and 255 on land.
+    fn terrain_bytes(&self, ox: usize, oy: usize, vw: usize, vh: usize) -> (Vec<u8>, Vec<u8>) {
+        let mut biomes = Vec::with_capacity(vw * vh);
+        let mut depth = Vec::with_capacity(vw * vh);
+        for y in oy..oy + vh {
+            let span = y * WIDTH + ox..y * WIDTH + ox + vw;
+            biomes.extend_from_slice(&self.biome[span.clone()]);
+            depth.extend(
+                self.tiles[span.clone()]
+                    .iter()
+                    .zip(&self.depth[span])
+                    .map(|(&t, &d)| {
+                        if t == Tile::Water as i8 {
+                            ((1.0 - d) * 200.0) as u8
+                        } else {
+                            255u8
+                        }
+                    }),
+            );
+        }
+        (biomes, depth)
     }
 
     pub fn to_json(&self) -> GridJson {
@@ -1250,7 +1316,7 @@ fn push_over_threshold(out: &mut Vec<[u16; 3]>, layer: &[f32], w: Window, thresh
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum TrailKind {
     Food,
     Water,
@@ -1266,13 +1332,16 @@ pub enum TrailKind {
 /// paths byte for byte.
 #[derive(Serialize)]
 pub struct GridJson {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub biomes: Option<Vec<Vec<u8>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub depth_map: Option<Vec<Vec<u8>>>,
+    /// Biome ids, row-major, one byte per cell (sent as raw bytes).
+    #[serde(skip_serializing_if = "Option::is_none", serialize_with = "bytes")]
+    pub biomes: Option<Vec<u8>>,
+    /// Sea depth, row-major, one byte per cell: `(1 - depth) * 200` on water, 255 on land.
+    #[serde(skip_serializing_if = "Option::is_none", serialize_with = "bytes")]
+    pub depth_map: Option<Vec<u8>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fertility: Option<Vec<[u16; 3]>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    /// Fertility percent, row-major, one byte per cell (sent as raw bytes).
+    #[serde(skip_serializing_if = "Option::is_none", serialize_with = "bytes")]
     pub fertility_dense: Option<Vec<u8>>,
     pub fire: Vec<[u16; 3]>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1291,11 +1360,29 @@ pub struct GridJson {
     /// patches the layer it holds. Sent instead of `structure` on hot frames.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub structure_delta: Option<Vec<[u16; 3]>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tiles: Option<Vec<Vec<i8>>>,
+    /// Tile ids, row-major, one byte per cell (each `i8` id's bit pattern, sent as raw bytes).
+    /// Absent on frames without the static layers.
+    #[serde(skip_serializing_if = "Option::is_none", serialize_with = "bytes")]
+    pub tiles: Option<Vec<u8>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trails: Option<Vec<[u16; 5]>>,
     pub width: usize,
+}
+
+/// The top-left cell of a `vw` x `vh` window centred on `(cx, cy)`, kept inside the world.
+fn viewport_origin(cx: i32, cy: i32, vw: usize, vh: usize) -> (usize, usize) {
+    let ox = (cx - vw as i32 / 2).clamp(0, (WIDTH as i32 - vw as i32).max(0)) as usize;
+    let oy = (cy - vh as i32 / 2).clamp(0, (HEIGHT as i32 - vh as i32).max(0)) as usize;
+    (ox, oy)
+}
+
+/// A per-cell byte layer as raw bytes: msgpack `bin`, which the client reads as a typed array
+/// without decoding a number per cell (JSON still sees an array of numbers).
+fn bytes<S: serde::Serializer>(layer: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error> {
+    match layer {
+        Some(cells) => serializer.serialize_bytes(cells),
+        None => serializer.serialize_none(),
+    }
 }
 
 /// What changed between two structure layers (each `[row, col, percent]` in row-major order):
@@ -1351,6 +1438,53 @@ mod tests {
         assert!(structure_delta(&cur, &cur).is_empty());
         assert_eq!(structure_delta(&[], &[[0, 0, 1]]), vec![[0, 0, 1]]);
         assert_eq!(structure_delta(&[[0, 0, 1]], &[]), vec![[0, 0, 0]]);
+    }
+
+    /// `trail_above` answers exactly what `detect_trail(..) > threshold` does: at the edges and corners of the
+    /// world (where part of the square falls outside), with values at and around the threshold, for each kind.
+    #[test]
+    fn trail_above_matches_the_strongest_trail_test() {
+        let mut grid = WorldGrid::new(5);
+        let mut state = 0x2545_F491_4F6C_DD1Du64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for _ in 0..4000 {
+            let i = (next() % (WIDTH * HEIGHT) as u64) as usize;
+            let v = [0.39, 0.4, 0.41, 0.9, 0.05][(next() % 5) as usize];
+            match next() % 3 {
+                0 => grid.food_trail[i] = v,
+                1 => grid.water_trail[i] = v,
+                _ => grid.path_trail[i] = v,
+            }
+        }
+        let w = WIDTH as i32;
+        let h = HEIGHT as i32;
+        let mut spots = vec![
+            (0, 0),
+            (w - 1, h - 1),
+            (0, h - 1),
+            (w - 1, 0),
+            (2, 3),
+            (w - 3, h / 2),
+            (-3, 5),
+            (w + 2, h + 2),
+        ];
+        spots.extend((0..3000).map(|_| ((next() % w as u64) as i32, (next() % h as u64) as i32)));
+        for (x, y) in spots {
+            for kind in [TrailKind::Food, TrailKind::Water, TrailKind::Path] {
+                for (radius, threshold) in [(5, 0.4), (0, 0.4), (3, 0.0), (5, 0.9)] {
+                    assert_eq!(
+                        grid.trail_above(x, y, kind, radius, threshold),
+                        grid.detect_trail(x, y, kind, radius) > threshold,
+                        "({x}, {y}) {kind:?} r={radius} t={threshold}"
+                    );
+                }
+            }
+        }
     }
 
     /// The block-skipping layer scans must emit exactly what the per-tile

@@ -1,10 +1,11 @@
-import { t } from '../i18n'
 import type { SandboxCommand } from './sandbox'
+import type { MessageKey } from '../i18n'
 
 export interface ScenarioPreset {
   id: string
-  title: string
-  detail: string
+  /** Translation keys: the modal and the status line read them with t(). */
+  title: MessageKey
+  detail: MessageKey
   /** The commands to send, placed by fractions of the world's width and height. */
   steps: (width: number, height: number) => SandboxCommand[]
 }
@@ -26,8 +27,8 @@ function at(width: number, height: number, fx: number, fy: number): { x: number;
 export const SCENARIO_PRESETS: ScenarioPreset[] = [
   {
     id: 'founding-family',
-    title: t('scenarios.founding-family.title'),
-    detail: t('scenarios.founding-family.detail'),
+    title: 'model.scenarios.foundingFamily.title',
+    detail: 'model.scenarios.foundingFamily.detail',
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       return [
@@ -38,8 +39,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'two-tribes',
-    title: t('scenarios.two-tribes.title'),
-    detail: t('scenarios.two-tribes.detail'),
+    title: 'model.scenarios.twoTribes.title',
+    detail: 'model.scenarios.twoTribes.detail',
     steps: (w, h) => {
       const west = at(w, h, 0.3, 0.45)
       const east = at(w, h, 0.7, 0.55)
@@ -52,9 +53,33 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
     },
   },
   {
+    id: 'one-tongue',
+    title: 'model.scenarios.oneTongue.title',
+    detail: 'model.scenarios.oneTongue.detail',
+    steps: (w, h) => {
+      const west = at(w, h, 0.44, 0.45)
+      const east = at(w, h, 0.56, 0.5)
+      return [
+        // One person first, so the rest of the western group copies their words instead of each keeping their own.
+        { cmd: 'spawn', x: west.x, y: west.y, count: 1, lineage: 'one-tongue-west' },
+        {
+          cmd: 'spawn',
+          x: west.x,
+          y: west.y,
+          count: 4,
+          lineage: 'one-tongue-west',
+          speak_like: [west.x, west.y],
+        },
+        { cmd: 'spawn', x: east.x, y: east.y, count: 5, speak_like: [west.x, west.y] },
+        { cmd: 'spawn_animal', x: west.x, y: west.y, count: 3, radius: 6 },
+        { cmd: 'spawn_animal', x: east.x, y: east.y, count: 3, radius: 6 },
+      ]
+    },
+  },
+  {
     id: 'wild-valley',
-    title: t('scenarios.wild-valley.title'),
-    detail: t('scenarios.wild-valley.detail'),
+    title: 'model.scenarios.wildValley.title',
+    detail: 'model.scenarios.wildValley.detail',
     steps: (w, h) => {
       const points = [at(w, h, 0.25, 0.3), at(w, h, 0.6, 0.35), at(w, h, 0.45, 0.7)]
       return [
@@ -68,8 +93,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'apocalypse',
-    title: t('scenarios.apocalypse.title'),
-    detail: t('scenarios.apocalypse.detail'),
+    title: 'model.scenarios.apocalypse.title',
+    detail: 'model.scenarios.apocalypse.detail',
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.25, 0.6)
@@ -85,8 +110,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'golden-age',
-    title: t('scenarios.golden-age.title'),
-    detail: t('scenarios.golden-age.detail'),
+    title: 'model.scenarios.goldenAge.title',
+    detail: 'model.scenarios.goldenAge.detail',
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.3, 0.5)
@@ -102,8 +127,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'tribal-war',
-    title: t('scenarios.tribal-war.title'),
-    detail: t('scenarios.tribal-war.detail'),
+    title: 'model.scenarios.tribalWar.title',
+    detail: 'model.scenarios.tribalWar.detail',
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.3, 0.5)
@@ -117,8 +142,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'island-survival',
-    title: t('scenarios.island-survival.title'),
-    detail: t('scenarios.island-survival.detail'),
+    title: 'model.scenarios.islandSurvival.title',
+    detail: 'model.scenarios.islandSurvival.detail',
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       return [
@@ -131,8 +156,8 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     id: 'ice-age',
-    title: t('scenarios.ice-age.title'),
-    detail: t('scenarios.ice-age.detail'),
+    title: 'model.scenarios.iceAge.title',
+    detail: 'model.scenarios.iceAge.detail',
     steps: (w, h) => {
       const c = at(w, h, 0.5, 0.5)
       const west = at(w, h, 0.3, 0.6)

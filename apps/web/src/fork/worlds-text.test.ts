@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../i18n/locale'
+import { setLocaleForTests } from './i18n/locale'
 import { worldFacts, worldTitle } from './worlds-text'
 
 afterEach(() => setLocaleForTests('en'))
@@ -15,14 +15,14 @@ const slot = {
 }
 
 describe('worlds list', () => {
-  it('names a world by its name, or by the day it was made', () => {
-    setLocaleForTests('ru')
+  it('names a world by its name, or by the day it was made', async () => {
+    await setLocaleForTests('ru')
     expect(worldTitle({ ...slot, name: 'Острова' })).toBe('Острова')
     expect(worldTitle(slot)).toMatch(/^мир от 21 окт/)
   })
 
-  it('says when it was saved, its size and its seed', () => {
-    setLocaleForTests('ru')
+  it('says when it was saved, its size and its seed', async () => {
+    await setLocaleForTests('ru')
     expect(worldFacts(slot)).toMatch(/^сохранён 22 окт.* · 3,4 МБ · сид 12345$/)
     expect(worldFacts({ ...slot, seed: null })).not.toMatch(/сид/)
   })

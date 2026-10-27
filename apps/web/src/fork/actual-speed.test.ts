@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setLocaleForTests } from '../i18n/locale'
+import { setLocaleForTests } from './i18n/locale'
 import {
   formatActualSpeed,
   parsePowerState,
@@ -34,11 +34,11 @@ describe('the achieved speed', () => {
     expect(speedLags(40, null)).toBe(false)
   })
 
-  it('is written as precisely as it is worth, with the locale decimal mark', () => {
+  it('is written as precisely as it is worth, with the locale decimal mark', async () => {
     expect(formatActualSpeed(17.4)).toBe('17×')
     expect(formatActualSpeed(2.45)).toBe('2.5×')
     expect(formatActualSpeed(0.68)).toBe('0.68×')
-    setLocaleForTests('ru')
+    await setLocaleForTests('ru')
     expect(formatActualSpeed(2.45)).toBe('2,5×')
     expect(formatActualSpeed(6)).toBe('6×')
   })
@@ -58,8 +58,8 @@ describe('the power note', () => {
     expect(parsePowerState('junk')).toBeNull()
   })
 
-  it('says why the world is on the efficiency cores, and nothing otherwise', () => {
-    setLocaleForTests('ru')
+  it('says why the world is on the efficiency cores, and nothing otherwise', async () => {
+    await setLocaleForTests('ru')
     expect(powerNote({ managed: true, mode: 'efficiency', reason: 'battery' })).toBe(
       'Mac работает от батареи: мир считается на энергоэффективных ядрах, чтобы Mac не грелся и не шумел.',
     )

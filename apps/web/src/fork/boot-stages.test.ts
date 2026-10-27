@@ -1,15 +1,15 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setLocaleForTests } from '../i18n/locale'
+import { setLocaleForTests } from './i18n/locale'
 import { bootStage, initialStage, installBootStages } from './boot-stages'
 
-beforeEach(() => {
+beforeEach(async () => {
   document.body.innerHTML =
     '<div id="thb-splash"><div class="thb-sub" id="thb-progress-text">мир просыпается…</div></div>'
-  setLocaleForTests('ru')
+  await setLocaleForTests('ru')
 })
-afterEach(() => {
-  setLocaleForTests('en')
+afterEach(async () => {
+  await setLocaleForTests('en')
   vi.useRealTimers()
 })
 

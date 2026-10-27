@@ -1,0 +1,21 @@
+{
+  "close": "닫기",
+  "open": "열기",
+  "retry": "다시 시도",
+  "loading": "불러오는 중…",
+  "export": "내보내기",
+  "restore": "복원…",
+  "delete": "삭제…",
+  "move": "이동",
+  "checking": "확인 중…",
+  "backToMap": "지도로 돌아가기",
+  "zoomIn": "확대",
+  "zoomOut": "축소",
+  "fitWorld": "전체 세계 보기",
+  "centreOnSelected": "선택한 대상으로 이동",
+  "worldMapLabel": "조작 가능한 세계 지도",
+  "terrainLabel": "세계의 지형과 주민",
+  "boundaryTitle": "세계가 멈칫했습니다",
+  "boundaryBody": "화면을 그리는 중 예상치 못한 문제가 생겼습니다. 다시 불러오면 지금의 시뮬레이션에 다시 연결됩니다.",
+  "boundaryReload": "새로고침"
+}

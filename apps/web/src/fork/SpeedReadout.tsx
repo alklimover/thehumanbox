@@ -3,7 +3,7 @@
 // what it really runs at, "6× из 40×", and a small "эко" marks a simulation the
 // desktop has moved to the efficiency cores (actual-speed.ts).
 import { formatSpeed } from '../simulation/speedSteps'
-import { t } from '../i18n'
+import { ft } from './i18n'
 import { formatActualSpeed, type SimPowerState } from './actual-speed'
 
 interface Props {
@@ -21,12 +21,12 @@ export function SpeedReadout({ speed, lagging, power }: Props) {
         formatSpeed(speed)
       ) : (
         <span className="fork-speed-of">
-          {t('speed.of', { actual: formatActualSpeed(lagging), asked: formatSpeed(speed) })}
+          {ft('speed.of', { actual: formatActualSpeed(lagging), asked: formatSpeed(speed) })}
         </span>
       )}
       {eco && (
         <span className="fork-speed-eco" aria-hidden="true">
-          {t('speed.eco')}
+          {ft('speed.eco')}
         </span>
       )}
     </>

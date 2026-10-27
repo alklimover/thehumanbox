@@ -1,8 +1,9 @@
+import { t } from '../../../i18n'
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
-import { t, tn } from '../../../i18n'
-import { sexOf, simText } from '../../../i18n/simtext'
-import { displayName } from '../../../i18n/names'
+import { sexOf, simText } from '../../../fork/i18n/simtext'
+import { displayName } from '../../../fork/i18n/names'
+import { ft, ftn } from '../../../fork/i18n'
 
 const RADIUS = 12
 
@@ -33,7 +34,9 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
     const entry: SceneOccupant = {
       org: o,
       role: o.is_leader ? 'host' : 'kin',
-      activity: o.thought ? simText('thought', o.thought, { sex: sexOf(o) }) : t('map.scene.idling'),
+      activity: o.thought
+        ? simText('thought', o.thought, { sex: sexOf(o) })
+        : t('panels.scene.activity.idling'),
     }
     if (d <= 5) inside.push(entry)
     else away.push(entry)
@@ -52,9 +55,10 @@ export function resolveSettlementScene(world: WorldState, scene: SceneId): Scene
   return {
     scene,
     world,
-    title: t('map.village.title', { tribe: lineageName }),
-    subtitle: t('map.village.subtitle', {
-      huts: tn('map.village.huts', hutCount),
+    // Fork: upstream leaves the village's title and subtitle in English.
+    title: ft('map.village.title', { tribe: lineageName }),
+    subtitle: ft('map.village.subtitle', {
+      huts: ftn('map.village.huts', hutCount),
       n: inside.length + away.length,
     }),
     isDay: !!world.is_day,

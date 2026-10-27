@@ -18,6 +18,9 @@ pub(super) struct Args {
     pub(super) load: Option<String>,
     pub(super) save_at_end: Option<String>,
     pub(super) population_limit: Option<usize>,
+    /// `--summon-wolves N --summon-at T`: at tick T the player summons N wolves beside the first living person.
+    pub(super) summon_wolves: u32,
+    pub(super) summon_at: u64,
 }
 
 pub(super) fn parse() -> Args {
@@ -112,6 +115,18 @@ pub(super) fn parse() -> Args {
         .position(|a| a == "--population-limit")
         .and_then(|i| args.get(i + 1))
         .and_then(|s| s.parse().ok());
+    let summon_wolves: u32 = args
+        .iter()
+        .position(|a| a == "--summon-wolves")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    let summon_at: u64 = args
+        .iter()
+        .position(|a| a == "--summon-at")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(6_000);
     Args {
         seed,
         max_ticks,
@@ -130,5 +145,7 @@ pub(super) fn parse() -> Args {
         load,
         save_at_end,
         population_limit,
+        summon_wolves,
+        summon_at,
     }
 }

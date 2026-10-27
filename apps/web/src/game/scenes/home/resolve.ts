@@ -1,23 +1,28 @@
+import { formatNumber, t, type MessageKey } from '../../../i18n'
 import type { SceneContext, SceneFixture, SceneId } from '../core/types'
 import type { OrganismState, WorldState } from '../../../shared/types'
 import { householdAround } from '../shared/occupants'
-import { t, tn, type MessageKey } from '../../../i18n'
-import { simLabelAsSent } from '../../../i18n/sim'
-import { displayName } from '../../../i18n/names'
+import { eraWord } from '../../../shared/era-words'
+import { displayName } from '../../../fork/i18n/names'
 import { personName } from '../../../shared/personName'
 
-/** What a home looks like in each era (the room's subtitle); later eras keep the plain word. */
-const HOME_FLAVOR: Record<string, MessageKey> = {
-  'pre-stone': 'map.home.flavor.preStone',
-  stone: 'map.home.flavor.stone',
-  bronze: 'map.home.flavor.bronze',
-  iron: 'map.home.flavor.iron',
-  classical: 'map.home.flavor.classical',
-  medieval: 'map.home.flavor.medieval',
-  renaissance: 'map.home.flavor.renaissance',
-  industrial: 'map.home.flavor.industrial',
-  modern: 'map.home.flavor.modern',
-  information: 'map.home.flavor.information',
+const ERA_LABEL: Record<string, MessageKey> = {
+  'pre-stone': 'panels.scene.home.era.preStone',
+  stone: 'panels.scene.home.era.stone',
+  bronze: 'panels.scene.home.era.bronze',
+  iron: 'panels.scene.home.era.iron',
+  classical: 'panels.scene.home.era.classical',
+  medieval: 'panels.scene.home.era.medieval',
+  renaissance: 'panels.scene.home.era.renaissance',
+  industrial: 'panels.scene.home.era.industrial',
+  modern: 'panels.scene.home.era.modern',
+  information: 'panels.scene.home.era.information',
+}
+
+/** One line describing the house for its era, e.g. "A stone-walled hut". */
+function eraLabel(era: string): string {
+  const key = ERA_LABEL[era]
+  return key ? t(key) : t('panels.scene.home.fallback')
 }
 
 interface Slot {
@@ -200,14 +205,16 @@ export function resolveHomeScene(world: WorldState, scene: SceneId): SceneContex
     return { id: `${k}-${i}`, kind: k, x: slot.x, y: slot.y, label: k.replace(/_/g, ' ') }
   })
 
-  const look = t(HOME_FLAVOR[era] ?? 'map.home.flavor.other')
-  const flavor = aiPicked.length === 0 ? look : tn('map.home.chosen', aiPicked.length, { flavor: look })
+  const flavor =
+    aiPicked.length === 0
+      ? eraLabel(era)
+      : `${eraLabel(era)} · ${t('panels.scene.home.chosenPieces', { count: formatNumber(aiPicked.length) })}`
 
   return {
     scene,
     world,
-    title: t('map.home.title', { name: personName(host) }),
-    subtitle: t('map.home.subtitle', { flavor, tribe: lineageName, era: simLabelAsSent('era', era) }),
+    title: t('panels.scene.home.title', { name: personName(host) }),
+    subtitle: `${flavor} · ${lineageName} · ${eraWord(era)}`,
     isDay,
     occupants: inside,
     away,

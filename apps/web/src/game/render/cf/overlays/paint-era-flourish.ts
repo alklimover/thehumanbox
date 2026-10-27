@@ -1,9 +1,9 @@
+import { t } from '../../../../i18n'
 import { TILE } from '../../../model/palette'
 import { FLOURISH_TICKS, type EraChange } from '../../../model/era-flourish'
 import type { CfFrame } from './frame'
-import { getLocale, t } from '../../../../i18n'
-import { simLabel } from '../../../../i18n/sim'
-import { displayName } from '../../../../i18n/names'
+import { displayName } from '../../../../fork/i18n/names'
+import { getLocale } from '../../../../fork/i18n/locale'
 
 type Ctx = CanvasRenderingContext2D
 
@@ -44,9 +44,11 @@ export function paintEraFlourish(ctx: Ctx, f: CfFrame, changes: readonly EraChan
 
     // The plate fades in quickly and out over the last third of its time.
     const alpha = Math.min(1, age * 8) * Math.min(1, (1 - age) / 0.3)
+    // Fork: the name in the player's alphabet, and Russian keeps its case («бронзовый век»).
     const name =
       displayName(world.lineage_names?.[change.lineage] ?? settlement.name) || change.lineage.slice(0, 6)
-    const text = t('map.eraFlourish', { name, era: eraPlateName(change.era) })
+    const eraAge = t('panels.tribe.eraAge', { era: change.era })
+    const text = `${name} · ${getLocale() === 'ru' ? eraAge : eraAge.toUpperCase()}`
     const font = 13 * s
     const width = (text.length * 7.6 + 16) * s
     const height = 20 * s
@@ -63,16 +65,6 @@ export function paintEraFlourish(ctx: Ctx, f: CfFrame, changes: readonly EraChan
     ctx.fillText(text, cx, top)
     ctx.restore()
   }
-}
-
-/**
- * The era as the plate names it. `EraChange.era` is pretty-printed ("pre stone") while the era ids
- * join their words with a hyphen ("pre-stone", "kardashev-2"). English shouts it ("BRONZE AGE");
- * Russian keeps the era's own name («бронзовый век»).
- */
-function eraPlateName(pretty: string): string {
-  const name = simLabel('era', pretty.trim().replace(/\s+/g, '-'))
-  return getLocale() === 'ru' ? name : name.toUpperCase()
 }
 
 /** The settlement a tribe is known by: its biggest one (`settlements` lists them all). */

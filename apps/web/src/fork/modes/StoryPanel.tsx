@@ -4,8 +4,8 @@
 // and the tribe card do: whatever happens to the world, the player does.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
-import { t } from '../../i18n'
-import { goalTitle } from '../../i18n/goals'
+import { ft } from '../i18n'
+import { goalTitle } from '../i18n/goals'
 import { calendarAt } from '../../game/model/calendar'
 import { useCameraFocus } from '../../state/camera-focus'
 import { useCurrentScene } from '../../state/scene'
@@ -90,7 +90,7 @@ export function StoryPanel({ world, role, onAnswer, onTool }: Props) {
   if (hideUI || photoMode || scene) return null
 
   const icon = ROLE_ICONS[role]
-  const title = role === 'god' ? t('modes.panel.god') : t('modes.panel.observer')
+  const title = role === 'god' ? ft('modes.panel.god') : ft('modes.panel.observer')
   const style = { top: corner.top, left: corner.left }
 
   if (!open) {
@@ -100,7 +100,7 @@ export function StoryPanel({ world, role, onAnswer, onTool }: Props) {
         className="fork-mode-chip"
         style={style}
         data-tour="mode-panel"
-        aria-label={t('modes.panel.expandAria')}
+        aria-label={ft('modes.panel.expandAria')}
         onClick={() => setPanelOpen(role, true)}
       >
         <ToolSprite icon={icon} size={14} />
@@ -140,21 +140,21 @@ export function StoryPanel({ world, role, onAnswer, onTool }: Props) {
         <span className="fork-mode-title">{title}</span>
         {role === 'observer' && (
           <span className="fork-mode-year">
-            {t('modes.panel.year', { year: calendarAt(world.tick).year })}
+            {ft('modes.panel.year', { year: calendarAt(world.tick).year })}
           </span>
         )}
         <button
           type="button"
           className="fork-mode-fold"
-          aria-label={t('modes.panel.collapseAria')}
+          aria-label={ft('modes.panel.collapseAria')}
           onClick={() => setPanelOpen(role, false)}
         >
-          {t('modes.panel.collapse')} ▴
+          {ft('modes.panel.collapse')} ▴
         </button>
       </header>
       {rows.length === 0 ? (
         <div className="fork-mode-quiet">
-          {role === 'god' ? t('modes.panel.quietGod') : t('modes.panel.quiet')}
+          {role === 'god' ? ft('modes.panel.quietGod') : ft('modes.panel.quiet')}
         </div>
       ) : (
         <ul className="fork-mode-rows">
@@ -176,10 +176,10 @@ export function StoryPanel({ world, role, onAnswer, onTool }: Props) {
                   onClick={() => act(story)}
                 >
                   {story.action.kind === 'prayer'
-                    ? t('modes.action.answer')
+                    ? ft('modes.action.answer')
                     : story.action.kind === 'tool'
-                      ? t('modes.action.help')
-                      : t('modes.action.show')}
+                      ? ft('modes.action.help')
+                      : ft('modes.action.show')}
                 </button>
               )}
             </li>
@@ -191,7 +191,7 @@ export function StoryPanel({ world, role, onAnswer, onTool }: Props) {
           <>
             <span>
               {goal
-                ? t('modes.panel.goal', {
+                ? ft('modes.panel.goal', {
                     goal: goalTitle(goal),
                     progress: goal.progress,
                     target: goal.target,
@@ -203,18 +203,18 @@ export function StoryPanel({ world, role, onAnswer, onTool }: Props) {
               className="fork-mode-link"
               onClick={() => useUIStore.getState().openGoals()}
             >
-              {t('modes.panel.goals')}
+              {ft('modes.panel.goals')}
             </button>
           </>
         ) : (
           <>
-            <span>{t('modes.panel.live')}</span>
+            <span>{ft('modes.panel.live')}</span>
             <button
               type="button"
               className="fork-mode-link"
               onClick={() => useUIStore.getState().openChronicles()}
             >
-              {t('modes.panel.chronicles')}
+              {ft('modes.panel.chronicles')}
             </button>
           </>
         )}

@@ -2,24 +2,24 @@ import { memo } from 'react'
 import { useWorldStore } from '../../state/worldStore'
 import type { WorldHistory } from '../../shared/types'
 import { Tooltip } from '../toolbar/Tooltip'
-import { t, type MessageKey } from '../../i18n'
+import { formatNumber, t, type MessageKey } from '../../i18n'
 
-/** Each row of the world's history: label, explanation, and its count. */
+/** Each row of the world's history: label key, explanation key, and its count. */
 const ROWS: Array<[MessageKey, MessageKey, (h: WorldHistory) => number | undefined]> = [
-  ['panel.history.births', 'panel.history.birthsTip', (h) => h.births],
-  ['panel.history.oldAge', 'panel.history.oldAgeTip', (h) => h.deaths_old_age],
-  ['panel.history.starvation', 'panel.history.starvationTip', (h) => h.deaths_starvation],
-  ['panel.history.sickness', 'panel.history.sicknessTip', (h) => h.deaths_sickness],
-  ['panel.history.combat', 'panel.history.combatTip', (h) => h.deaths_combat],
-  ['panel.history.beasts', 'panel.history.beastsTip', (h) => h.deaths_beasts],
-  ['panel.history.drowned', 'panel.history.drownedTip', (h) => h.deaths_drowning],
-  ['panel.history.fire', 'panel.history.fireTip', (h) => h.deaths_fire],
-  ['panel.history.disaster', 'panel.history.disasterTip', (h) => h.deaths_disaster],
-  ['panel.history.alliances', 'panel.history.alliancesTip', (h) => h.alliances_formed],
-  ['panel.history.challenges', 'panel.history.challengesTip', (h) => h.challenges_total],
-  ['panel.history.gifts', 'panel.history.giftsTip', (h) => h.gifts_total],
-  ['panel.history.droughts', 'panel.history.droughtsTip', (h) => h.droughts],
-  ['panel.history.outbreaks', 'panel.history.outbreaksTip', (h) => h.outbreaks],
+  ['panels.history.births', 'panels.history.birthsTip', (h) => h.births],
+  ['panels.history.oldAge', 'panels.history.oldAgeTip', (h) => h.deaths_old_age],
+  ['panels.history.starvation', 'panels.history.starvationTip', (h) => h.deaths_starvation],
+  ['panels.history.sickness', 'panels.history.sicknessTip', (h) => h.deaths_sickness],
+  ['panels.history.combat', 'panels.history.combatTip', (h) => h.deaths_combat],
+  ['panels.history.beasts', 'panels.history.beastsTip', (h) => h.deaths_beasts],
+  ['panels.history.drowned', 'panels.history.drownedTip', (h) => h.deaths_drowning],
+  ['panels.history.fire', 'panels.history.fireTip', (h) => h.deaths_fire],
+  ['panels.history.disaster', 'panels.history.disasterTip', (h) => h.deaths_disaster],
+  ['panels.history.alliances', 'panels.history.alliancesTip', (h) => h.alliances_formed],
+  ['panels.history.challenges', 'panels.history.challengesTip', (h) => h.challenges_total],
+  ['panels.history.gifts', 'panels.history.giftsTip', (h) => h.gifts_total],
+  ['panels.history.droughts', 'panels.history.droughtsTip', (h) => h.droughts],
+  ['panels.history.outbreaks', 'panels.history.outbreaksTip', (h) => h.outbreaks],
 ]
 
 function HistoryGridImpl() {
@@ -27,7 +27,7 @@ function HistoryGridImpl() {
   if (!h) return null
   return (
     <>
-      <div className="section-title">{t('panel.history.title')}</div>
+      <div className="section-title">{t('panels.history.title')}</div>
       <div className="history-grid">
         {ROWS.map(([label, tip, value]) => {
           const n = value(h)
@@ -40,7 +40,7 @@ function HistoryGridImpl() {
                   {t(label)}
                 </span>
               </Tooltip>
-              <span className="hist-val">{n}</span>
+              <span className="hist-val">{formatNumber(n)}</span>
             </span>
           )
         })}

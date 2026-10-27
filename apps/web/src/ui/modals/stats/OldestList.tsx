@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { oldestLiving } from '../../../game/model/oldest-living'
-import { t, tn } from '../../../i18n'
 import type { OrganismState } from '../../../shared/types'
-import { displayName } from '../../../i18n/names'
+import { t } from '../../../i18n'
+import { displayName } from '../../../fork/i18n/names'
 
 /** The five oldest living people in the world, with their tribe and age in days. */
 export function OldestList({
@@ -16,7 +16,7 @@ export function OldestList({
   if (rows.length === 0) {
     return (
       <div style={{ color: '#444', fontSize: 11, textAlign: 'center', padding: '12px 0' }}>
-        {t('stats.nobodyAlive')}
+        {t('dialogs.stats.nobodyAlive')}
       </div>
     )
   }
@@ -28,7 +28,7 @@ export function OldestList({
           <span style={{ color: '#777' }}>
             {' '}
             · {displayName(lineageNames?.[r.lineage_id]) || r.lineage_id.slice(0, 6)} ·{' '}
-            {tn('stats.daysOld', r.days)}
+            {t('dialogs.stats.ageDays', { count: r.days })}
           </span>
         </li>
       ))}

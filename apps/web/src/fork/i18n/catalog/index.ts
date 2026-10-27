@@ -1,0 +1,69 @@
+import type { Message, PluralForms } from '../define'
+import { chronicle } from './chronicle'
+import { civ } from './civ'
+import { common } from './common'
+import { dialogs } from './dialogs'
+import { errors } from './errors'
+import { header } from './header'
+import { hud } from './hud'
+import { life } from './life'
+import { load } from './load'
+import { map } from './map'
+import { modals } from './modals'
+import { model } from './model'
+import { modes } from './modes'
+import { onboarding } from './onboarding'
+import { person } from './person'
+import { settings } from './settings'
+import { speed } from './speed'
+import { splash } from './splash'
+import { status } from './status'
+import { worlds } from './worlds'
+
+/** Every area of the interface. Add a new area here; its keys join ForkMessageKey. */
+const AREAS = {
+  chronicle,
+  civ,
+  common,
+  dialogs,
+  errors,
+  header,
+  hud,
+  life,
+  load,
+  map,
+  modals,
+  model,
+  modes,
+  onboarding,
+  person,
+  settings,
+  speed,
+  splash,
+  status,
+  worlds,
+}
+
+type Areas = typeof AREAS
+export type ForkMessageKey = { [A in keyof Areas]: keyof Areas[A]['en'] & string }[keyof Areas]
+
+/** Keys whose English is a plural (use ftn for them). */
+export type ForkPluralKey = {
+  [A in keyof Areas]: {
+    [K in keyof Areas[A]['en']]: Areas[A]['en'][K] extends PluralForms ? K : never
+  }[keyof Areas[A]['en']]
+}[keyof Areas] &
+  string
+
+function merge(side: 'en' | 'ru'): Record<string, Message> {
+  const out: Record<string, Message> = {}
+  for (const area of Object.values(AREAS)) {
+    for (const [key, value] of Object.entries(area[side])) {
+      if (key in out) throw new Error(`duplicate message key ${key}`)
+      out[key] = value
+    }
+  }
+  return out
+}
+
+export const CATALOGS = { en: merge('en'), ru: merge('ru') }

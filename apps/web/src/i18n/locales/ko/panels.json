@@ -1,0 +1,475 @@
+{
+  "right": {
+    "alive": "생존 ({count})",
+    "starred": "즐겨찾기",
+    "showAll": "모든 생명체 보기",
+    "showStarred": "즐겨찾기만 보기 ({count})",
+    "showMore": "{count}개 더 보기 · {hidden}개 숨김",
+    "dead": "사망 ({count})",
+    "generation": "{generation}세대 · {age}",
+    "unstar": "즐겨찾기 해제",
+    "gone": "사라짐 ({count})",
+    "vanished": "세계에서 사라졌습니다"
+  },
+  "events": {
+    "heading": "사건",
+    "important": "중요",
+    "all": "전체",
+    "showImportant": "중요한 사건만 보고 있습니다. 클릭하면 모두 보입니다.",
+    "showAll": "모든 사건을 보고 있습니다. 클릭하면 중요한 사건만 보입니다."
+  },
+  "eventRow": {
+    "goThere": "그곳으로 가기"
+  },
+  "headlines": {
+    "label": "세계의 최근 소식"
+  },
+  "history": {
+    "title": "세계의 역사",
+    "births": "출생",
+    "birthsTip": "이 세계에서 태어난 사람의 총수",
+    "oldAge": "노환",
+    "oldAgeTip": "노환으로 인한 사망: 천수를 누린 사람들",
+    "starvation": "굶주림",
+    "starvationTip": "굶주림이나 갈증으로 인한 사망: 음식이나 물 부족",
+    "sickness": "질병",
+    "sicknessTip": "질병으로 인한 사망",
+    "combat": "전투",
+    "combatTip": "이웃 간 싸움과 부족 간 전쟁에서의 사망",
+    "beasts": "맹수",
+    "beastsTip": "늑대, 곰, 괴물에게 죽음",
+    "drowned": "익사",
+    "drownedTip": "깊은 물이나 불어난 물에서 익사",
+    "fire": "화재",
+    "fireTip": "산불로 인한 사망",
+    "disaster": "재해",
+    "disasterTip": "지진, 운석, 홍수, 폭풍, 화산, 신의 번개로 인한 사망",
+    "alliances": "동맹",
+    "alliancesTip": "부족 사이에 맺은 동맹",
+    "challenges": "도전",
+    "challengesTip": "영역 도전: 한 사람이 다른 사람에게 맞섬",
+    "gifts": "선물",
+    "giftsTip": "사람들 사이에 주고받은 음식: 친족과 우정의 표시",
+    "droughts": "가뭄",
+    "droughtsTip": "가뭄: 물이 부족한 계절",
+    "outbreaks": "유행",
+    "outbreaksTip": "인구 사이에 퍼진 질병 유행"
+  },
+  "wildlife": {
+    "title": "야생동물",
+    "danger": "배고플 때 사람을 사냥함",
+    "herds": "양, 소, 말, 닭",
+    "game": "먹이로 사냥하는 야생 사냥감: 과잉 사냥은 개체 수를 줄인다",
+    "away": "+{count} 원정 중",
+    "animals": {
+      "rabbits": "토끼",
+      "deer": "사슴",
+      "boar": "멧돼지",
+      "birds": "새",
+      "fish": "물고기",
+      "herds": "가축 떼",
+      "foxes": "여우",
+      "cats": "고양이",
+      "penguins": "펭귄",
+      "camels": "낙타",
+      "frogs": "개구리",
+      "whales": "고래",
+      "ducks": "오리",
+      "bees": "벌",
+      "owls": "올빼미",
+      "eagles": "독수리",
+      "snakes": "뱀",
+      "crocodiles": "악어",
+      "monkeys": "원숭이",
+      "wolves": "늑대",
+      "goats": "염소",
+      "elephants": "코끼리",
+      "lions": "사자",
+      "zebras": "얼룩말",
+      "polarBears": "북극곰",
+      "kangaroos": "캥거루",
+      "bears": "곰"
+    }
+  },
+  "footer": {
+    "era": "시대",
+    "eras": {
+      "genesis": "창세",
+      "forager": "채집",
+      "fire": "불",
+      "shelter": "거처",
+      "tribal": "부족",
+      "invention": "발명",
+      "cooking": "요리",
+      "masonry": "석공",
+      "equilibrium": "균형"
+    },
+    "day": "낮",
+    "night": "밤",
+    "weather": "날씨",
+    "droughtTag": "· {label}",
+    "tribes": "부족"
+  },
+  "weather": {
+    "clear": "맑음",
+    "rain": "비",
+    "rainBody": "마른 땅이 더 빨리 회복되는 데 도움이 된다.",
+    "storm": "폭풍",
+    "stormBody": "기력을 소모시킨다. 벼락이 칠 수 있다.",
+    "snow": "눈",
+    "fog": "안개",
+    "wet": "습함",
+    "drought": "가뭄",
+    "droughtBody": "물이 줄어들고 갈증으로 인한 사망이 늘고 있다."
+  },
+  "silent": {
+    "title": "세계가 고요해졌습니다",
+    "body": "당신의 백성 중 마지막 한 사람까지 세상을 떠났습니다. 그들이 세운 마을에는 아무것도 움직이지 않습니다.",
+    "lasted": "지속 기간",
+    "years": {
+      "other": "{count}년"
+    },
+    "mostAlive": "동시에 살았던 최대 인구",
+    "tribes": "부족",
+    "furthestAge": "도달한 가장 높은 시대",
+    "prayersAnswered": "응답받은 기도",
+    "unanswered": "{count}개 미응답",
+    "keepWatching": "계속 지켜보기",
+    "newWorld": "새 세계",
+    "seed": "새 사람들 심기"
+  },
+  "rename": {
+    "label": "새 이름",
+    "save": "저장",
+    "cancel": "취소",
+    "refused": "이름이 저장되지 않았습니다. 다시 시도하세요."
+  },
+  "prayerHint": {
+    "title": "백성이 기도하고 있습니다",
+    "body": "부족 위의 말풍선을 클릭해 도울 수 있습니다. 응답받은 기도는 신앙을 얻습니다.",
+    "showMe": "보여 주기",
+    "dismiss": "닫기"
+  },
+  "prayerChip": {
+    "tipTitle": "기도",
+    "tipBody": {
+      "other": "{count}개 부족이 도움을 청하고 있습니다. 신앙을 잃기 전에 응답하세요."
+    },
+    "label": {
+      "other": "기도 {formattedCount}개"
+    }
+  },
+  "peril": {
+    "title": "존폐 위기",
+    "tipOne": "{tribe} 부족이 존폐 위기에 있습니다: {remaining}, {reason}.",
+    "tipMany": "{count}개 부족이 존폐 위기에 있습니다. 클릭하면 차례로 이동합니다.",
+    "label": {
+      "other": "존폐 위기 부족 {count}개"
+    }
+  },
+  "population": {
+    "people": "인구",
+    "alive": "{count}명 생존.",
+    "milestone": "다음 목표 {count}명",
+    "sickness": "질병",
+    "sick": {
+      "other": "{count}명이 아픕니다. 가까이 접촉하면 퍼집니다."
+    }
+  },
+  "calendar": {
+    "year": "{year}년",
+    "yearTitle": "{year}년, {season}",
+    "dayOfSeason": "{season} {day}일째(5일 중). 한 해는 네 계절로 이루어지며, 사람은 살아온 햇수만큼 나이를 먹는다.",
+    "throughDay": "{phase}, 하루의 {percent}% 경과.",
+    "moon": "달: {phase}",
+    "moonDate": "{year}년, {day}일째.",
+    "hardWinter": "혹독한 겨울",
+    "hardWinterAhead": "{season} · 혹독한 겨울이 다가옴",
+    "omen": "혹독한 겨울이 다가옴",
+    "hardWinterBody": "평소보다 춥습니다. 야생 먹이가 빨리 줄고 열병이 퍼집니다.",
+    "hardWinterHow": "부족들이 음식과 치료를 기도할 것입니다.",
+    "aheadBody": "원로들은 혹독한 겨울을 걱정합니다. 야생 먹이가 부족해지고 열병이 퍼질 것입니다.",
+    "aheadHow": "추위가 오기 전에 지금 작물과 과수원을 심으세요.",
+    "tip": {
+      "recovery": "땅이 회복되고 있습니다. 먹이가 다시 자라기 시작합니다.",
+      "abundance": "먹이가 풍부합니다.",
+      "decline": "겨울을 앞두고 먹이 성장이 둔화되고 있습니다.",
+      "scarcity": "먹이가 부족합니다. 겨울이 가장 힘든 계절입니다.",
+      "default": "먹이 성장과 가뭄 위험에 영향을 줍니다."
+    },
+    "season": {
+      "spring": "봄",
+      "summer": "여름",
+      "autumn": "가을",
+      "winter": "겨울"
+    },
+    "seasonName": {
+      "spring": "봄",
+      "summer": "여름",
+      "autumn": "가을",
+      "winter": "겨울"
+    },
+    "phase": {
+      "dawn": "새벽",
+      "day": "낮",
+      "dusk": "황혼",
+      "night": "밤"
+    },
+    "phaseTitle": {
+      "dawn": "새벽",
+      "day": "낮",
+      "dusk": "황혼",
+      "night": "밤"
+    }
+  },
+  "lineages": {
+    "title": "계통 ({count})",
+    "onBrink": "존폐 위기: {line}, {reason}. 클릭해서 도와주세요.",
+    "showAll": "모든 계통 보기",
+    "focus": "{name} 집중",
+    "brink": "존폐 위기",
+    "oldest": "가장 나이 많은 생존자: {line}",
+    "viewAll": "전체 보기 ({count})",
+    "faith": "신앙 {faith}",
+    "faithBlessed": "신앙 {faith} · 응답받은 기도로 축복받음",
+    "faithDespair": "신앙 {faith} · 응답받지 못한 기도 뒤 절망",
+    "eldestDays": "{days}일",
+    "generation": "{from}세대",
+    "generationRange": "{from}~{to}세대"
+  },
+  "tribe": {
+    "rename": "이 부족 이름 바꾸기",
+    "nameLabel": "부족 이름",
+    "close": "닫기",
+    "regionLabel": "{name} 부족",
+    "sparkTitle": "최근 {from} → {to}명",
+    "growing": "늘어나는 중",
+    "shrinking": "줄어드는 중",
+    "steady": "안정",
+    "food": "식량",
+    "water": "물",
+    "health": "건강",
+    "ledBy": "지도자:",
+    "followLeader": "지도자 따라가기",
+    "festival": "{name} 축제 진행 중",
+    "people": {
+      "other": "{count}명"
+    },
+    "eraAge": "{era} 시대",
+    "wealth": "부 {gap}",
+    "onBrink": "존폐 위기: {line} (최대 {peak}명), {reason}",
+    "atWar": "{enemies}와(과) 전쟁 중",
+    "makePeace": "화해하기",
+    "granary": "곡간: 곡식 {count}되",
+    "bakery": "빵집: 빵 {count}개",
+    "pen": "우리: 가축 {count}마리",
+    "lostLately": "최근 잃은 것: {losses}",
+    "oldest": "가장 나이 많은 생존자: {line}",
+    "oldestTitle": "이 부족에서 가장 나이 많은 생존자",
+    "families": "가족: {list}",
+    "familiesTitle": "이 부족 생존자들의 가족",
+    "faith": "신앙 {faith}",
+    "faithTitle": "응답받은 기도에서 버려진 기도를 뺀 수",
+    "faithLostTitle": "신들을 포기해 기도를 거의 하지 않습니다. 요청하지 않아도 도와서 신앙을 되찾으세요.",
+    "blessed": "축복받음",
+    "lostFaith": "신앙 상실",
+    "despairing": "절망 중",
+    "sick": {
+      "other": "아픈 사람 {count}명"
+    },
+    "nextAge": "다음 시대: {era}",
+    "inspire": "고무하기",
+    "inspireTitle": "고무하기: 다음 발견을 앞당깁니다",
+    "teach": "가르치기",
+    "teachTitle": "아직 모르는 다음 비법을 가르칩니다 (계절당 한 번)",
+    "stillToLearn": "아직 배울 것: {list}",
+    "needsPeople": "사람 {count}명 더 필요",
+    "praying": "기도 중",
+    "help": "도움",
+    "lore": {
+      "craftTitle": "이 부족 어른들이 잘하는 일. 아이들은 그것을 보며 자란다.",
+      "winter": "{year}년의 굶주린 겨울을 기억한다",
+      "winterTitle": "그 뒤로 해마다 가을이면 식량을 모아 둔다.",
+      "warWeary": "전투에서 {count}명을 잃고 전쟁에 지쳤다",
+      "warWearyTitle": "습격을 자주 그만두고, 똑같이 싸움에 지친 부족과는 화친을 맺는다.",
+      "craft": {
+        "woodcutting": "나무꾼으로 알려짐",
+        "quarrying": "석공으로 알려짐",
+        "foraging": "채집꾼으로 알려짐",
+        "fishing": "어부로 알려짐",
+        "hunting": "사냥꾼으로 알려짐",
+        "farming": "농부로 알려짐",
+        "building": "건축으로 알려짐",
+        "crafting": "공예로 알려짐",
+        "healing": "치료사로 알려짐"
+      }
+    },
+    "history": {
+      "title": "연대기",
+      "empty": "아직 기록된 것이 없음",
+      "goTo": "이 장소로 가기",
+      "raid": "{other}와의 습격",
+      "war": "{other}와 전쟁을 시작했다",
+      "era": "{era} 시대에 접어듦",
+      "famine": "기근을 겪음",
+      "arrival": "떠돌던 무리가 와서 이곳에 정착함",
+      "split": "{other}에서 갈라져 이 부족을 세움",
+      "craft": "{craft}로 알려지게 됨",
+      "leaderDied": "지도자 {name}을(를) 잃음",
+      "crafts": {
+        "woodcutting": "벌목",
+        "quarrying": "채석",
+        "foraging": "채집",
+        "fishing": "낚시",
+        "hunting": "사냥",
+        "farming": "농사",
+        "building": "건설",
+        "crafting": "공예",
+        "healing": "치료"
+      }
+    },
+    "why": {
+      "title": "왜 이렇게 행동하는가",
+      "guided": "{strategy} 방향으로 이끄는 중: {target} 중 {done} 완료",
+      "unguided": "아무도 이끌지 않아 스스로 움직임",
+      "need": "가장 시급: {need} ({pct}% 부족)",
+      "needNone": "지금은 시급한 것이 없음",
+      "needs": {
+        "food": "식량",
+        "water": "물",
+        "health": "건강",
+        "shelter": "거처",
+        "safety": "안전",
+        "land": "땅"
+      },
+      "doing": "하는 일: {list}",
+      "idle": "지금은 아무도 일하지 않음",
+      "work": {
+        "woodcutting": "벌목",
+        "quarrying": "채석",
+        "foraging": "채집",
+        "fishing": "낚시",
+        "hunting": "사냥",
+        "farming": "농사",
+        "building": "건설",
+        "crafting": "공예",
+        "healing": "치료"
+      },
+      "allied": "{names}와 동맹",
+      "rivals": "{names}와 대립",
+      "neutral": "{names}에 중립",
+      "stanceNone": "알려진 이웃이 없음",
+      "next": "다음에 시도할 일: {step}",
+      "step": {
+        "food": "채집하고 사냥해 식량 구하기",
+        "water": "물가로 가기",
+        "health": "아픈 사람 돌보기",
+        "shelter": "집을 더 짓기",
+        "safety": "무장하고 땅을 지키기",
+        "land": "땅을 더 차지하기",
+        "campaign": "{strategy} 활동을 이어 가기",
+        "learn": "다음 시대를 위해 {secret} 배우기",
+        "carryOn": "지금처럼 계속하기"
+      }
+    },
+    "guide": {
+      "known": "비밀 {required}개 중 {known}개를 앎",
+      "worldPeople": "이 시대에 필요한 {need}명 중 세계에 {have}명이 있음 ({short}명 부족)",
+      "ready": "준비됨: 세계의 다음 점검 때 시대가 옴"
+    }
+  },
+  "scene": {
+    "out": "외출 중",
+    "nearby": "근처",
+    "shopNearby": "근처",
+    "homeOut": "지금 외출 중",
+    "villageAway": "마을에는 있지만 광장에는 없음",
+    "tavernAway": "근처에 있지만 주점 안은 아님",
+    "templeAway": "근처에 있지만 사원 안은 아님",
+    "noOneHome": "집에 아무도 없음",
+    "insideCount": "안에 {count}명",
+    "emptySquare": "빈 광장",
+    "inSquareCount": "광장에 {count}명",
+    "emptyTavern": "빈 주점",
+    "shopClosed": "가게 문 닫음",
+    "noOneInPrayer": "기도하는 사람 없음",
+    "drinkingCount": "{count}명 마시는 중",
+    "inPrayerCount": "{count}명 기도 중",
+    "atWorkCount": "{count}명 작업 중",
+    "day": "낮",
+    "night": "밤",
+    "role": {
+      "host": "주인",
+      "partner": "배우자",
+      "child": "자녀",
+      "kin": "친척",
+      "guest": "손님",
+      "stranger": "낯선 사람",
+      "patron": "단골",
+      "worshipper": "신도",
+      "brewer": "양조사",
+      "priest": "사제"
+    },
+    "tavern": {
+      "title": "{name}의 주점",
+      "nearbyCount": "근처 {count}명",
+      "time": {
+        "busyLunch": "점심 손님으로 북적임",
+        "quietDay": "조용한 낮 시간",
+        "rowdyEvening": "시끌벅적한 저녁",
+        "lateNight": "밤늦은 단골들"
+      },
+      "brewers": {
+        "one": "양조사 {count}명",
+        "other": "양조사 {count}명"
+      },
+      "shelf": "선반에 {count}"
+    },
+    "activity": {
+      "atHome": "집에 있음",
+      "idling": "한가하게 있음",
+      "visiting": "방문 중",
+      "working": {
+        "forge": "대장간에서 일하는 중",
+        "bakery": "빵집에서 일하는 중",
+        "mill": "방앗간에서 일하는 중"
+      },
+      "serving": "서빙 중",
+      "drinking": "마시는 중",
+      "lookingIn": "안을 들여다보는 중",
+      "praying": "기도하는 중",
+      "reflecting": "묵상하는 중",
+      "observing": "지켜보는 중"
+    },
+    "home": {
+      "title": "{name}의 집",
+      "fallback": "보금자리",
+      "chosenPieces": "고른 가구 {count}개",
+      "era": {
+        "preStone": "맨 바람막이",
+        "stone": "돌담 오두막",
+        "bronze": "목재와 초가의 집",
+        "iron": "철기 시대의 오두막",
+        "classical": "점토 기와집",
+        "medieval": "목조 골격 오두막",
+        "renaissance": "이층 주택",
+        "industrial": "벽돌 연립주택",
+        "modern": "집",
+        "information": "작은 아파트"
+      }
+    },
+    "temple": {
+      "kind": {
+        "animism": "정령에게 바치는 돌 사당",
+        "polytheism": "여러 신을 모신 신전",
+        "monotheism": "유일신을 모신 성스러운 집",
+        "philosophical": "사색의 전당",
+        "secular": "시민 추모의 전당",
+        "fallback": "예배 장소"
+      },
+      "adherents": "신도 {count}명",
+      "atAltar": "제단 앞 {count}명",
+      "nearbyCount": "근처 {count}명"
+    }
+  }
+}

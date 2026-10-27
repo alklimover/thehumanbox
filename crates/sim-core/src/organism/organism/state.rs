@@ -7,6 +7,25 @@ impl Organism {
     /// Remember what just hurt this person.
     pub fn mark_harm(&mut self, harm: Harm, tick: u64) {
         self.last_harm = Some((harm, tick));
+        // Hurt at their work, a person comes to dread that work and drops it.
+        let what = match harm {
+            Harm::Beast => "an animal attack",
+            Harm::Drowning => "nearly drowning",
+            Harm::Fire => "being burned",
+            _ => return,
+        };
+        let Some(plan) = self.work.take() else {
+            return;
+        };
+        use crate::organism::skills::DREAD;
+        if self.skills.feeling(plan.skill) > DREAD {
+            self.skills.set_feeling(plan.skill, DREAD);
+            self.log_life(
+                tick,
+                "danger",
+                format!("swore off {} after {}", plan.skill.name(), what),
+            );
+        }
     }
 
     /// The recent wound most likely to have killed this person.
@@ -264,6 +283,8 @@ impl Organism {
             "danger" => (MemoryKind::Episode, 0.75, -2),
             "aspiration" => (MemoryKind::Fact, 0.85, 2),
             "specialty" => (MemoryKind::Fact, 0.75, 1),
+            "skill" => (MemoryKind::Fact, 0.70, 1),
+            "learned" => (MemoryKind::Bond, 0.70, 1),
             "graduated" => (MemoryKind::Fact, 0.75, 2),
             "religion" => (MemoryKind::Fact, 0.80, 1),
             "milestone" => (MemoryKind::Episode, 0.80, 1),

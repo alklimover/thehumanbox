@@ -10,11 +10,11 @@ interface Props {
 /** Ready-made additions to the world you are watching. Each one places people or animals and then gets out of the way. */
 export function ScenariosModal({ onStart, onClose }: Props) {
   return (
-    <Modal open onClose={onClose} className="scenarios-modal" title={t('scenes.title')} hideTitle>
+    <Modal open onClose={onClose} className="scenarios-modal" title={t('dialogs.scenarios.title')} hideTitle>
       <div className="lang-modal-header">
-        <span className="lang-modal-title">{t('scenes.heading')}</span>
+        <span className="lang-modal-title">{t('dialogs.scenarios.heading')}</span>
       </div>
-      <p className="tree-modal-sub">{t('scenes.sub')}</p>
+      <p className="tree-modal-sub">{t('dialogs.scenarios.intro')}</p>
       <ul className="scenario-list" style={{ listStyle: 'none', padding: 0, margin: '12px 0 0' }}>
         {SCENARIO_PRESETS.map((preset) => (
           <li
@@ -28,11 +28,11 @@ export function ScenariosModal({ onStart, onClose }: Props) {
             }}
           >
             <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-              <span style={{ color: '#f4e6c0' }}>{preset.title}</span>
-              <span className="tree-modal-sub">{preset.detail}</span>
+              <span style={{ color: '#f4e6c0' }}>{t(preset.title)}</span>
+              <span className="tree-modal-sub">{t(preset.detail)}</span>
             </span>
             <button type="button" className="tree-zoom-btn" onClick={() => onStart(preset)}>
-              {t('scenes.start')}
+              {t('dialogs.scenarios.start')}
             </button>
           </li>
         ))}

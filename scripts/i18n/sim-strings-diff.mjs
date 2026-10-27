@@ -3,7 +3,7 @@
 // upstream sync report (scripts/fork/sync-report.mjs calls it when present).
 // Runs extract-sim-strings.mjs on both trees, taken with `git archive`, so the
 // checkout is not touched. Also lists the keys of the Russian tables
-// (apps/web/src/i18n/simtext/ru) that matched a text at --base and match
+// (apps/web/src/fork/i18n/simtext/ru) that matched a text at --base and match
 // nothing at --head: upstream reworded a translated line, and the table test
 // fails until the key follows it.
 //
@@ -47,19 +47,29 @@ function catalogAt(sha) {
   }
 }
 
-const RU_TABLES = 'apps/web/src/i18n/simtext/ru'
+/** Where the Russian tables live: the fork's own layer, or apps/web/src/i18n before upstream had translations. */
+const RU_TABLES = ['apps/web/src/fork/i18n/simtext/ru', 'apps/web/src/i18n/simtext/ru']
 
 /** The keys of the Russian tables at a commit, read from the source (prettier writes one per line). */
 function russianKeys(sha) {
   let files
-  try {
-    files = execFileSync('git', ['ls-tree', '--name-only', `${sha}:${RU_TABLES}`], { encoding: 'utf8' }).split('\n')
-  } catch {
-    return []
+  let dir
+  for (const candidate of RU_TABLES) {
+    try {
+      files = execFileSync('git', ['ls-tree', '--name-only', `${sha}:${candidate}`], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).split('\n')
+      dir = candidate
+      break
+    } catch {
+      // not at this commit
+    }
   }
+  if (!dir) return []
   const keys = []
   for (const file of files.filter((f) => f.endsWith('.ts'))) {
-    const src = execFileSync('git', ['show', `${sha}:${RU_TABLES}/${file}`], { encoding: 'utf8' })
+    const src = execFileSync('git', ['show', `${sha}:${dir}/${file}`], { encoding: 'utf8' })
     for (const m of src.matchAll(/^ {2}('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|[A-Za-z_]\w*):/gm)) {
       const raw = m[1]
       keys.push({ file, key: /^['"]/.test(raw) ? raw.slice(1, -1).replace(/\\(.)/g, '$1') : raw })
@@ -104,7 +114,7 @@ if (added.length === 0) {
   }
   const parts = [...byChannel].sort((a, b) => b[1] - a[1]).map(([ch, n]) => `${CHANNEL_WORD[ch] ?? ch} ${n}`)
   lines.push(
-    `Новых текстов симуляции: **${added.length}** (${parts.join(', ')}); убрано: ${removed}. Найдены экстрактором \`scripts/i18n/extract-sim-strings.mjs\`; переводятся на этапе 0.4 (\`docs/fork/SIMTEXT.ru.md\`).`,
+    `Новых текстов симуляции: **${added.length}** (${parts.join(', ')}); убрано: ${removed}. Найдены экстрактором \`scripts/i18n/extract-sim-strings.mjs\`; переводы добавляются в \`apps/web/src/fork/i18n/simtext/ru/*.ts\` (\`docs/fork/SIMTEXT.ru.md\`).`,
     '',
   )
   const limit = Number(args.limit)
@@ -127,7 +137,7 @@ if (reworded.length > 0) {
     const site = matchBase(sample(k))?.entries?.[0]?.sites?.[0] ?? ''
     const near = site ? addedIn(site.replace(/:\d+$/, '')).slice(0, 3) : []
     const hint = near.length ? ` → ${near.map((e) => code(e.kind === 'template' ? e.pattern : e.text)).join(', ')}` : ''
-    lines.push(`- \`ru/${file}\`: ${code(k)}${hint}`)
+    lines.push(`- \`fork/i18n/simtext/ru/${file}\`: ${code(k)}${hint}`)
   }
 }
 process.stdout.write(lines.join('\n') + '\n')

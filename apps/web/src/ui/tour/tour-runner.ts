@@ -3,6 +3,7 @@
 // names so the game's existing tour theme (pixel-theme.css,
 // 10-toasts-worlds-tour.css) styles it unchanged; layout lives in styles/fork.css.
 import { t } from '../../i18n'
+import { ft } from '../../fork/i18n'
 import type { PlayerWorldKind } from '../../simulation/worldSource'
 import { tourWorldCopy } from '../../simulation/playerWorldCopy'
 import { isTourSupported, markSeen } from './tour'
@@ -31,8 +32,8 @@ export function tourSteps(worldKind: PlayerWorldKind): StepDef[] {
       // Centred, not pinned to the header chips: they change width every few seconds and the card
       // would jump around with them.
       selector: '',
-      title: t('tour.prayers.title'),
-      text: t('tour.prayers.text'),
+      title: t('tour.prayer.title'),
+      text: t('tour.prayer.text'),
     },
     {
       selector: '.sandbox-bar',
@@ -170,7 +171,7 @@ export function runTour(worldKind: PlayerWorldKind = 'local', custom?: StepDef[]
   title.id = 'thb-tour-title'
   const close = el('button', 'shepherd-cancel-icon', '×')
   close.type = 'button'
-  close.setAttribute('aria-label', t('tour.close'))
+  close.setAttribute('aria-label', ft('tour.close'))
   const text = el('div', 'shepherd-text')
   text.id = 'thb-tour-text'
   const footer = el('footer', 'shepherd-footer')
@@ -211,12 +212,12 @@ export function runTour(worldKind: PlayerWorldKind = 'local', custom?: StepDef[]
     text.textContent = step.text
     footer.replaceChildren()
     if (!first) {
-      const back = el('button', 'shepherd-button shepherd-button-secondary', t('common.back'))
+      const back = el('button', 'shepherd-button shepherd-button-secondary', t('tour.back'))
       back.type = 'button'
       back.addEventListener('click', () => handle.back())
       footer.append(back)
     }
-    const primary = el('button', 'shepherd-button', last ? t('common.finish') : t('common.next'))
+    const primary = el('button', 'shepherd-button', last ? t('tour.finish') : t('tour.next'))
     primary.type = 'button'
     primary.addEventListener('click', () => (last ? handle.complete() : handle.next()))
     footer.append(primary)

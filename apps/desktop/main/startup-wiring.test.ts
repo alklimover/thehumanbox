@@ -85,6 +85,7 @@ function loadIndex(options: {
     setName() {},
     isPackaged: true,
     getVersion: () => "0.0.0-test",
+    getLocale: () => "en-US",
     setLoginItemSettings() {},
     getLoginItemSettings: () => ({ wasOpenedAtLogin: false }),
     on(event: string, handler: () => Promise<void>) {
@@ -137,6 +138,14 @@ function loadIndex(options: {
       }
       if (id === "./ipc") return { registerIpc() {} };
       if (id === "./renderer-load") return { loadRenderer };
+      if (id === "./main-log") {
+        return {
+          teeConsoleToLog: (_console: unknown, file: string) => {
+            calls.push(`log:${file}`);
+            return { write() {}, close() {} };
+          },
+        };
+      }
       if (id === "./startup-lifecycle") {
         return {
           startWhenReady: (_ready: Promise<void>, start: () => Promise<void>, fail: (error: unknown) => Promise<void>) => {
@@ -164,6 +173,10 @@ function loadIndex(options: {
         };
       }
       if (id === "./settings") return { loadSettings: () => startupSettings, prepareDataRoot() {} };
+      if (id === "./i18n") return require(path.join(__dirname, "i18n"));
+      if (id === "./fork-shell") return require(path.join(__dirname, "fork-shell"));
+      if (id === "./fork-ipc") return { registerForkIpc: () => {} };
+      if (id === "./app-menu") return require(path.join(__dirname, "app-menu"));
       if (id === "./updater") return { initUpdater: () => calls.push("updater:init") };
       if (id === "./app-version-arg") return { appVersionArgument: (v: string) => `--thb-app-version=${v}` };
       if (id === "./app-icon") return { appIconPath: () => "/tmp/icon.png" };
@@ -171,6 +184,8 @@ function loadIndex(options: {
       if (id === "node:fs") return { readFileSync: () => { throw new Error("no saved bounds"); } };
       if (id === "node:path") return path;
       if (id === "./i18n") return require(path.join(__dirname, "i18n"));
+      if (id === "./fork-shell") return require(path.join(__dirname, "fork-shell"));
+      if (id === "./fork-ipc") return { registerForkIpc: () => {} };
       if (id === "./renderer-csp") return rendererCsp;
       return {};
     },
@@ -240,6 +255,16 @@ test("boot registers app IPC before creating the window and stops the sim on fat
   wiring.setStopBehavior("hang");
   await assertFatalOrder(new Error("third startup failure"));
   assert.equal(calls.filter((call) => call === "app:exit").length, 3);
+});
+
+test("boot writes the shell's log to the logs folder before any other boot step", async () => {
+  const calls: string[] = [];
+  const wiring = loadIndex({ singleInstance: true, calls });
+  await assert.rejects(wiring.boot!(), /malformed window state/);
+  const log = calls.indexOf("log:/tmp/thehumanbox-test/main.log");
+  assert.ok(log > -1, `calls: ${calls.join(", ")}`);
+  assert.ok(log < calls.indexOf("csp:install"), `calls: ${calls.join(", ")}`);
+  assert.ok(log < calls.indexOf("ipc:app:setLocale"), `calls: ${calls.join(", ")}`);
 });
 
 test("boot installs a content security policy for the renderer file", async () => {

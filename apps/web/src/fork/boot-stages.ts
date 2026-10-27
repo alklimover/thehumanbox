@@ -7,13 +7,13 @@
 //     restores the world or creates a new one.
 // After a few seconds the screen also counts the seconds, so a long start does
 // not look stuck.
-import { t, type MessageKey } from '../i18n'
+import { ft, type ForkMessageKey } from './i18n'
 import { isDesktopStartupPending } from '../shared/desktopStartup'
 import { getWorldSource } from '../simulation/worldSource'
 
 export type BootStage = 'sim' | 'connecting' | 'drawing' | 'engine' | 'reading' | 'restoring' | 'creating'
 
-const TEXT: Record<BootStage, MessageKey> = {
+const TEXT: Record<BootStage, ForkMessageKey> = {
   sim: 'splash.stage.sim',
   connecting: 'splash.stage.connecting',
   drawing: 'splash.stage.drawing',
@@ -41,7 +41,7 @@ export function bootStage(stage: string, tick?: number): void {
 function show(detail: StageDetail): void {
   const text = document.getElementById('thb-progress-text')
   if (!text) return
-  text.textContent = t(TEXT[detail.stage], { tick: detail.tick ?? 0 })
+  text.textContent = ft(TEXT[detail.stage], { tick: detail.tick ?? 0 })
 }
 
 /** The first step this page can name by itself, before anything reports one. */
@@ -74,6 +74,6 @@ export function installBootStages(): void {
       return
     }
     const s = Math.floor((performance.now() - started) / 1000)
-    elapsed.textContent = s >= COUNT_AFTER_S ? t('splash.elapsed', { s }) : ''
+    elapsed.textContent = s >= COUNT_AFTER_S ? ft('splash.elapsed', { s }) : ''
   }, 1000)
 }

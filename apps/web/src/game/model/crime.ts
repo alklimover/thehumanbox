@@ -1,7 +1,7 @@
 // Crime in a tribe, in words. The simulation sends each tribe's thefts,
 // killings and caught thefts (see sim/civ/society/crime.rs).
 
-import { tn } from '../../i18n'
+import { t } from '../../i18n'
 
 export interface LineageCrime {
   lineage_id: string
@@ -14,7 +14,7 @@ export interface LineageCrime {
 export function crimeLineOf(rows: LineageCrime[] | undefined, lineage: string): string | null {
   const row = rows?.find((r) => r.lineage_id === lineage)
   if (!row || row.thefts <= 0) return null
-  const thefts = tn('model.crime.thefts', row.thefts)
+  const thefts = t('model.crime.thefts', { count: row.thefts })
   if (row.murders <= 0) return thefts
-  return `${thefts}, ${tn('model.crime.killings', row.murders)}`
+  return t('model.crime.both', { thefts, killings: t('model.crime.killings', { count: row.murders }) })
 }

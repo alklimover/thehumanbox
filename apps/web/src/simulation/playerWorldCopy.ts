@@ -1,5 +1,5 @@
-import { t } from '../i18n'
 import type { PlayerWorldKind } from './worldSource'
+import { t } from '../i18n'
 
 export interface WelcomeStepCopy {
   title: string
@@ -7,21 +7,25 @@ export interface WelcomeStepCopy {
 }
 
 // One card: enough to know what this is, then the world itself. The tour is there for anyone who wants it.
-const localWelcomeSteps = (): readonly WelcomeStepCopy[] => [
-  { title: t('welcome.title'), body: t('welcome.body') },
-]
-
 export function welcomeStepsFor(worldKind: PlayerWorldKind): readonly WelcomeStepCopy[] {
   void worldKind
-  return localWelcomeSteps()
+  return [
+    {
+      title: t('dialogs.welcome.localTitle'),
+      body: t('dialogs.welcome.localBody'),
+    },
+  ]
 }
 
 export function tourWorldCopy(worldKind: PlayerWorldKind): { opening: string; closing: string } {
   void worldKind
-  return { opening: t('tour.opening'), closing: t('tour.closing') }
+  return {
+    opening: t('tour.worldCopy.opening'),
+    closing: t('tour.worldCopy.closing'),
+  }
 }
 
 export function worldsIntroCopy(worldKind: PlayerWorldKind, apiEnabled: boolean): string {
   void worldKind
-  return apiEnabled ? t('worlds.introDesktop') : t('worlds.introBrowser')
+  return apiEnabled ? t('dialogs.worlds.introArchives') : t('dialogs.worlds.introPrivate')
 }

@@ -3,7 +3,8 @@ import { startTour, isTourSupported, preloadTour } from '../tour/tour'
 import { useIsMobile } from '../../shared/hooks/useIsMobile'
 import { useSimulationData } from '../../simulation/simulationData'
 import { welcomeStepsFor } from '../../simulation/playerWorldCopy'
-import { t } from '../../i18n'
+import { LOCALES, nativeName, t } from '../../i18n'
+import { languageFailureText, useLanguageChoice } from './useLanguageChoice'
 
 const STORAGE_KEY = 'thb-welcome-seen-v1'
 
@@ -15,6 +16,7 @@ export function WelcomeModal() {
   const { playerWorldKind } = useSimulationData()
   const steps = welcomeStepsFor(playerWorldKind)
   const cardRef = useRef<HTMLDivElement>(null)
+  const language = useLanguageChoice()
 
   useEffect(() => {
     let seen = true
@@ -67,7 +69,10 @@ export function WelcomeModal() {
         return
       }
       if (e.key !== 'Tab') return
-      const buttons = card.querySelectorAll<HTMLButtonElement>('button')
+      // A disabled control cannot take focus, so Tab must skip it (the picker is disabled while a language reloads).
+      const buttons = card.querySelectorAll<HTMLButtonElement | HTMLSelectElement>(
+        'button:not(:disabled), select:not(:disabled)',
+      )
       const first = buttons[0]
       const last = buttons[buttons.length - 1]
       if (!card.contains(document.activeElement)) {
@@ -102,12 +107,12 @@ export function WelcomeModal() {
   // The last card starts the game; the tour is an offer beside it, never the default.
   const secondary =
     isLast && tourAvailable
-      ? { label: t('welcome.quickTour'), onClick: () => finish(true) }
+      ? { label: t('dialogs.welcome.quickTour'), onClick: () => finish(true) }
       : step > 0
-        ? { label: t('common.back'), onClick: back }
+        ? { label: t('dialogs.welcome.back'), onClick: back }
         : isLast
           ? null
-          : { label: t('common.skip'), onClick: () => finish(false) }
+          : { label: t('dialogs.welcome.skip'), onClick: () => finish(false) }
 
   return (
     <div className="welcome-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
@@ -123,6 +128,27 @@ export function WelcomeModal() {
           {current.title}
         </h2>
         <p className="welcome-body">{current.body}</p>
+        {/* The browser's language is picked automatically; this card is where a player corrects it. */}
+        <label className="welcome-language">
+          <span className="welcome-language-label">{t('settings.language.title')}</span>
+          <select
+            className="welcome-language-select"
+            value={language.pending ?? language.current}
+            disabled={!!language.pending}
+            onChange={(e) => language.choose(e.target.value)}
+          >
+            {LOCALES.map((code) => (
+              <option key={code} value={code} lang={code}>
+                {nativeName(code)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {language.failed && (
+          <div className="welcome-language-note" role="alert">
+            {languageFailureText(language.failed)}
+          </div>
+        )}
         <div className="welcome-actions">
           {secondary && (
             <button type="button" className="welcome-btn welcome-btn--ghost" onClick={secondary.onClick}>
@@ -130,7 +156,7 @@ export function WelcomeModal() {
             </button>
           )}
           <button type="button" className="welcome-btn welcome-btn--primary" onClick={next} autoFocus>
-            {isLast ? t('common.start') : t('common.next')}
+            {isLast ? t('dialogs.welcome.start') : t('dialogs.welcome.next')}
           </button>
         </div>
       </div>

@@ -1,30 +1,26 @@
+import { t } from '../../../i18n'
 import type { SceneContext, SceneFixture, SceneId, SceneOccupant } from '../core/types'
 import type { WorldState } from '../../../shared/types'
 import { getBuildingState } from '../../model/building-state'
-import { t, type MessageKey } from '../../../i18n'
-import { sexOf, simText } from '../../../i18n/simtext'
-import { displayName } from '../../../i18n/names'
+import { sexOf, simText } from '../../../fork/i18n/simtext'
+import { displayName } from '../../../fork/i18n/names'
+import { ft, type ForkMessageKey } from '../../../fork/i18n'
 
 const RADIUS = 14
 
-type ShopKind = 'forge' | 'bakery' | 'mill'
+/** Fork: the shop's title and subtitle (upstream writes them in English). */
+const SHOP_WORDS: Record<'forge' | 'bakery' | 'mill', { title: ForkMessageKey; subtitle: ForkMessageKey }> = {
+  forge: { title: 'map.shop.forge.title', subtitle: 'map.shop.forge.subtitle' },
+  bakery: { title: 'map.shop.bakery.title', subtitle: 'map.shop.bakery.subtitle' },
+  mill: { title: 'map.shop.mill.title', subtitle: 'map.shop.mill.subtitle' },
+}
 
-const SHOP_WORDS: Record<ShopKind, { title: MessageKey; subtitle: MessageKey; working: MessageKey }> = {
-  forge: {
-    title: 'map.shop.forge.title',
-    subtitle: 'map.shop.forge.subtitle',
-    working: 'map.shop.forge.working',
-  },
-  bakery: {
-    title: 'map.shop.bakery.title',
-    subtitle: 'map.shop.bakery.subtitle',
-    working: 'map.shop.bakery.working',
-  },
-  mill: {
-    title: 'map.shop.mill.title',
-    subtitle: 'map.shop.mill.subtitle',
-    working: 'map.shop.mill.working',
-  },
+/** What a worker in the building is doing, in words: "working at the forge". */
+function workingAt(kind: 'forge' | 'bakery' | 'mill'): string {
+  if (kind === 'forge') return t('panels.scene.activity.working.forge')
+  return kind === 'bakery'
+    ? t('panels.scene.activity.working.bakery')
+    : t('panels.scene.activity.working.mill')
 }
 
 export function resolveForgeScene(world: WorldState, scene: SceneId): SceneContext | null {
@@ -32,8 +28,7 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   const building = world.buildings?.find((b) => b.id === scene.buildingId)
   if (!building || !getBuildingState(building).isOperational) return null
 
-  const kind: ShopKind = scene.kind
-  const words = SHOP_WORDS[kind]
+  const kind = scene.kind
   const wantedSpecialties: string[] =
     kind === 'forge'
       ? ['smith', 'carpenter', 'builder', 'mason']
@@ -57,10 +52,10 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
       org: o,
       role: isWorker ? 'host' : 'patron',
       activity: isWorker
-        ? t(words.working)
+        ? workingAt(kind)
         : o.thought
           ? simText('thought', o.thought, { sex: sexOf(o) })
-          : t('map.shop.visiting'),
+          : t('panels.scene.activity.visiting'),
     }
     if (d <= 3) inside.push(entry)
     else away.push(entry)
@@ -70,9 +65,11 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   const ownerLineage = owned.owner_lineage ?? owned.lineage_id ?? ''
   const lineageName =
     displayName(world.lineage_names?.[ownerLineage]) ||
-    (ownerLineage ? ownerLineage.slice(0, 6) : t('map.shop.unowned'))
+    (ownerLineage ? ownerLineage.slice(0, 6) : ft('map.shop.unowned'))
 
-  const subtitle = t(words.subtitle, { tribe: lineageName })
+  // Fork: upstream leaves the shop's title and subtitle in English.
+  const words = SHOP_WORDS[kind]
+  const subtitle = ft(words.subtitle, { tribe: lineageName })
 
   const fixtures: SceneFixture[] =
     kind === 'forge'
@@ -97,7 +94,7 @@ export function resolveForgeScene(world: WorldState, scene: SceneId): SceneConte
   return {
     scene,
     world,
-    title: t(words.title, { tribe: lineageName }),
+    title: ft(words.title, { tribe: lineageName }),
     subtitle,
     isDay: !!world.is_day,
     occupants: inside.slice(0, 6),

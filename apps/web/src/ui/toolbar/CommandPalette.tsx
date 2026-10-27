@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { useUIStore } from '../../state/store'
 import { getDesktop } from '../../shared/desktop'
 import { t } from '../../i18n'
@@ -7,13 +7,35 @@ interface Command {
   id: string
   label: string
   hint?: string
-  run: () => void
+  run: () => void | Promise<void>
+}
+
+type DesktopFailure =
+  | 'settings.desktop.screenshotFailed'
+  | 'settings.desktop.openWorldsFailed'
+  | 'settings.desktop.openLogsFailed'
+
+/**
+ * A desktop tool whose failure is named in the palette. The settings tab does the same; a bare
+ * `void` call would turn a refused folder into an unhandled rejection the player never sees.
+ */
+function desktopTool(failure: DesktopFailure, action: () => Promise<unknown>): () => Promise<void> {
+  return async () => {
+    try {
+      await action()
+    } catch (error) {
+      throw new Error(t(failure, { error: error instanceof Error ? error.message : String(error) }), {
+        cause: error,
+      })
+    }
+  }
 }
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
+  const [failure, setFailure] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const ranCommand = useRef(false)
   const openStats = useUIStore((s) => s.openStats)
@@ -29,43 +51,50 @@ export function CommandPalette() {
 
   const commands = useMemo<Command[]>(() => {
     const cmds: Command[] = [
-      { id: 'stats', label: t('palette.stats'), run: () => openStats() },
-      { id: 'civ', label: t('palette.civ'), run: () => openCiv() },
-      { id: 'chronicles', label: t('palette.chronicles'), run: () => openChronicles() },
+      { id: 'stats', label: t('dock.commands.openStats'), run: () => openStats() },
+      { id: 'civ', label: t('dock.commands.openCiv'), run: () => openCiv() },
+      { id: 'chronicles', label: t('dock.commands.openChronicles'), run: () => openChronicles() },
       {
         id: 'search',
-        label: t('palette.search'),
-        hint: t('palette.search.hint'),
+        label: t('dock.commands.findOrganism'),
+        hint: t('dock.commands.findOrganismHint'),
         run: () => openOrgSearch(),
       },
-      { id: 'left', label: t('palette.left'), run: () => toggleLeft() },
+      { id: 'left', label: t('dock.commands.toggleLeft'), run: () => toggleLeft() },
       {
         id: 'tour',
-        label: viewFlags.randomTour ? t('palette.tour.stop') : t('palette.tour.start'),
+        label: viewFlags.randomTour ? t('dock.commands.stopTour') : t('dock.commands.startTour'),
         run: () => setViewFlag('randomTour', !viewFlags.randomTour),
       },
       {
         id: 'hide-ui',
-        label: viewFlags.hideUI ? t('palette.ui.show') : t('palette.ui.hide'),
-        hint: t('palette.ui.hint'),
+        label: viewFlags.hideUI ? t('dock.commands.showUI') : t('dock.commands.hideUI'),
+        hint: t('dock.commands.hideUIHint'),
         run: () => setViewFlag('hideUI', !viewFlags.hideUI),
       },
     ]
     if (desktop) {
       cmds.push(
-        { id: 'desk-settings', label: t('palette.deskSettings'), run: () => openDesktopSettings() },
+        { id: 'desk-settings', label: t('dock.commands.desktopSettings'), run: () => openDesktopSettings() },
         {
           id: 'desk-screenshot',
-          label: t('palette.screenshot'),
-          hint: t('palette.screenshot.hint'),
-          run: () => void desktop.app.screenshot(),
+          label: t('dock.commands.screenshot'),
+          hint: t('dock.commands.screenshotHint'),
+          // screenshot() resolves null when the capture or its file write fails.
+          run: desktopTool('settings.desktop.screenshotFailed', async () => {
+            if (!(await desktop.app.screenshot())) throw new Error(t('settings.desktop.captureFailed'))
+          }),
         },
         {
           id: 'desk-open-worlds',
-          label: t('palette.worldsFolder'),
-          run: () => void desktop.app.openWorlds(),
+          label: t('dock.commands.openWorlds'),
+          run: desktopTool('settings.desktop.openWorldsFailed', () => desktop.app.openWorlds()),
         },
-        { id: 'desk-open-logs', label: t('palette.logsFolder'), run: () => void desktop.app.openLogs() },
+        {
+          id: 'desk-open-logs',
+          label: t('dock.commands.openLogs'),
+          run: desktopTool('settings.desktop.openLogsFailed', () => desktop.app.openLogs()),
+        },
       )
     }
     return cmds
@@ -89,26 +118,58 @@ export function CommandPalette() {
     )
   }, [commands, query])
 
-  const runCommand = (cmd: Command) => {
-    ranCommand.current = true
-    cmd.run()
+  // Bumped when a command starts and whenever the palette closes or reopens. A command still running when
+  // the number has moved on was superseded: its result must not close the palette or replace its message.
+  const generation = useRef(0)
+
+  const closePalette = useCallback(() => {
+    generation.current += 1
     setOpen(false)
-  }
+  }, [])
+
+  const runCommand = useCallback(
+    (cmd: Command) => {
+      ranCommand.current = true
+      setFailure(null)
+      const token = ++generation.current
+      const outcome = cmd.run()
+      if (!(outcome instanceof Promise)) {
+        closePalette()
+        return
+      }
+      // A command that is still running keeps the palette open; a failure stays on screen here.
+      outcome.then(
+        () => {
+          if (token === generation.current) closePalette()
+        },
+        (error: unknown) => {
+          if (token === generation.current) {
+            setFailure(error instanceof Error ? error.message : String(error))
+          }
+        },
+      )
+    },
+    [closePalette],
+  )
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      // Enter and Escape that end an IME composition belong to the input method, not to the palette.
+      if (e.isComposing || e.keyCode === 229) return
       const isOpenShortcut = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'
       if (isOpenShortcut) {
         e.preventDefault()
+        generation.current += 1
         setOpen((prev) => !prev)
         setQuery('')
         setHighlight(0)
+        setFailure(null)
         return
       }
       if (!open) return
       if (e.key === 'Escape') {
         e.preventDefault()
-        setOpen(false)
+        closePalette()
         return
       }
       if (e.key === 'ArrowDown') {
@@ -130,7 +191,7 @@ export function CommandPalette() {
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [open, filtered, highlight])
+  }, [open, filtered, highlight, runCommand, closePalette])
 
   useEffect(() => {
     if (!open) return
@@ -164,17 +225,22 @@ export function CommandPalette() {
   if (!open) return null
 
   return (
-    <div className="cmd-backdrop" onClick={() => setOpen(false)}>
+    <div className="cmd-backdrop" onClick={closePalette}>
       <div className="cmd-panel" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           className="cmd-input"
-          placeholder={t('palette.placeholder')}
+          placeholder={t('dock.palette.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <div className="cmd-list">
-          {filtered.length === 0 && <div className="cmd-empty">{t('palette.empty')}</div>}
+          {failure && (
+            <div className="cmd-empty cmd-failure" role="alert">
+              {failure}
+            </div>
+          )}
+          {filtered.length === 0 && <div className="cmd-empty">{t('dock.palette.empty')}</div>}
           {filtered.map((cmd, i) => (
             <div
               key={cmd.id}
@@ -189,7 +255,7 @@ export function CommandPalette() {
             </div>
           ))}
         </div>
-        <div className="cmd-footer">{t('palette.footer')}</div>
+        <div className="cmd-footer">{t('dock.palette.footer')}</div>
       </div>
     </div>
   )

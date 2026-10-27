@@ -3,7 +3,7 @@ import { useGame } from 'xipjs'
 import type { WorldState } from '../../../shared/types'
 import type { InterpRefs } from '../../../simulation/useSimulation'
 import { logger } from '../../../shared/logger'
-import { t } from '../../../i18n'
+import { ft } from '../../../fork/i18n'
 import { vegetationSeason } from '../landscape-style'
 import { isSettled } from '../render-timing'
 import { terrainSeason } from '../terrain-season'
@@ -55,8 +55,8 @@ export function CfWorld({
   worldRef.current = world
   const showTradeRef = useRef(showTrade)
   showTradeRef.current = showTrade
-  const cachedBiomes = useRef<number[][] | undefined>(undefined)
-  const cachedDepth = useRef<number[][] | undefined>(undefined)
+  const cachedBiomes = useRef<ArrayLike<number>[] | undefined>(undefined)
+  const cachedDepth = useRef<ArrayLike<number>[] | undefined>(undefined)
   const hasDrawn = useRef(false)
   const onFirstDrawRef = useRef(onFirstDraw)
   onFirstDrawRef.current = onFirstDraw
@@ -69,8 +69,8 @@ export function CfWorld({
   const step = useCallback(
     (w: WorldState) => {
       // Wire grids are delta-merged: biomes and depth only arrive with full frames.
-      if (w.grid.biomes) cachedBiomes.current = w.grid.biomes as number[][]
-      if (w.grid.depth_map) cachedDepth.current = w.grid.depth_map as number[][]
+      if (w.grid.biomes) cachedBiomes.current = w.grid.biomes as ArrayLike<number>[]
+      if (w.grid.depth_map) cachedDepth.current = w.grid.depth_map as ArrayLike<number>[]
       const grid = w.grid
       const camera = cameraStateRef.current
       // The cover over the map comes off after the first pass, even before the terrain has arrived:
@@ -127,7 +127,7 @@ export function CfWorld({
       step(w)
     } catch (error) {
       logger.error('2d-world', 'GPU world drawing failed', error)
-      onDrawErrorRef.current(t('map.drawFailed'))
+      onDrawErrorRef.current(ft('map.drawFailed'))
     }
   }, [interp, step])
 
@@ -150,7 +150,7 @@ export function CfWorld({
         step(w)
       } catch (error) {
         logger.error('2d-world', 'GPU world drawing failed', error)
-        onDrawErrorRef.current(t('map.drawFailed'))
+        onDrawErrorRef.current(ft('map.drawFailed'))
         return false
       }
       return true

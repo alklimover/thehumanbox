@@ -2,9 +2,10 @@ import { Bar } from './bars'
 import { AGE_STAGE_ICON, ERA_ICON } from './icons'
 import type { OrganismState } from '../../../shared/types'
 import { skillPercent, skillWord } from '../../../game/model/skills'
-import { t } from '../../../i18n'
-import { simLabel, simLabelAsSent } from '../../../i18n/sim'
-import { sexOf, simText } from '../../../i18n/simtext'
+import { hasMessage, t, type MessageKey } from '../../../i18n'
+import { eraWord } from '../../../shared/era-words'
+import { simLabel, simWordFallback, type SimDomain } from '../../../fork/i18n/sim'
+import { sexOf, simText } from '../../../fork/i18n/simtext'
 
 /** A glyph for each mood word the simulation sends. */
 const MOOD_ICON: Record<string, string> = {
@@ -15,6 +16,31 @@ const MOOD_ICON: Record<string, string> = {
   angry: '✶',
   joyful: '♪',
   content: '☺',
+}
+
+const SKILL_KEY: Record<string, MessageKey> = {
+  master: 'person.status.skillWord.master',
+  skilled: 'person.status.skillWord.skilled',
+  journeyman: 'person.status.skillWord.journeyman',
+  apprentice: 'person.status.skillWord.apprentice',
+}
+
+/** A word from the table under `prefix`; an id the table does not name is shown as its words. */
+// Fork: an id upstream does not name may still be named in the fork's tables (fork/i18n/sim).
+function wordFrom(prefix: string, id: string, domain: SimDomain): string {
+  const key = `${prefix}.${id}`
+  return hasMessage(key) ? t(key as MessageKey) : simWordFallback(domain, id, id.replace(/_/g, ' '))
+}
+
+/** A life stage in words, e.g. "elder" in German is "Alter". */
+const ageStageWord = (stage: string) => wordFrom('person.status.ageStage', stage, 'ageStage')
+
+/** A trade or calling in words, e.g. "smith" in German is "Schmied". */
+const specialtyWord = (specialty: string) => wordFrom('person.status.specialty', specialty, 'specialty')
+
+/** The skill level in words, translated from the level `skillWord` names. */
+function skillLabel(practice: number): string {
+  return t(SKILL_KEY[skillWord(practice)])
 }
 
 export function StatusChips({ org }: { org: OrganismState }) {
@@ -28,7 +54,7 @@ export function StatusChips({ org }: { org: OrganismState }) {
             className="relation-tag"
             style={{ background: '#2a1f08', color: '#ffd966', cursor: 'default' }}
           >
-            {'\u{1F4B0}'} {t('person.rich')}
+            {'\u{1F4B0}'} {t('person.status.rich')}
           </span>
         )}
         {org.discoveries?.includes('poor') && (
@@ -36,7 +62,7 @@ export function StatusChips({ org }: { org: OrganismState }) {
             className="relation-tag"
             style={{ background: '#1a1a2a', color: '#7a8898', cursor: 'default' }}
           >
-            {'\u{1FAA8}'} {t('person.poor')}
+            {'\u{1FAA8}'} {t('person.status.poor')}
           </span>
         )}
         {(org.age_stage ?? null) && (
@@ -44,7 +70,7 @@ export function StatusChips({ org }: { org: OrganismState }) {
             className="relation-tag"
             style={{ background: '#1a1a2a', color: '#bbcce6', cursor: 'default' }}
           >
-            {AGE_STAGE_ICON[org.age_stage as string] ?? '•'} {simLabel('ageStage', org.age_stage)}
+            {AGE_STAGE_ICON[org.age_stage as string] ?? '•'} {ageStageWord(org.age_stage as string)}
           </span>
         )}
         {(org.era ?? org.lineage_era ?? null) && (
@@ -52,8 +78,7 @@ export function StatusChips({ org }: { org: OrganismState }) {
             className="relation-tag"
             style={{ background: '#2a1a0a', color: '#e6c488', cursor: 'default' }}
           >
-            {ERA_ICON[(org.era ?? org.lineage_era) as string] ?? '◷'}{' '}
-            {simLabelAsSent('era', org.era ?? org.lineage_era)}
+            {ERA_ICON[(org.era ?? org.lineage_era) as string] ?? '◷'} {eraWord(org.era ?? org.lineage_era)}
           </span>
         )}
         {(org.specialty ?? null) && (
@@ -61,11 +86,14 @@ export function StatusChips({ org }: { org: OrganismState }) {
             className="relation-tag"
             style={{ background: '#0a1a2a', color: '#88c6e6', cursor: 'default' }}
           >
-            ★ {simLabel('specialty', org.specialty)}
+            ★ {specialtyWord(org.specialty as string)}
             {org.skill != null && org.skill > 0 && (
-              <span style={{ opacity: 0.8 }} title={t('person.skillTip', { pct: skillPercent(org.skill) })}>
+              <span
+                style={{ opacity: 0.8 }}
+                title={t('person.status.skillTip', { percent: skillPercent(org.skill) })}
+              >
                 {' '}
-                · {skillWord(org.skill)}
+                · {skillLabel(org.skill)}
               </span>
             )}
           </span>
@@ -75,7 +103,7 @@ export function StatusChips({ org }: { org: OrganismState }) {
             key={word}
             className="relation-tag"
             style={{ background: '#241a14', color: '#e6c9a0', cursor: 'default' }}
-            title={t('person.personalityTip')}
+            title={t('person.status.traitTip')}
           >
             {simLabel('personality', word)}
           </span>
@@ -84,9 +112,9 @@ export function StatusChips({ org }: { org: OrganismState }) {
           <span
             className="relation-tag"
             style={{ background: '#1a1a24', color: '#c8c2d8', cursor: 'default' }}
-            title={t('person.moodTip')}
+            title={t('person.status.moodTip')}
           >
-            {MOOD_ICON[org.mood] ?? '·'} {t('person.feels', { mood: simLabel('mood', org.mood) })}
+            {MOOD_ICON[org.mood] ?? '·'} {t('person.status.feels', { mood: simLabel('mood', org.mood) })}
           </span>
         )}
         {(org.mounted_vehicle ?? null) !== null && org.mounted_vehicle !== undefined && (
@@ -94,7 +122,7 @@ export function StatusChips({ org }: { org: OrganismState }) {
             className="relation-tag"
             style={{ background: '#1a2a0a', color: '#c4e688', cursor: 'default' }}
           >
-            🛞 {t('person.mounted')}
+            🛞 {t('person.status.mounted')}
           </span>
         )}
       </div>
@@ -107,10 +135,10 @@ export function Vitals({ org, isSick }: { org: OrganismState; isSick: boolean })
     <>
       <div className="org-detail-thought">{simText('thought', org.thought, { sex: sexOf(org) })}</div>
 
-      <Bar label={t('person.energy')} value={org.energy} color="#55dd55" />
-      <Bar label={t('person.hydration')} value={org.hydration} color="#4499ff" />
-      <Bar label={t('person.health')} value={org.health} color="#ff6644" />
-      {isSick && <Bar label={t('person.infection')} value={org.infection} color="#bbff44" />}
+      <Bar label={t('person.vitals.energy')} value={org.energy} color="#55dd55" />
+      <Bar label={t('person.vitals.hydration')} value={org.hydration} color="#4499ff" />
+      <Bar label={t('person.vitals.health')} value={org.health} color="#ff6644" />
+      {isSick && <Bar label={t('person.vitals.infection')} value={org.infection} color="#bbff44" />}
     </>
   )
 }

@@ -1,8 +1,8 @@
 import clsx from 'clsx'
-import { fmtNumber, t, tn } from '../../i18n'
 import { Tooltip } from '../toolbar/Tooltip'
 import { ToolSprite } from '../toolbar/ToolSprite'
 import { nextPopulationMilestone } from './population-milestone'
+import { formatNumber, t } from '../../i18n'
 
 interface Props {
   /** People alive. */
@@ -22,15 +22,21 @@ export function PopulationChip({ population, sick }: Props) {
     <span className="tip-card">
       {population > 0 && (
         <span className="tip-part">
-          <span className="tip-title">{t('population.title')}</span>
-          <span className="tip-body">{t('population.alive', { n: population })}</span>
-          {milestone && <span className="tip-how">{t('population.milestone', { n: milestone })}</span>}
+          <span className="tip-title">{t('panels.population.people')}</span>
+          <span className="tip-body">
+            {t('panels.population.alive', { count: formatNumber(population) })}
+          </span>
+          {milestone && (
+            <span className="tip-how">
+              {t('panels.population.milestone', { count: formatNumber(milestone) })}
+            </span>
+          )}
         </span>
       )}
       {sick > 0 && (
         <span className="tip-part">
-          <span className="tip-title">{t('population.sickTitle')}</span>
-          <span className="tip-body">{tn('population.sick', sick)}</span>
+          <span className="tip-title">{t('panels.population.sickness')}</span>
+          <span className="tip-body">{t('panels.population.sick', { count: formatNumber(sick) })}</span>
         </span>
       )}
     </span>
@@ -41,13 +47,13 @@ export function PopulationChip({ population, sick }: Props) {
         {population > 0 && (
           <>
             <ToolSprite icon="🚶" size={16} />
-            {fmtNumber(population)}
+            {formatNumber(population)}
           </>
         )}
         {sick > 0 && (
           <span className="pop-sick">
             <ToolSprite icon="🦠" size={16} />
-            {fmtNumber(sick)}
+            {formatNumber(sick)}
           </span>
         )}
       </span>

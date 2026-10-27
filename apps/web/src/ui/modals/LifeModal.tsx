@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import type { OrgLife, LifeEvent } from '../../shared/types'
 import { Modal } from './Modal'
+import { eventDate } from '../event-date'
 import { API_BASE } from '../../shared/config'
 import { useSimulationData } from '../../simulation/simulationData'
-import { t, tn, type MessageKey } from '../../i18n'
-import { simLabel } from '../../i18n/sim'
-import { sexLabel } from './words'
-import { sexOf, simText, type Sex } from '../../i18n/simtext'
+import { shownGeneration } from '../../game/model/generations'
+import { formatNumber, t } from '../../i18n'
 
 const DAY_LENGTH = 600
 
@@ -26,65 +25,14 @@ const CATEGORY_ICON: Record<string, string> = {
   danger: '⚠',
   specialty: '🛠',
   graduated: '🎓',
+  skill: '🛠',
+  learned: '👁',
   religion: '🕯️',
   milestone: '🏁',
   elder: '◈',
   death: '⚰',
   betrayal: '🗡️',
   event: '•',
-}
-
-const CATEGORY_LABEL: Record<string, MessageKey> = {
-  love: 'life.category.love',
-  loss: 'life.category.loss',
-  birth: 'life.category.birth',
-  friendship: 'life.category.friendship',
-  discovery: 'life.category.discovery',
-  achievement: 'life.category.achievement',
-  trauma: 'life.category.trauma',
-  witnessed: 'life.category.witnessed',
-  aspiration: 'life.category.aspiration',
-  partnership: 'life.category.partnership',
-  courtship: 'life.category.courtship',
-  farewell: 'life.category.farewell',
-  danger: 'life.category.danger',
-  specialty: 'life.category.specialty',
-  graduated: 'life.category.graduated',
-  religion: 'life.category.religion',
-  milestone: 'life.category.milestone',
-  elder: 'life.category.elder',
-  death: 'life.category.death',
-  betrayal: 'life.category.betrayal',
-  event: 'life.category.event',
-}
-
-/** The name of a life-event category; one the client does not know shows as the simulation sends it. */
-function categoryLabel(category: string): string {
-  const key = CATEGORY_LABEL[category]
-  return key ? t(key) : category
-}
-
-// The life summary's emotional state (OrgLife::emotional_state in sim-core's organism/json.rs). These
-// are not the person's mood ids, so they have their own words; anything else goes through the mood table.
-const FEELING_LABEL: Record<string, MessageKey> = {
-  devastated: 'life.state.devastated',
-  grieving: 'life.state.grieving',
-  'desperately lonely': 'life.state.desperatelyLonely',
-  terrified: 'life.state.terrified',
-  lonely: 'life.state.lonely',
-  content: 'life.state.content',
-  restless: 'life.state.restless',
-  starving: 'life.state.starving',
-  stable: 'life.state.stable',
-}
-
-const MEMORY_KIND_LABEL: Record<string, MessageKey> = {
-  core: 'life.memory.core',
-  episode: 'life.memory.episode',
-  fact: 'life.memory.fact',
-  bond: 'life.memory.bond',
-  place: 'life.memory.place',
-  dream: 'life.memory.dream',
 }
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -103,6 +51,8 @@ const CATEGORY_COLOR: Record<string, string> = {
   danger: '#ff6644',
   specialty: '#88ccff',
   graduated: '#88ccff',
+  skill: '#79d6b0',
+  learned: '#79d6b0',
   religion: '#f6d062',
   milestone: '#ffaa33',
   elder: '#ffcf6a',
@@ -114,7 +64,7 @@ const CATEGORY_COLOR: Record<string, string> = {
 function EventRow({ ev, sex }: { ev: LifeEvent; sex: Sex | null }) {
   const icon = CATEGORY_ICON[ev.category] ?? '•'
   const color = CATEGORY_COLOR[ev.category] ?? '#888'
-  const day = ev.tick > 0 ? t('life.day', { n: Math.floor(ev.tick / DAY_LENGTH) }) : ''
+  const day = ev.tick > 0 ? eventDate(ev.tick) : ''
   return (
     <div
       className="life-event-row"
@@ -123,7 +73,7 @@ function EventRow({ ev, sex }: { ev: LifeEvent; sex: Sex | null }) {
       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
         <span style={{ fontSize: 13 }}>{icon}</span>
         <span style={{ color, fontSize: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
-          {categoryLabel(ev.category)}
+          {lifeCategory(ev.category)}
         </span>
         {day && <span style={{ color: '#555', fontSize: 8, marginLeft: 'auto' }}>{day}</span>}
       </div>
@@ -131,7 +81,7 @@ function EventRow({ ev, sex }: { ev: LifeEvent; sex: Sex | null }) {
         {simText('life', ev.text, { sex })}
       </div>
       {ev.related_name && ev.category !== 'event' && (
-        <div style={{ color: '#666', fontSize: 9, marginTop: 1 }}>↳ {ev.related_name}</div>
+        <div style={{ color: '#666', fontSize: 9, marginTop: 1 }}>↳ {displayName(ev.related_name)}</div>
       )}
     </div>
   )
@@ -142,6 +92,12 @@ interface Props {
   orgName: string
   onClose: () => void
 }
+
+import { discoveryWord } from '../sim-words'
+import { lifeCategory, lifeFeeling, memoryKind } from '../../fork/i18n/life-words'
+import { sexOf, simText, type Sex } from '../../fork/i18n/simtext'
+import { displayName } from '../../fork/i18n/names'
+import { sexLabel } from './words'
 
 export function LifeModal({ orgId, orgName, onClose }: Props) {
   const { apiEnabled, loadLocalOrgLife } = useSimulationData()
@@ -197,12 +153,12 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
       open
       onClose={onClose}
       className="lang-modal life-modal"
-      title={t('life.title', { name: orgName })}
+      title={t('dialogs.life.title', { name: orgName })}
       hideTitle
     >
       <div className="lang-modal-header">
-        <span className="lang-modal-title">{t('life.heading', { name: orgName.toUpperCase() })}</span>
-        <button aria-label={t('common.close')} className="close-btn" onClick={onClose}>
+        <span className="lang-modal-title">{t('dialogs.life.heading', { name: orgName.toUpperCase() })}</span>
+        <button aria-label={t('dialogs.life.close')} className="close-btn" onClick={onClose}>
           ✕
         </button>
       </div>
@@ -220,7 +176,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
           </div>
         )}
         {error && (
-          <div style={{ color: '#ff6644', textAlign: 'center', padding: 20 }}>{t('life.failed')}</div>
+          <div style={{ color: '#ff6644', textAlign: 'center', padding: 20 }}>{t('dialogs.life.failed')}</div>
         )}
         {life && (
           <>
@@ -234,27 +190,27 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                 color: '#888',
               }}
             >
-              <span>{t('life.gen', { n: life.generation })}</span>
+              <span>{t('dialogs.life.gen', { gen: formatNumber(shownGeneration(life.generation)) })}</span>
               <span>·</span>
-              <span>{tn('stats.daysOld', ageInDays)}</span>
+              <span>{t('dialogs.life.age', { count: ageInDays })}</span>
               <span>·</span>
               <span>{sexLabel(life.sex)}</span>
               {life.is_elder && (
                 <>
                   <span>·</span>
-                  <span style={{ color: '#ffcc44' }}>{t('life.elder')}</span>
+                  <span style={{ color: '#ffcc44' }}>{t('dialogs.life.elder')}</span>
                 </>
               )}
               {life.partner_id && (
                 <>
                   <span>·</span>
-                  <span style={{ color: '#ff88aa' }}>{t('life.partnered')}</span>
+                  <span style={{ color: '#ff88aa' }}>{t('dialogs.life.partnered')}</span>
                 </>
               )}
               {life.children_count > 0 && (
                 <>
                   <span>·</span>
-                  <span>{tn('life.children', life.children_count)}</span>
+                  <span>{t('dialogs.life.children', { count: life.children_count })}</span>
                 </>
               )}
             </div>
@@ -272,13 +228,9 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
               }}
             >
               <span style={{ color: '#888', fontSize: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
-                {t('life.feeling')}
+                {t('dialogs.life.feeling')}
               </span>
-              <span style={{ marginLeft: 8, color: '#ddd' }}>
-                {FEELING_LABEL[life.emotional_state]
-                  ? t(FEELING_LABEL[life.emotional_state])
-                  : simLabel('mood', life.emotional_state)}
-              </span>
+              <span style={{ marginLeft: 8, color: '#ddd' }}>{lifeFeeling(life.emotional_state)}</span>
             </div>
 
             {life.friends.length > 0 && (
@@ -292,7 +244,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                     marginBottom: 4,
                   }}
                 >
-                  {t('life.friends')}
+                  {t('dialogs.life.friends')}
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {life.friends.map((f) => (
@@ -307,7 +259,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                         color: '#ffcc44',
                       }}
                     >
-                      {f}
+                      {displayName(f)}
                     </span>
                   ))}
                 </div>
@@ -325,7 +277,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                     marginBottom: 4,
                   }}
                 >
-                  {t('life.discoveries')}
+                  {t('dialogs.life.discoveries')}
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {life.discoveries.map((d) => (
@@ -340,7 +292,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                         color: '#88ccff',
                       }}
                     >
-                      {simLabel('discovery', d)}
+                      {discoveryWord(d)}
                     </span>
                   ))}
                 </div>
@@ -360,7 +312,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                       padding: '1px 5px',
                     }}
                   >
-                    {CATEGORY_ICON[c]} {categoryLabel(c)}
+                    {CATEGORY_ICON[c]} {lifeCategory(c)}
                   </span>
                 ))}
               </div>
@@ -378,7 +330,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                     marginTop: 4,
                   }}
                 >
-                  {t('life.memories', { n: life.memories.length })}
+                  {t('dialogs.life.memories', { count: formatNumber(life.memories.length) })}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
                   {life.memories.slice(0, 8).map((m, i) => {
@@ -413,7 +365,7 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                             fontSize: 9,
                           }}
                         >
-                          {MEMORY_KIND_LABEL[m.kind] ? t(MEMORY_KIND_LABEL[m.kind]) : m.kind}
+                          {memoryKind(m.kind)}
                         </span>
                         <span style={{ color: emoColor, lineHeight: 1.4 }}>
                           {simText('memory', m.text, { sex: sexOf(life) })}
@@ -434,14 +386,16 @@ export function LifeModal({ orgId, orgName, onClose }: Props) {
                 marginBottom: 8,
               }}
             >
-              {t('life.events', { n: life.events.length })}
+              {t('dialogs.life.events', { count: formatNumber(life.events.length) })}
             </div>
 
-            {stuckCount > 0 && <div className="life-stuck-banner">{tn('life.stuck', stuckCount)}</div>}
+            {stuckCount > 0 && (
+              <div className="life-stuck-banner">{t('dialogs.life.stuck', { count: stuckCount })}</div>
+            )}
 
             {life.events.length === 0 ? (
               <div style={{ color: '#555', fontSize: 10, textAlign: 'center', padding: 12 }}>
-                {t('life.noEvents')}
+                {t('dialogs.life.noEvents')}
               </div>
             ) : (
               <div className={life.events.length > 8 ? 'life-events-grid' : ''}>

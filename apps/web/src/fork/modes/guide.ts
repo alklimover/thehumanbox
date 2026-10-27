@@ -1,7 +1,7 @@
 // Fork: the mode tips, four steps for each role, each pointing at a real part
 // of the screen. They replace the general tour and run on its card
 // (ui/tour/tour-runner.ts); only the steps are the fork's.
-import { t, type MessageKey } from '../../i18n'
+import { ft, type ForkMessageKey } from '../i18n'
 import { logger } from '../../shared/logger'
 import type { StepDef } from '../../ui/tour/tour-runner'
 import { markGuideSeen, setPanelOpen, useModeStore, type Role } from './role'
@@ -11,8 +11,8 @@ export const PANEL_SELECTOR = '[data-tour="mode-panel"]'
 export interface GuideStep {
   /** What the step points at; when it is not on screen the card stands in the middle. */
   selector: string
-  title: MessageKey
-  text: MessageKey
+  title: ForkMessageKey
+  text: ForkMessageKey
   on?: StepDef['on']
 }
 
@@ -83,8 +83,8 @@ export function resolveGuide(role: Role, onScreen: (selector: string) => boolean
     const there = onScreen(step.selector)
     return {
       selector: there ? step.selector : '',
-      title: t('modes.guide.counter', { n: i + 1, total: steps.length, title: t(step.title) }),
-      text: t(step.text),
+      title: ft('modes.guide.counter', { n: i + 1, total: steps.length, title: ft(step.title) }),
+      text: ft(step.text),
       on: there ? step.on : undefined,
     }
   })
