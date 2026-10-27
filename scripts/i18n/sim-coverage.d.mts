@@ -1,4 +1,4 @@
-// Types for sim-coverage.mjs, for the vitest checks in apps/web/src/i18n/simtext.
+// Types for sim-coverage.mjs, for the vitest checks in apps/web/src/fork/i18n/simtext.
 import type { CatalogEntry } from './extract-sim-strings.mjs'
 export function makeMatcher(
   entries: CatalogEntry[],

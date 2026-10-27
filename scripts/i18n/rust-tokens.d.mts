@@ -1,4 +1,4 @@
-// Types for rust-tokens.mjs, for the vitest checks in apps/web/src/i18n/simtext.
+// Types for rust-tokens.mjs, for the vitest checks in apps/web/src/fork/i18n/simtext.
 export interface RustToken {
   t: 'str' | 'char' | 'lifetime' | 'ident' | 'num' | 'punct'
   v: string
