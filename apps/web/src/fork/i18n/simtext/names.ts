@@ -87,8 +87,50 @@ export function faithName(name: string): string | null {
   return m ? `${base} № ${m[2]}` : base
 }
 
+/**
+ * The kinds of work people get skilled at (Skill in crates/sim-core/src/organism/skills.rs): the work by its name
+ * (`Skill::name`), and the worker (`Skill::worker`) as a noun and as the work it does, for «набрался опыта в рубке леса».
+ */
+const SKILL: Record<string, string> = {
+  woodcutting: 'рубка леса',
+  quarrying: 'добыча камня',
+  foraging: 'собирательство',
+  fishing: 'рыбалка',
+  hunting: 'охота',
+  farming: 'земледелие',
+  building: 'строительство',
+  crafting: 'ремесло',
+  healing: 'врачевание',
+}
+const WORKER: Record<string, string> = {
+  woodcutter: 'лесоруб',
+  quarrier: 'каменотёс',
+  forager: 'собиратель',
+  fisher: 'рыбак',
+  hunter: 'охотник',
+  farmer: 'земледелец',
+  builder: 'строитель',
+  crafter: 'ремесленник',
+  healer: 'лекарь',
+}
+const WORKER_IN: Record<string, string> = {
+  woodcutter: 'рубке леса',
+  quarrier: 'добыче камня',
+  forager: 'собирательстве',
+  fisher: 'рыбалке',
+  hunter: 'охоте',
+  farmer: 'земледелии',
+  builder: 'строительстве',
+  crafter: 'ремесле',
+  healer: 'врачевании',
+}
+
 /** Composed names for `{value|domain}` placeholders, beside the simLabel tables. */
 export const NAME_DOMAINS: Record<string, (value: string) => string | null> = {
+  // A kind of work («рубка леса»), its worker («лесоруб») and the work a worker does, in the prepositional («в рубке леса»).
+  skill: (value) => SKILL[value] ?? null,
+  worker: (value) => WORKER[value] ?? null,
+  workerIn: (value) => WORKER_IN[value] ?? null,
   book: bookTitle,
   artwork: artworkTitle,
   faith: faithName,

@@ -33,6 +33,45 @@ export const events: SimTextTable = {
   'marked a flood hazard area to keep the group safe':
     'отметил[а] место, которое заливает водой, чтобы уберечь своих',
 
+  // Work, crafts and the lessons of loss (upstream 0.6.28–0.7.x).
+  'came away wounded from a battle': '[вернулся|вернулась] из битвы [раненым|раненой]',
+  'got the hang of {name}': '[освоился|освоилась] в деле: {name|skill}',
+  'became a skilled {worker}': '[набрался|набралась] опыта в {worker|workerIn}',
+  'became a master {worker}': 'стал[а] мастером в {worker|workerIn}',
+  'began to learn {name} by watching {teacher}': 'стал[а] учиться, глядя на {teacher}: {name|skill}',
+  'went to learn from {parent_name}, a skilled {worker}':
+    '[пошёл|пошла] учиться к {parent_name}, умелому мастеру: {worker|worker}',
+  'learned the {tribe} way of {name} from a trader':
+    'узнал[а] от торговца, как работают в племени {tribe}: {name|skill}',
+  'worked out {arg0} after years of {name}':
+    'после долгих лет дела ({name|skill}) [пришёл|пришла] к открытию: {arg0|discovery}',
+  'swore off {name} after an animal attack': 'бросил[а] дело после нападения зверя: {name|skill}',
+  'swore off {name} after nearly drowning': '[бросил|бросила] дело, едва не утонув: {name|skill}',
+  'swore off {name} after being burned': 'бросил[а] дело после ожогов: {name|skill}',
+  'learned to fear deep water after {dead} drowned':
+    'научил[ся|ась] бояться глубокой воды, когда утонул(а) {dead}',
+  'learned to eat before hunger came after {dead} starved':
+    'научил[ся|ась] есть, не дожидаясь голода, когда от голода умер(ла) {dead}',
+  'learned to keep water near after {dead} died of thirst':
+    'научил[ся|ась] держать воду под рукой, когда от жажды умер(ла) {dead}',
+  'learned to keep clear of beasts after one killed {dead}':
+    'научил[ся|ась] обходить зверей стороной, когда зверь убил человека по имени {dead}',
+  'learned to respect fire after {dead} burned':
+    'научил[ся|ась] уважать огонь, когда в огне погиб(ла) {dead}',
+  // A tribe's deeds: the actor is the tribe, so the verb is plural and present.
+  'find the game near them grown wary of their hunters': 'замечают, что дичь вокруг стала пугливой',
+  'are too weary of war to march on the {them}': 'слишком устали от войны, чтобы идти на племя {them}',
+  'became known for their {name}': 'славятся ремеслом: {name|skill}',
+  'have buried {fallen} of their own in battle and are weary of war':
+    'похоронили павших в боях ({fallen}) и устали от войны',
+  'remember the hungry winter of year {arg0} and lay food by':
+    'помнят голодную зиму {arg0}-го года и делают запасы',
+  'worn out by war, the {an} and the {bn} make peace': 'измотанные войной, племена {an} и {bn} заключают мир',
+  'the marriage of {a} and {b} brings peace between the {na} and the {nb}':
+    'брак {a} и {b} приносит мир племенам {na} и {nb}',
+  'the {na} and the {nb} are joined by the marriage of {a} and {b}':
+    'племена {na} и {nb} породнились: {a} и {b} вступили в брак',
+
   // Templates: names stay as they are, ids go through the simLabel tables.
   'heard that {actor_name} {detail}': 'услышал[а], что {actor_name|someone} {detail@actor_name}',
   'noticed {actor_name} {detail}': 'заметил[а]: {actor_name|someone} {detail@actor_name}',
